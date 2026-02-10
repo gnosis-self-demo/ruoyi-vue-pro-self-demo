@@ -40,6 +40,10 @@ public class QueueConsumer {
     public void setRuntimeConfig(RuntimeQueueConfig runtimeConfig) {
         this.runtimeConfig = runtimeConfig;
     }
+    
+    public void setProcessorManager(BusinessProcessorManager processorManager) {
+        this.processorManager = processorManager;
+    }
 
     /**
      * 启动消费者线程

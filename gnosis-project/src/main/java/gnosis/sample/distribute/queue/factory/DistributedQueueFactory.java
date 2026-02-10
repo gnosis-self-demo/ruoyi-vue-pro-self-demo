@@ -3,6 +3,7 @@ package gnosis.sample.distribute.queue.factory;
 import gnosis.sample.distribute.queue.config.RuntimeQueueConfig;
 import gnosis.sample.distribute.queue.consumer.QueueConsumer;
 import gnosis.sample.distribute.queue.model.QueueInstance;
+import gnosis.sample.distribute.queue.processor.BusinessProcessorManager;
 import gnosis.sample.distribute.queue.service.DistributedQueueService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class DistributedQueueFactory {
 
     @Autowired
     private DataSource dataSource;
+    
+    @Autowired
+    private BusinessProcessorManager businessProcessorManager;
 
     // 存储队列实例的映射
     private final ConcurrentHashMap<String, QueueInstance> queueInstances = new ConcurrentHashMap<>();
@@ -50,6 +54,7 @@ public class DistributedQueueFactory {
         QueueConsumer consumer = new QueueConsumer();
         consumer.setQueueService(service);
         consumer.setRuntimeConfig(config);
+        consumer.setProcessorManager(businessProcessorManager);
         
         // 启动消费者
         consumer.startConsumer(queueName);
