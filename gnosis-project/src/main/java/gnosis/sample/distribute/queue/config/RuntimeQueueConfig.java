@@ -1,5 +1,7 @@
 package gnosis.sample.distribute.queue.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -10,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 支持动态调整队列最大长度和QPS限制
  */
 @Component
+@Getter
+@Setter
 public class RuntimeQueueConfig {
 
     // 队列最大长度配置映射

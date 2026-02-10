@@ -74,6 +74,8 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
+
     </dependencies>
 
     <build>
@@ -95,7 +97,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.example.demo.DistributedQueueApplication</mainClass>
+                    <mainClass>gnosis.sample.distribute.queue.DistributedQueueApplication</mainClass>
                 </configuration>
             </plugin>
 

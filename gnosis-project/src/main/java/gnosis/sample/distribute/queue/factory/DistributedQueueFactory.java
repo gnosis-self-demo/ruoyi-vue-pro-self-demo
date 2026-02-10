@@ -2,7 +2,9 @@ package gnosis.sample.distribute.queue.factory;
 
 import gnosis.sample.distribute.queue.config.RuntimeQueueConfig;
 import gnosis.sample.distribute.queue.consumer.QueueConsumer;
+import gnosis.sample.distribute.queue.model.QueueInstance;
 import gnosis.sample.distribute.queue.service.DistributedQueueService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 分布式队列工厂
  * 支持创建和管理多个队列实例
  */
+@Slf4j
 @Component
 public class DistributedQueueFactory {
 
@@ -23,34 +26,6 @@ public class DistributedQueueFactory {
 
     // 存储队列实例的映射
     private final ConcurrentHashMap<String, QueueInstance> queueInstances = new ConcurrentHashMap<>();
-
-    /**
-     * 队列实例包装类
-     */
-    public static class QueueInstance {
-        private final String queueName;
-        private final RuntimeQueueConfig config;
-        private final DistributedQueueService service;
-        private final QueueConsumer consumer;
-        private final PlatformTransactionManager transactionManager;
-
-        public QueueInstance(String queueName, RuntimeQueueConfig config, 
-                           DistributedQueueService service, QueueConsumer consumer,
-                           PlatformTransactionManager transactionManager) {
-            this.queueName = queueName;
-            this.config = config;
-            this.service = service;
-            this.consumer = consumer;
-            this.transactionManager = transactionManager;
-        }
-
-        // getter方法
-        public String getQueueName() { return queueName; }
-        public RuntimeQueueConfig getConfig() { return config; }
-        public DistributedQueueService getService() { return service; }
-        public QueueConsumer getConsumer() { return consumer; }
-        public PlatformTransactionManager getTransactionManager() { return transactionManager; }
-    }
 
     /**
      * 创建新的队列实例
@@ -83,7 +58,7 @@ public class DistributedQueueFactory {
         QueueInstance instance = new QueueInstance(queueName, config, service, consumer, transactionManager);
         queueInstances.put(queueName, instance);
         
-        System.out.println("Created queue instance: " + queueName);
+        log.info("创建队列实例: {}", queueName);
         return instance;
     }
 
@@ -114,7 +89,7 @@ public class DistributedQueueFactory {
         if (instance != null) {
             // 停止消费者线程
             instance.getConsumer().stopConsumer();
-            System.out.println("Removed queue instance: " + queueName);
+            log.info("删除队列实例: {}", queueName);
             return true;
         }
         return false;

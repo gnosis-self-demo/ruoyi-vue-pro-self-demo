@@ -2,7 +2,8 @@ package gnosis.sample.distribute.queue.controller;
 
 import gnosis.sample.distribute.queue.config.RuntimeQueueConfig;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,10 +14,11 @@ import java.util.Map;
  * 队列配置管理控制器
  * 支持运行时动态调整队列配置
  */
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class QueueConfigController {
+    
+    private static final Logger log = LoggerFactory.getLogger(QueueConfigController.class);
 
     private final RuntimeQueueConfig config;
 

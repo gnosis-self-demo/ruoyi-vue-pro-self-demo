@@ -1,12 +1,12 @@
 package gnosis.sample.distribute.queue.consumer;
 
 import gnosis.sample.distribute.queue.config.RuntimeQueueConfig;
+import gnosis.sample.distribute.queue.dto.BusinessProcessRequest;
+import gnosis.sample.distribute.queue.dto.BusinessProcessResult;
 import gnosis.sample.distribute.queue.model.QueueMessage;
-import gnosis.sample.distribute.queue.processor.MessageProcessorManager;
+import gnosis.sample.distribute.queue.processor.BusinessProcessorManager;
 import gnosis.sample.distribute.queue.service.DistributedQueueService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.HashSet;
@@ -18,17 +18,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 自动监听并处理队列中的消息
  */
 @Slf4j
-@Component
 public class QueueConsumer {
 
-    @Autowired
     private DistributedQueueService queueService;
 
-    @Autowired
     private RuntimeQueueConfig runtimeConfig;
     
-    @Autowired
-    private MessageProcessorManager processorManager;
+    private BusinessProcessorManager processorManager;
 
     // 消费者线程控制
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -112,22 +108,24 @@ public class QueueConsumer {
                     }
 
                     // 处理消息
-                    boolean success = false;
-                    String resultData = null;
-                    String errorMsg = null;
+                    BusinessProcessResult result = null;
 
                     try {
                         // 使用策略模式处理消息
-                        resultData = processorManager.processMessage(queueName, actualPayload);
-                        success = true;
+                        BusinessProcessRequest request = 
+                            new BusinessProcessRequest(requestId, actualPayload, queueName);
+                        result = processorManager.processRequest(queueName, request);
                     } catch (Exception e) {
-                        errorMsg = e.getMessage();
                         log.error("处理队列 {} 消息时发生错误: {}", queueName, e.getMessage(), e);
                         throw e;
                     } finally {
                         // 如果是同步消息，保存结果
-                        if (hasRequestId && requestId != null) {
-                            queueService.saveResult(requestId, success, resultData, errorMsg);
+                        if (hasRequestId && requestId != null && result != null) {
+                            queueService.saveResult(
+                                requestId, 
+                                result.isSuccess(), 
+                                result.getResultData() != null ? result.getResultData().toString() : null,
+                                result.getErrorMessage());
                         }
                     }
 

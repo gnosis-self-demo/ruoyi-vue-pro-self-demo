@@ -1,7 +1,8 @@
 package gnosis.sample.distribute.queue.task;
 
-import gnosis.sample.distribute.queue.service.DistributedQueueService;
-import org.springframework.beans.factory.annotation.Autowired;
+import gnosis.sample.distribute.queue.factory.DistributedQueueFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -9,11 +10,12 @@ import org.springframework.stereotype.Component;
  * 定时清理任务
  * 定期清理已完成的队列消息，释放存储空间
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class CleanupTask {
 
-    @Autowired
-    private DistributedQueueService queueService;
+    private final DistributedQueueFactory queueFactory;
 
     // 默认保留7天的数据
     private static final int DEFAULT_KEEP_DAYS = 7;
@@ -25,12 +27,17 @@ public class CleanupTask {
     @Scheduled(cron = "0 0 2 * * ?")
     public void dailyCleanup() {
         try {
-            System.out.println("Starting daily cleanup task...");
-            queueService.cleanupDoneMessages(DEFAULT_KEEP_DAYS);
-            System.out.println("Daily cleanup task completed successfully.");
+            log.info("开始每日清理任务...");
+            // 获取任意一个队列实例进行清理
+            java.util.Optional<String> firstQueue = queueFactory.getAllQueueNames().stream().findFirst();
+            if (firstQueue.isPresent()) {
+                String queueName = firstQueue.get();
+                queueFactory.getQueueInstance(queueName).getService()
+                    .cleanupDoneMessages(DEFAULT_KEEP_DAYS);
+                log.info("每日清理任务完成");
+            }
         } catch (Exception e) {
-            System.err.println("Error during daily cleanup: " + e.getMessage());
-            e.printStackTrace();
+            log.error("每日清理任务执行失败: {}", e.getMessage(), e);
         }
     }
 
@@ -40,13 +47,17 @@ public class CleanupTask {
     @Scheduled(cron = "0 0 3 ? * SUN")
     public void weeklyDeepCleanup() {
         try {
-            System.out.println("Starting weekly deep cleanup task...");
+            log.info("开始每周深度清理任务...");
             // 保留30天的数据进行深度清理
-            queueService.cleanupDoneMessages(30);
-            System.out.println("Weekly deep cleanup task completed successfully.");
+            java.util.Optional<String> firstQueue = queueFactory.getAllQueueNames().stream().findFirst();
+            if (firstQueue.isPresent()) {
+                String queueName = firstQueue.get();
+                queueFactory.getQueueInstance(queueName).getService()
+                    .cleanupDoneMessages(30);
+                log.info("每周深度清理任务完成");
+            }
         } catch (Exception e) {
-            System.err.println("Error during weekly deep cleanup: " + e.getMessage());
-            e.printStackTrace();
+            log.error("每周深度清理任务执行失败: {}", e.getMessage(), e);
         }
     }
 
@@ -57,9 +68,14 @@ public class CleanupTask {
     public void hourlyLightCleanup() {
         try {
             // 轻量级清理：只清理1天前的完成消息
-            queueService.cleanupDoneMessages(1);
+            java.util.Optional<String> firstQueue = queueFactory.getAllQueueNames().stream().findFirst();
+            if (firstQueue.isPresent()) {
+                String queueName = firstQueue.get();
+                queueFactory.getQueueInstance(queueName).getService()
+                    .cleanupDoneMessages(1);
+            }
         } catch (Exception e) {
-            System.err.println("Error during hourly light cleanup: " + e.getMessage());
+            log.warn("每小时轻量级清理任务执行失败: {}", e.getMessage());
             // 轻量级清理失败不影响主要业务
         }
     }
@@ -74,11 +90,17 @@ public class CleanupTask {
         }
         
         try {
-            System.out.println("Starting manual cleanup for " + keepDays + " days...");
-            queueService.cleanupDoneMessages(keepDays);
-            System.out.println("Manual cleanup completed successfully.");
+            log.info("开始手动清理 {} 天前的数据...", keepDays);
+            // 获取任意一个队列实例进行清理
+            java.util.Optional<String> firstQueue = queueFactory.getAllQueueNames().stream().findFirst();
+            if (firstQueue.isPresent()) {
+                String queueName = firstQueue.get();
+                queueFactory.getQueueInstance(queueName).getService()
+                    .cleanupDoneMessages(keepDays);
+                log.info("手动清理完成");
+            }
         } catch (Exception e) {
-            System.err.println("Error during manual cleanup: " + e.getMessage());
+            log.error("手动清理任务异常: {}", e.getMessage(), e);
             throw new RuntimeException("Manual cleanup failed", e);
         }
     }

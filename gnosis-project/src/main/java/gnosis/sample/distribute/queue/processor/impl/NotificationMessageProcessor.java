@@ -1,6 +1,8 @@
 package gnosis.sample.distribute.queue.processor.impl;
 
-import gnosis.sample.distribute.queue.processor.MessageProcessor;
+import gnosis.sample.distribute.queue.dto.BusinessProcessRequest;
+import gnosis.sample.distribute.queue.dto.BusinessProcessResult;
+import gnosis.sample.distribute.queue.processor.AbstractDistributeQueueBusinessProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -9,19 +11,19 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class NotificationMessageProcessor implements MessageProcessor {
+public class NotificationMessageProcessor extends AbstractDistributeQueueBusinessProcessor {
     
     @Override
-    public String process(String message) throws Exception {
-        log.info("处理通知消息: {}", message);
+    public BusinessProcessResult process(BusinessProcessRequest request) throws Exception {
+        log.info("处理通知消息: {}", request.getBusinessData());
         
         // 模拟通知处理耗时
         Thread.sleep(50);
         
-        String result = "NOTIFICATION_PROCESSED: " + message;
+        String result = "NOTIFICATION_PROCESSED: " + request.getBusinessData();
         log.info("通知处理完成: {}", result);
         
-        return result;
+        return BusinessProcessResult.success(request.getRequestId(), result);
     }
     
     @Override

@@ -6,7 +6,7 @@ import gnosis.sample.distribute.queue.exception.QueueFullException;
 import gnosis.sample.distribute.queue.model.QueueMessage;
 import gnosis.sample.distribute.queue.model.QueueResult;
 import gnosis.sample.distribute.queue.util.IdGenerator;
-import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -20,8 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 分布式队列核心服务
+ * 通过工厂创建实例，非单例模式
  */
-@Service
+@Slf4j
 public class DistributedQueueService {
 
     private DataSource dataSource;
@@ -279,7 +280,7 @@ public class DistributedQueueService {
             ps.setString(1, QueueMessageStatus.DONE.getValue());
             ps.setTimestamp(2, cutoff);
             int deleted = ps.executeUpdate();
-            System.out.println("Cleaned up " + deleted + " done messages older than " + keepDays + " days.");
+            log.info("清理了 {} 条超过 {} 天的已完成消息", deleted, keepDays);
         } finally {
             closeQuietly(ps);
             closeQuietly(conn);

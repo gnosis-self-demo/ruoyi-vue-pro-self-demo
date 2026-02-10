@@ -2,6 +2,7 @@ package gnosis.sample.distribute.queue.controller;
 
 import gnosis.sample.distribute.queue.exception.QueueFullException;
 import gnosis.sample.distribute.queue.factory.DistributedQueueFactory;
+import gnosis.sample.distribute.queue.model.QueueInstance;
 import gnosis.sample.distribute.queue.model.QueueResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,7 @@ public class TaskController {
      */
     @PostMapping("/distribute-queue/tasks/{queueName}")
     public ResponseEntity<?> submitTask(@PathVariable String queueName, @RequestBody String payload) {
-        DistributedQueueFactory.QueueInstance instance = queueFactory.getQueueInstance(queueName);
+        QueueInstance instance = queueFactory.getQueueInstance(queueName);
         if (instance == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "QUEUE_NOT_FOUND");
@@ -73,7 +74,7 @@ public class TaskController {
     public ResponseEntity<?> submitTaskSync(@PathVariable String queueName,
                                             @RequestBody String payload,
                                             @RequestParam(defaultValue = "5000") long timeoutMs) {
-        DistributedQueueFactory.QueueInstance instance = queueFactory.getQueueInstance(queueName);
+        QueueInstance instance = queueFactory.getQueueInstance(queueName);
         if (instance == null) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "QUEUE_NOT_FOUND");

@@ -1,10 +1,12 @@
 package gnosis.sample.distribute.queue.model;
 
 import gnosis.sample.distribute.queue.enums.QueueMessageStatus;
+import lombok.Data;
 
 /**
  * 队列消息模型
  */
+@Data
 public class QueueMessage {
     private final long id;
     private final String queueName;
@@ -22,36 +24,5 @@ public class QueueMessage {
         this.messageBody = messageBody;
         this.attemptCount = attemptCount;
         this.status = status;
-    }
-
-    public long getId() { 
-        return id; 
-    }
-    
-    public String getQueueName() { 
-        return queueName; 
-    }
-    
-    public String getMessageBody() { 
-        return messageBody; 
-    }
-    
-    public int getAttemptCount() { 
-        return attemptCount; 
-    }
-    
-    public QueueMessageStatus getStatus() { 
-        return status; 
-    }
-
-    @Override
-    public String toString() {
-        return "QueueMessage{" +
-                "id=" + id +
-                ", queueName='" + queueName + '\'' +
-                ", messageBody='" + messageBody + '\'' +
-                ", attemptCount=" + attemptCount +
-                ", status=" + status +
-                '}';
     }
 }

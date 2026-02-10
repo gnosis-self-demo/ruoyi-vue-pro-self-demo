@@ -1,4 +1,4 @@
-package gnosis.sample;
+package gnosis.sample.distribute.queue;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

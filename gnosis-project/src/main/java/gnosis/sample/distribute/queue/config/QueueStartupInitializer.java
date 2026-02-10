@@ -1,6 +1,6 @@
 package gnosis.sample.distribute.queue.config;
 
-import gnosis.sample.distribute.queue.config.entity.QueueStartupConfig;
+import gnosis.sample.distribute.queue.config.dto.QueueConfig;
 import gnosis.sample.distribute.queue.factory.DistributedQueueFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +26,6 @@ public class QueueStartupInitializer implements ApplicationListener<ApplicationR
     public void onApplicationEvent(ApplicationReadyEvent event) {
         log.info("开始初始化队列实例...");
         
-        // 创建默认队列
-        createDefaultQueues();
-        
         // 创建配置文件中定义的队列
         createConfiguredQueues();
         
@@ -36,32 +33,14 @@ public class QueueStartupInitializer implements ApplicationListener<ApplicationR
     }
     
     /**
-     * 创建默认队列实例
-     */
-    private void createDefaultQueues() {
-        String[] defaultQueues = {"sms_queue", "email_queue", "notification_queue"};
-        
-        for (String queueName : defaultQueues) {
-            try {
-                if (queueFactory.getQueueInstance(queueName) == null) {
-                    queueFactory.createDefaultQueueInstance(queueName);
-                    log.info("创建默认队列实例: {}", queueName);
-                }
-            } catch (Exception e) {
-                log.error("创建默认队列 {} 失败: {}", queueName, e.getMessage());
-            }
-        }
-    }
-    
-    /**
      * 创建配置文件中定义的队列实例
      */
     private void createConfiguredQueues() {
-        Map<String, QueueStartupConfig.QueueConfig> configuredQueues = startupConfig.getQueues();
+        Map<String, QueueConfig> configuredQueues = startupConfig.getQueues();
         
-        for (Map.Entry<String, QueueStartupConfig.QueueConfig> entry : configuredQueues.entrySet()) {
+        for (Map.Entry<String, QueueConfig> entry : configuredQueues.entrySet()) {
             String queueName = entry.getKey();
-            QueueStartupConfig.QueueConfig config = entry.getValue();
+            QueueConfig config = entry.getValue();
             
             if (Boolean.TRUE.equals(config.getEnabled())) {
                 try {
@@ -79,17 +58,16 @@ public class QueueStartupInitializer implements ApplicationListener<ApplicationR
     /**
      * 根据配置创建队列实例
      */
-    private void createQueueFromConfig(String queueName, QueueStartupConfig.QueueConfig config) {
-        gnosis.sample.distribute.queue.config.RuntimeQueueConfig runtimeConfig = 
-            new gnosis.sample.distribute.queue.config.RuntimeQueueConfig();
+    private void createQueueFromConfig(String queueName, QueueConfig config) {
+        RuntimeQueueConfig runtimeConfig = new RuntimeQueueConfig();
             
-        // 使用配置值或默认值
+        // 使用配置值
         int maxLength = config.getMaxLength() != null ? 
-            config.getMaxLength() : startupConfig.getDefaults().getMaxLength();
+            config.getMaxLength() : 1000;
         int maxQps = config.getMaxQps() != null ? 
-            config.getMaxQps() : startupConfig.getDefaults().getMaxQps();
+            config.getMaxQps() : 50;
         long pollInterval = config.getPollInterval() != null ? 
-            config.getPollInterval() : startupConfig.getDefaults().getPollInterval();
+            config.getPollInterval() : 1000L;
             
         runtimeConfig.setMaxQueueLength(queueName, maxLength);
         runtimeConfig.setMaxQps(queueName, maxQps);

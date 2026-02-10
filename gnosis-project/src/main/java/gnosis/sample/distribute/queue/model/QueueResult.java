@@ -1,8 +1,11 @@
 package gnosis.sample.distribute.queue.model;
 
+import lombok.Data;
+
 /**
  * 队列处理结果模型
  */
+@Data
 public class QueueResult {
     private final String requestId;
     private final boolean success;
@@ -14,31 +17,5 @@ public class QueueResult {
         this.success = success;
         this.resultData = resultData;
         this.errorMessage = errorMessage;
-    }
-
-    public String getRequestId() { 
-        return requestId; 
-    }
-    
-    public boolean isSuccess() { 
-        return success; 
-    }
-    
-    public String getResultData() { 
-        return resultData; 
-    }
-    
-    public String getErrorMessage() { 
-        return errorMessage; 
-    }
-
-    @Override
-    public String toString() {
-        return "QueueResult{" +
-                "requestId='" + requestId + '\'' +
-                ", success=" + success +
-                ", resultData='" + resultData + '\'' +
-                ", errorMessage='" + errorMessage + '\'' +
-                '}';
     }
 }
