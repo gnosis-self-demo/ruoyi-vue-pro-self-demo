@@ -1,7 +1,9 @@
 package gnosis.sample.distribute.queue.sdk.simple.example;
 
+import gnosis.sample.distribute.queue.dto.request.TaskSubmitRequest;
+import gnosis.sample.distribute.queue.dto.response.CommonResponse;
+import gnosis.sample.distribute.queue.dto.response.TaskSubmitResponse;
 import gnosis.sample.distribute.queue.sdk.simple.SimpleDistributedQueueSdk;
-import gnosis.sample.distribute.queue.sdk.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +44,7 @@ public class SimpleSdkExample {
     
     private static void demonstrateHealthCheck(SimpleDistributedQueueSdk sdk) {
         System.out.println("--- 健康检查 ---");
-        Map<String, Object> health = sdk.getTaskManagementService().healthCheck();
+        CommonResponse<CommonResponse.CommonData> health = sdk.getTaskManagementService().healthCheck();
         System.out.println("服务状态: " + health);
         System.out.println();
     }
@@ -78,17 +80,17 @@ public class SimpleSdkExample {
         System.out.println("--- 任务管理 ---");
         
         // 异步提交任务
-        Map<String, Object> asyncResult = sdk.getTaskManagementService()
-            .submitTask("test-queue", "Hello World Async!");
+        TaskSubmitRequest asyncRequest = new TaskSubmitRequest("test-queue", "Hello World Async!");
+        TaskSubmitResponse asyncResult = sdk.getTaskManagementService().submitTask(asyncRequest);
         System.out.println("异步任务结果: " + asyncResult);
         
         // 同步提交任务
-        Map<String, Object> syncResult = sdk.getTaskManagementService()
-            .submitTaskSync("test-queue", "Hello World Sync!", 5000);
+        TaskSubmitRequest syncRequest = new TaskSubmitRequest("test-queue", "Hello World Sync!", 5000L);
+        TaskSubmitResponse syncResult = sdk.getTaskManagementService().submitTaskSync(syncRequest);
         System.out.println("同步任务结果: " + syncResult);
         
         // 查询队列状态
-        Map<String, Object> status = sdk.getTaskManagementService()
+        CommonResponse<CommonResponse.CommonData> status = sdk.getTaskManagementService()
             .getQueueStatus("test-queue");
         System.out.println("队列状态: " + status);
         

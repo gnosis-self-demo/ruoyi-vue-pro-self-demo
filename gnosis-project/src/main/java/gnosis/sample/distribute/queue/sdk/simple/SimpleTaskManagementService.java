@@ -1,49 +1,47 @@
 package gnosis.sample.distribute.queue.sdk.simple;
 
+import gnosis.sample.distribute.queue.dto.request.TaskSubmitRequest;
+import gnosis.sample.distribute.queue.dto.response.CommonResponse;
+import gnosis.sample.distribute.queue.dto.response.TaskSubmitResponse;
+import gnosis.sample.distribute.queue.exception.ProcessingFailedException;
+import gnosis.sample.distribute.queue.exception.QueueFullException;
+import gnosis.sample.distribute.queue.exception.QueueNotFoundException;
+import gnosis.sample.distribute.queue.exception.TimeoutException;
 import gnosis.sample.distribute.queue.sdk.TaskManagementService;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 简化的任务管理服务实现
  */
 public class SimpleTaskManagementService implements TaskManagementService {
+    
     @Override
-    public Map<String, Object> submitTask(String queueName, String payload) 
+    public TaskSubmitResponse submitTask(TaskSubmitRequest request) 
             throws QueueNotFoundException, QueueFullException {
-        Map<String, Object> result = new HashMap<String, Object>();
-        result.put("status", "success");
-        result.put("message", "任务已加入队列: " + queueName);
-        result.put("queueName", queueName);
-        return result;
+        // 模拟实现
+        return TaskSubmitResponse.asyncSuccess(request.getQueueName());
     }
     
     @Override
-    public Map<String, Object> submitTaskSync(String queueName, String payload, long timeoutMs) 
+    public TaskSubmitResponse submitTaskSync(TaskSubmitRequest request) 
             throws QueueNotFoundException, QueueFullException, TimeoutException, ProcessingFailedException {
-        Map<String, Object> result = new HashMap<String, Object>();
-        result.put("status", "success");
-        result.put("requestId", "req-" + System.currentTimeMillis());
-        result.put("result", "处理完成: " + payload);
-        return result;
+        // 模拟实现
+        return TaskSubmitResponse.syncSuccess("req-" + System.currentTimeMillis(), 
+            "处理完成: " + request.getPayload());
     }
     
     @Override
-    public Map<String, Object> getQueueStatus(String queueName) {
-        Map<String, Object> status = new HashMap<String, Object>();
-        status.put("queueName", queueName);
-        status.put("timestamp", System.currentTimeMillis());
-        status.put("status", "active");
-        return status;
+    public CommonResponse<CommonResponse.CommonData> getQueueStatus(String queueName) {
+        CommonResponse.CommonData data = new CommonResponse.CommonData();
+        data.setQueueName(queueName);
+        data.setStatus("active");
+        return CommonResponse.success("获取队列状态成功", data);
     }
     
     @Override
-    public Map<String, Object> healthCheck() {
-        Map<String, Object> health = new HashMap<String, Object>();
-        health.put("status", "UP");
-        health.put("service", "分布式队列服务");
-        health.put("timestamp", System.currentTimeMillis());
-        return health;
+    public CommonResponse<CommonResponse.CommonData> healthCheck() {
+        CommonResponse.CommonData data = new CommonResponse.CommonData();
+        data.setStatus("UP");
+        data.setService("分布式队列服务");
+        return CommonResponse.success("服务健康", data);
     }
 }

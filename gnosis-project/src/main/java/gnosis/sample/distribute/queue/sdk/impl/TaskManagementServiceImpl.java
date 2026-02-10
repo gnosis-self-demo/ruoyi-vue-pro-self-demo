@@ -1,17 +1,20 @@
 package gnosis.sample.distribute.queue.sdk.impl;
 
+import gnosis.sample.distribute.queue.dto.request.TaskSubmitRequest;
+import gnosis.sample.distribute.queue.dto.response.CommonResponse;
+import gnosis.sample.distribute.queue.dto.response.TaskSubmitResponse;
+import gnosis.sample.distribute.queue.exception.ProcessingFailedException;
 import gnosis.sample.distribute.queue.exception.QueueFullException;
+import gnosis.sample.distribute.queue.exception.QueueNotFoundException;
+import gnosis.sample.distribute.queue.exception.TimeoutException;
 import gnosis.sample.distribute.queue.factory.DistributedQueueFactory;
 import gnosis.sample.distribute.queue.model.QueueInstance;
 import gnosis.sample.distribute.queue.model.QueueResult;
 import gnosis.sample.distribute.queue.sdk.TaskManagementService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 任务管理服务实现类
@@ -26,21 +29,18 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         this.queueFactory = queueFactory;
     }
 
-    public Map<String, Object> submitTask(String queueName, String payload) 
+    @Override
+    public TaskSubmitResponse submitTask(TaskSubmitRequest request) 
             throws QueueNotFoundException, QueueFullException {
         
-        QueueInstance instance = queueFactory.getQueueInstance(queueName);
+        QueueInstance instance = queueFactory.getQueueInstance(request.getQueueName());
         if (instance == null) {
-            throw new QueueNotFoundException("队列 '" + queueName + "' 不存在，请先创建");
+            return TaskSubmitResponse.queueNotFound(request.getQueueName());
         }
         
         try {
-            instance.getService().enqueue(queueName, payload);
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("message", "任务已加入队列");
-            response.put("queueName", queueName);
-            return response;
+            instance.getService().enqueue(request.getQueueName(), request.getPayload());
+            return TaskSubmitResponse.asyncSuccess(request.getQueueName());
         } catch (gnosis.sample.distribute.queue.exception.QueueFullException e) {
             throw new QueueFullException(e.getQueueName(), e.getCurrentSize(), e.getMaxSize());
         } catch (SQLException e) {
@@ -52,17 +52,20 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         }
     }
 
-    public Map<String, Object> submitTaskSync(String queueName, String payload, long timeoutMs) 
+    @Override
+    public TaskSubmitResponse submitTaskSync(TaskSubmitRequest request) 
             throws QueueNotFoundException, QueueFullException, TimeoutException, ProcessingFailedException {
         
-        QueueInstance instance = queueFactory.getQueueInstance(queueName);
+        QueueInstance instance = queueFactory.getQueueInstance(request.getQueueName());
         if (instance == null) {
-            throw new QueueNotFoundException("队列 '" + queueName + "' 不存在，请先创建");
+            return TaskSubmitResponse.queueNotFound(request.getQueueName());
         }
+        
+        long timeoutMs = request.getTimeoutMs() != null ? request.getTimeoutMs() : 5000L;
         
         try {
             // 入队并获取请求ID
-            String requestId = instance.getService().enqueueWithResult(queueName, payload);
+            String requestId = instance.getService().enqueueWithResult(request.getQueueName(), request.getPayload());
             
             // 等待处理结果
             QueueResult result = instance.getService().waitForResult(requestId, timeoutMs);
@@ -72,11 +75,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
             }
 
             if (result.isSuccess()) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "success");
-                response.put("requestId", result.getRequestId());
-                response.put("result", result.getResultData());
-                return response;
+                return TaskSubmitResponse.syncSuccess(result.getRequestId(), result.getResultData());
             } else {
                 throw new ProcessingFailedException(result.getRequestId(), result.getErrorMessage());
             }
@@ -94,23 +93,25 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         }
     }
 
-    public Map<String, Object> getQueueStatus(String queueName) {
+    @Override
+    public CommonResponse<CommonResponse.CommonData> getQueueStatus(String queueName) {
         try {
-            Map<String, Object> status = new HashMap<>();
-            status.put("queueName", queueName);
-            status.put("timestamp", System.currentTimeMillis());
-            return status;
+            CommonResponse.CommonData data = new CommonResponse.CommonData();
+            data.setQueueName(queueName);
+            data.setTimestamp(System.currentTimeMillis());
+            return CommonResponse.success("获取队列状态成功", data);
         } catch (Exception e) {
             log.error("获取队列状态失败: {}", e.getMessage(), e);
-            throw new RuntimeException("获取队列状态失败: " + e.getMessage(), e);
+            return CommonResponse.error("获取队列状态失败: " + e.getMessage());
         }
     }
 
-    public Map<String, Object> healthCheck() {
-        Map<String, Object> health = new HashMap<>();
-        health.put("status", "UP");
-        health.put("service", "分布式队列服务");
-        health.put("timestamp", System.currentTimeMillis());
-        return health;
+    @Override
+    public CommonResponse<CommonResponse.CommonData> healthCheck() {
+        CommonResponse.CommonData data = new CommonResponse.CommonData();
+        data.setStatus("UP");
+        data.setService("分布式队列服务");
+        data.setTimestamp(System.currentTimeMillis());
+        return CommonResponse.success("服务健康", data);
     }
 }

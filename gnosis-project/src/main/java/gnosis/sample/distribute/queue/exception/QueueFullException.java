@@ -1,16 +1,15 @@
 package gnosis.sample.distribute.queue.exception;
 
 /**
- * 队列满异常
- * 当队列达到最大长度限制时抛出此异常
+ * 队列已满异常
  */
-public class QueueFullException extends RuntimeException {
+public class QueueFullException extends Exception {
     private final String queueName;
     private final int currentSize;
     private final int maxSize;
 
     public QueueFullException(String queueName, int currentSize, int maxSize) {
-        super("Queue '" + queueName + "' is full: " + currentSize + " >= " + maxSize);
+        super(String.format("队列 '%s' 已满，当前大小: %d, 最大大小: %d", queueName, currentSize, maxSize));
         this.queueName = queueName;
         this.currentSize = currentSize;
         this.maxSize = maxSize;
@@ -26,15 +25,5 @@ public class QueueFullException extends RuntimeException {
     
     public int getMaxSize() { 
         return maxSize; 
-    }
-
-    @Override
-    public String toString() {
-        return "QueueFullException{" +
-                "queueName='" + queueName + '\'' +
-                ", currentSize=" + currentSize +
-                ", maxSize=" + maxSize +
-                ", message='" + getMessage() + '\'' +
-                '}';
     }
 }

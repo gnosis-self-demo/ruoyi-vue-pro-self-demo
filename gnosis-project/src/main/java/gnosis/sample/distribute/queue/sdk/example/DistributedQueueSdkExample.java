@@ -1,5 +1,8 @@
 package gnosis.sample.distribute.queue.sdk.example;
 
+import gnosis.sample.distribute.queue.dto.request.TaskSubmitRequest;
+import gnosis.sample.distribute.queue.dto.response.CommonResponse;
+import gnosis.sample.distribute.queue.dto.response.TaskSubmitResponse;
 import gnosis.sample.distribute.queue.sdk.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -34,27 +37,35 @@ public class DistributedQueueSdkExample {
             System.out.println("队列创建结果: " + createResult);
 
             // 2. 异步提交任务
-            Map<String, Object> asyncResult = distributedQueueSdk
+            TaskSubmitRequest asyncRequest = new TaskSubmitRequest("test-queue", "Hello World!");
+            TaskSubmitResponse asyncResult = distributedQueueSdk
                 .getTaskManagementService()
-                .submitTask("test-queue", "Hello World!");
+                .submitTask(asyncRequest);
             
             System.out.println("异步任务提交结果: " + asyncResult);
 
             // 3. 同步提交任务并等待结果
-            Map<String, Object> syncResult = distributedQueueSdk
+            TaskSubmitRequest syncRequest = new TaskSubmitRequest("test-queue", "Hello Sync!", 5000L);
+            TaskSubmitResponse syncResult = distributedQueueSdk
                 .getTaskManagementService()
-                .submitTaskSync("test-queue", "Hello Sync!", 5000);
+                .submitTaskSync(syncRequest);
             
             System.out.println("同步任务执行结果: " + syncResult);
 
             // 4. 获取队列状态
-            Map<String, Object> status = distributedQueueSdk
+            CommonResponse<CommonResponse.CommonData> status = distributedQueueSdk
                 .getTaskManagementService()
                 .getQueueStatus("test-queue");
             
             System.out.println("队列状态: " + status);
 
-            // 5. 更新队列配置
+            // 5. 健康检查
+            CommonResponse<CommonResponse.CommonData> healthStatus = distributedQueueSdk
+                .getTaskManagementService()
+                .healthCheck();
+            System.out.println("健康检查结果: " + healthStatus);
+
+            // 6. 更新队列配置
             Map<String, Object> configUpdates = new HashMap<>();
             configUpdates.put("maxLength", 2000);
             configUpdates.put("maxQps", 200);
@@ -64,6 +75,12 @@ public class DistributedQueueSdkExample {
                 .updateQueueConfig("test-queue", configUpdates);
             
             System.out.println("配置更新结果: " + updateResult);
+
+            // 7. 获取最终队列状态
+            CommonResponse<CommonResponse.CommonData> finalStatus = distributedQueueSdk
+                .getTaskManagementService()
+                .getQueueStatus("test-queue");
+            System.out.println("最终队列状态: " + finalStatus);
 
         } catch (Exception e) {
             System.err.println("SDK调用出错: " + e.getMessage());
@@ -157,7 +174,7 @@ public class DistributedQueueSdkExample {
      */
     public void demonstrateHealthCheck() {
         try {
-            Map<String, Object> healthStatus = distributedQueueSdk
+            CommonResponse<CommonResponse.CommonData> healthStatus = distributedQueueSdk
                 .getTaskManagementService()
                 .healthCheck();
             

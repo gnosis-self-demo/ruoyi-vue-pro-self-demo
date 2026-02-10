@@ -13,7 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.Statement;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DistributedQueueService {
 
     private DataSource dataSource;
-
     private RuntimeQueueConfig runtimeConfig;
 
     // 结果缓存，用于同步等待结果
@@ -45,13 +44,44 @@ public class DistributedQueueService {
     }
 
     /**
+     * 获取空队列轮询间隔
+     */
+    public long getEmptyPollIntervalMs() {
+        return runtimeConfig != null ? runtimeConfig.getEmptyPollIntervalMs() : 1000L;
+    }
+
+    /**
+     * 清理已完成的消息
+     * @param keepDays 保留天数
+     * @return 清理的记录数
+     * @throws SQLException 数据库异常
+     */
+    public int cleanupDoneMessages(int keepDays) throws SQLException {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
+                "DELETE FROM sys_distributed_queue WHERE status = ? AND updated_at < ?");
+            ps.setString(1, QueueMessageStatus.DONE.getValue());
+            ps.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis() - (long) keepDays * 24 * 60 * 60 * 1000));
+            int deleted = ps.executeUpdate();
+            log.info("清理了 {} 条超过 {} 天的已完成消息", deleted, keepDays);
+            return deleted;
+        } finally {
+            closeQuietly(ps);
+            closeQuietly(conn);
+        }
+    }
+
+    /**
      * 异步入队
      * @param queueName 队列名称
      * @param messageBody 消息体
      * @throws SQLException 数据库异常
      * @throws QueueFullException 队列满异常
      */
-    public void enqueue(String queueName, String messageBody) throws SQLException {
+    public void enqueue(String queueName, String messageBody) throws SQLException, QueueFullException {
         Objects.requireNonNull(queueName, "queueName cannot be null");
         Objects.requireNonNull(messageBody, "messageBody cannot be null");
 
@@ -91,7 +121,7 @@ public class DistributedQueueService {
      * @throws SQLException 数据库异常
      * @throws QueueFullException 队列满异常
      */
-    public String enqueueWithResult(String queueName, String payload) throws SQLException {
+    public String enqueueWithResult(String queueName, String payload) throws SQLException, QueueFullException {
         String requestId = UUID.randomUUID().toString().replace("-", "");
         String wrappedBody = "{\"requestId\":\"" + requestId + "\",\"payload\":" + payload + "}";
         enqueue(queueName, wrappedBody);
@@ -265,40 +295,10 @@ public class DistributedQueueService {
     }
 
     /**
-     * 清理已完成的消息
-     * @param keepDays 保留天数
+     * 获取当前队列长度
+     * @param queueName 队列名称
+     * @return 队列长度
      * @throws SQLException 数据库异常
-     */
-    public void cleanupDoneMessages(int keepDays) throws SQLException {
-        Timestamp cutoff = new Timestamp(System.currentTimeMillis() - (long) keepDays * 24 * 3600 * 1000L);
-        Connection conn = null;
-        PreparedStatement ps = null;
-        try {
-            conn = dataSource.getConnection();
-            ps = conn.prepareStatement(
-                "DELETE FROM sys_distributed_queue WHERE status = ? AND updated_at < ?");
-            ps.setString(1, QueueMessageStatus.DONE.getValue());
-            ps.setTimestamp(2, cutoff);
-            int deleted = ps.executeUpdate();
-            log.info("清理了 {} 条超过 {} 天的已完成消息", deleted, keepDays);
-        } finally {
-            closeQuietly(ps);
-            closeQuietly(conn);
-        }
-    }
-
-    /**
-     * 获取空队列轮询间隔
-     * @return 轮询间隔毫秒数
-     */
-    public long getEmptyPollIntervalMs() {
-        return runtimeConfig.getEmptyPollIntervalMs();
-    }
-
-    // ==================== 私有工具方法 ====================
-
-    /**
-     * 获取队列当前长度
      */
     private int getCurrentQueueLength(String queueName) throws SQLException {
         Connection conn = null;
@@ -307,12 +307,12 @@ public class DistributedQueueService {
         try {
             conn = dataSource.getConnection();
             ps = conn.prepareStatement(
-                "SELECT COUNT(*) FROM sys_distributed_queue WHERE queue_name = ? AND status IN (?, ?)");
+                "SELECT COUNT(*) as cnt FROM sys_distributed_queue WHERE queue_name = ? AND status IN (?, ?)");
             ps.setString(1, queueName);
             ps.setString(2, QueueMessageStatus.PENDING.getValue());
             ps.setString(3, QueueMessageStatus.PROCESSING.getValue());
             rs = ps.executeQuery();
-            return rs.next() ? rs.getInt(1) : 0;
+            return rs.next() ? rs.getInt("cnt") : 0;
         } finally {
             closeQuietly(rs);
             closeQuietly(ps);
@@ -330,14 +330,7 @@ public class DistributedQueueService {
             conn = dataSource.getConnection();
             ps = conn.prepareStatement(sql);
             for (int i = 0; i < params.length; i++) {
-                Object param = params[i];
-                if (param instanceof Long) {
-                    ps.setLong(i + 1, (Long) param);
-                } else if (param instanceof String) {
-                    ps.setString(i + 1, (String) param);
-                } else if (param instanceof Timestamp) {
-                    ps.setTimestamp(i + 1, (Timestamp) param);
-                }
+                ps.setObject(i + 1, params[i]);
             }
             ps.executeUpdate();
         } finally {
@@ -347,29 +340,15 @@ public class DistributedQueueService {
     }
 
     /**
-     * 静默关闭Statement
+     * 静默关闭资源
      */
-    private void closeQuietly(java.sql.Statement stmt) {
-        if (stmt != null) {
-            try { stmt.close(); } catch (SQLException ignored) {}
-        }
-    }
-
-    /**
-     * 静默关闭Connection
-     */
-    private void closeQuietly(Connection conn) {
-        if (conn != null) {
-            try { conn.close(); } catch (SQLException ignored) {}
-        }
-    }
-
-    /**
-     * 静默关闭ResultSet
-     */
-    private void closeQuietly(ResultSet rs) {
-        if (rs != null) {
-            try { rs.close(); } catch (SQLException ignored) {}
+    private void closeQuietly(AutoCloseable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                // ignore
+            }
         }
     }
 }

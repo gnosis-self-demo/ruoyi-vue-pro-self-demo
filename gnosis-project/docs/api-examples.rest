@@ -1,0 +1,538 @@
+# 分布式队列系统 REST API 示例
+
+## 📋 文档概述
+本文档展示了分布式队列系统的所有可用API接口，涵盖任务管理、队列实例管理和配置管理三大核心功能。
+
+## ⚙️ 基础信息
+- **Base URL**: http://localhost:8080
+- **Content-Type**: application/json
+- **认证方式**: 无（开发环境）
+- **编码格式**: UTF-8
+
+## 📦 1. 任务管理相关接口
+
+### 接口概览
+任务管理接口提供异步和同步两种任务提交方式，以及队列状态查询和健康检查功能。
+
+### 1.1 🔧 异步提交任务
+**POST** `/distribute-queue/tasks/{queueName}`
+
+将任务异步提交到指定队列，立即返回而不等待处理结果。适用于不需要实时反馈的场景。
+
+**请求示例:**
+```json
+{
+  "payload": "{\"businessType\":\"email\",\"data\":{\"to\":\"user@example.com\",\"subject\":\"测试邮件\",\"content\":\"这是一封测试邮件\"}}"
+}
+```
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "任务已加入队列",
+  "data": {
+    "queueName": "email-queue"
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 1.2 ⚡ 同步提交任务并等待结果
+**POST** `/distribute-queue/tasks-sync/{queueName}?timeoutMs=5000`
+
+提交任务并等待处理结果返回。适用于需要实时获取处理结果的场景。
+
+**请求示例:**
+```json
+{
+  "payload": "{\"businessType\":\"notification\",\"data\":{\"userId\":12345,\"message\":\"订单已发货\"}}"
+}
+```
+
+**成功响应示例:**
+```json
+{
+  "status": "success",
+  "message": "任务处理完成",
+  "data": {
+    "requestId": "abcd1234efgh5678",
+    "result": "{\"status\":\"sent\",\"messageId\":\"msg_001\"}"
+  },
+  "timestamp": 1707582254123
+}
+```
+
+**超时响应示例:**
+```json
+{
+  "status": "error",
+  "message": "等待结果超时: 5000ms",
+  "data": {
+    "requestId": "abcd1234efgh5678"
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 1.3 📊 查询队列状态
+**GET** `/distribute-queue/queues/{queueName}/status`
+
+获取指定队列的当前运行状态信息。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "获取队列状态成功",
+  "data": {
+    "queueName": "email-queue",
+    "timestamp": 1707582254123
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 1.4 🏥 健康检查
+**GET** `/distribute-queue/health`
+
+检查服务整体健康状况，用于监控和运维。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "服务健康",
+  "data": {
+    "status": "UP",
+    "service": "分布式队列服务",
+    "timestamp": 1707582254123
+  },
+  "timestamp": 1707582254123
+}
+```
+
+## 🏗️ 2. 队列实例管理接口
+
+### 接口概览
+队列实例管理接口支持动态创建、配置、查询和删除队列实例，实现多队列隔离管理。
+
+### 2.1 🆕 创建队列实例
+**POST** `/distribute-queue/admin/queue-instances/{queueName}`
+
+动态创建新的队列实例，支持自定义配置参数。
+
+**请求示例:**
+```json
+{
+  "maxLength": 1000,
+  "maxQps": 100,
+  "pollInterval": 1000
+}
+```
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "队列实例创建成功",
+  "data": {
+    "queueName": "sms-queue",
+    "config": {
+      "maxLength": 1000,
+      "maxQps": 100,
+      "pollInterval": 1000
+    }
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 2.2 🔍 获取队列实例信息
+**GET** `/distribute-queue/admin/queue-instances/{queueName}`
+
+查询指定队列实例的详细配置和运行信息。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "获取队列信息成功",
+  "data": {
+    "queueName": "sms-queue",
+    "config": {
+      "maxLength": 1000,
+      "maxQps": 100,
+      "pollInterval": 1000
+    },
+    "status": "active"
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 2.3 📋 获取所有队列实例
+**GET** `/distribute-queue/admin/queue-instances`
+
+获取系统中所有队列实例的统计信息和配置概览。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "获取所有队列实例成功",
+  "data": {
+    "totalInstances": 3,
+    "queueNames": ["email-queue", "sms-queue", "notification-queue"],
+    "configurations": {
+      "email-queue": {
+        "maxLength": 1000,
+        "maxQps": 100,
+        "pollInterval": 1000
+      },
+      "sms-queue": {
+        "maxLength": 500,
+        "maxQps": 50,
+        "pollInterval": 2000
+      }
+    }
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 2.4 🛠️ 更新队列配置
+**PUT** `/distribute-queue/admin/queue-instances/{queueName}/config`
+
+动态更新队列实例的运行配置，无需重启服务。
+
+**请求示例:**
+```json
+{
+  "maxLength": 2000,
+  "maxQps": 200,
+  "pollInterval": 500
+}
+```
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "配置更新成功",
+  "data": {
+    "queueName": "sms-queue",
+    "updatedConfig": {
+      "maxLength": 2000,
+      "maxQps": 200,
+      "pollInterval": 500
+    }
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 2.5 🗑️ 删除队列实例
+**DELETE** `/distribute-queue/admin/queue-instances/{queueName}`
+
+安全删除指定的队列实例，会停止相关消费者和服务。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "队列实例删除成功",
+  "data": {
+    "queueName": "temp-queue"
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 2.6 📦 批量创建队列实例
+**POST** `/distribute-queue/admin/queue-instances/batch`
+
+一次性创建多个队列实例，提高配置效率。
+
+**请求示例:**
+```json
+{
+  "email-queue": {
+    "maxLength": 1000,
+    "maxQps": 100,
+    "pollInterval": 1000
+  },
+  "sms-queue": {
+    "maxLength": 500,
+    "maxQps": 50,
+    "pollInterval": 2000
+  },
+  "notification-queue": {
+    "maxLength": 800,
+    "maxQps": 80,
+    "pollInterval": 1500
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "批量队列实例创建成功",
+  "data": {
+    "createdQueues": ["email-queue", "sms-queue", "notification-queue"]
+  },
+  "timestamp": 1707582254123
+}
+```
+
+## ⚙️ 3. 队列配置管理接口
+
+### 接口概览
+配置管理接口提供细粒度的队列参数调整能力，支持运行时动态配置。
+
+### 3.1 📋 获取所有队列配置
+**GET** `/distribute-queue/admin/queue-config`
+
+获取系统中所有队列的当前配置信息。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "获取所有配置成功",
+  "data": {
+    "email-queue": {
+      "maxLength": 1000,
+      "maxQps": 100
+    },
+    "sms-queue": {
+      "maxLength": 500,
+      "maxQps": 50
+    }
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 3.2 🔍 获取指定队列配置
+**GET** `/distribute-queue/admin/queue-config/{queueName}`
+
+获取特定队列的详细配置参数。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "获取队列配置成功",
+  "data": {
+    "queueName": "email-queue",
+    "maxLength": 1000,
+    "maxQps": 100
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 3.3 📏 设置队列最大长度
+**POST** `/distribute-queue/admin/queue-config/{queueName}/max-length?maxLength=1500`
+
+设置队列的最大容量限制，防止内存溢出。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "队列 'email-queue' 最大长度设置为 1500",
+  "timestamp": 1707582254123
+}
+```
+
+### 3.4 🚀 设置队列最大QPS
+**POST** `/distribute-queue/admin/queue-config/{queueName}/max-qps?maxQps=150`
+
+控制队列每秒最大处理请求数，实现流量控制。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "队列 'email-queue' 最大QPS设置为 150",
+  "timestamp": 1707582254123
+}
+```
+
+### 3.5 ⏱️ 设置空队列轮询间隔
+**POST** `/distribute-queue/admin/queue-config/empty-poll-interval?intervalMs=2000`
+
+调整空队列时的轮询间隔，平衡性能和资源消耗。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "空队列轮询间隔设置为 2000 ms",
+  "timestamp": 1707582254123
+}
+```
+
+### 3.6 🔄 重置队列配置
+**DELETE** `/distribute-queue/admin/queue-config/{queueName}`
+
+将指定队列的配置重置为系统默认值。
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "队列 'email-queue' 配置已重置为默认值",
+  "timestamp": 1707582254123
+}
+```
+
+### 3.7 📦 批量设置配置
+**POST** `/distribute-queue/admin/queue-config/batch`
+
+批量更新多个队列的配置参数，提高运维效率。
+
+**请求示例:**
+```json
+{
+  "email-queue": {
+    "maxLength": 2000,
+    "maxQps": 200
+  },
+  "sms-queue": {
+    "maxLength": 1000,
+    "maxQps": 100
+  }
+}
+```
+
+**响应示例:**
+```json
+{
+  "status": "success",
+  "message": "批量配置更新: 设置 email-queue 最大长度为 2000; 设置 email-queue 最大QPS为 200; 设置 sms-queue 最大长度为 1000; 设置 sms-queue 最大QPS为 100; ",
+  "timestamp": 1707582254123
+}
+```
+
+## ❌ 4. 错误响应示例
+
+### 错误码说明
+系统使用标准HTTP状态码配合详细的错误信息，便于问题定位和处理。
+
+### 4.1 🚫 队列不存在 (404)
+**错误码**: QUEUE_NOT_FOUND
+```json
+{
+  "status": "error",
+  "message": "队列 'non-existent-queue' 不存在，请先创建",
+  "timestamp": 1707582254123
+}
+```
+
+### 4.2 📦 队列已满 (429)
+**错误码**: QUEUE_FULL
+```json
+{
+  "status": "error",
+  "message": "队列 'email-queue' 已满，当前大小: 1000, 最大大小: 1000",
+  "data": {
+    "queueName": "email-queue"
+  },
+  "timestamp": 1707582254123
+}
+```
+
+### 4.3 ⚠️ 参数验证错误 (400)
+**错误码**: VALIDATION_ERROR
+```json
+{
+  "status": "error",
+  "message": "maxLength必须>=0",
+  "timestamp": 1707582254123
+}
+```
+
+### 4.4 💥 系统内部错误 (500)
+**错误码**: INTERNAL_ERROR
+```json
+{
+  "status": "error",
+  "message": "内部服务器错误: 数据库连接失败",
+  "timestamp": 1707582254123
+}
+```
+
+## 🎯 5. 典型使用场景
+
+### 场景一：用户注册邮件发送
+```bash
+# 1. 创建专用邮件队列
+POST /distribute-queue/admin/queue-instances/email-notification
+{
+  "maxLength": 1000,
+  "maxQps": 50,
+  "pollInterval": 1000
+}
+
+# 2. 异步发送注册邮件
+POST /distribute-queue/tasks/email-notification
+{
+  "userId": 12345,
+  "email": "user@example.com",
+  "template": "welcome_email",
+  "data": {
+    "username": "张三",
+    "activationCode": "ABC123"
+  }
+}
+```
+
+### 场景二：订单支付处理
+```bash
+# 1. 创建高优先级支付队列
+POST /distribute-queue/admin/queue-instances/payment-processing
+{
+  "maxLength": 500,
+  "maxQps": 100,
+  "pollInterval": 500
+}
+
+# 2. 同步处理支付并等待结果
+POST /distribute-queue/tasks-sync/payment-processing?timeoutMs=10000
+{
+  "orderId": "ORD20240210001",
+  "amount": 299.99,
+  "paymentMethod": "credit_card"
+}
+```
+
+## 🛠️ 6. 运维管理示例
+
+### 监控脚本示例
+```bash
+#!/bin/bash
+BASE_URL="http://localhost:8080"
+
+# 检查服务健康状态
+curl -s "$BASE_URL/distribute-queue/health" | jq '.status'
+
+# 获取所有队列状态
+curl -s "$BASE_URL/distribute-queue/admin/queue-instances" | jq '.queueNames'
+```
+
+## 📝 7. 最佳实践建议
+
+1. **队列命名规范**: 使用业务含义明确的名称
+2. **合理配置参数**: 根据业务特点设置合适的参数
+3. **监控告警**: 定期检查队列状态和处理延迟
+4. **优雅降级**: 系统压力大时适当调整配置
+5. **日志记录**: 记录关键操作便于问题排查
+
+---
+
+> 📌 **注意**: 以上示例均基于开发环境配置，生产环境请注意安全认证。
