@@ -1,0 +1,260 @@
+# 分布式队列业务场景实战示例
+
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@timestamp = {{$datetime iso8601}}
+@requestId = {{$guid}}
+
+###
+
+# 🎯 核心业务场景演示
+
+## 场景一：控制调用外部接口的最大QPS
+
+### 1.1 创建外部API调用限流队列
+# 控制对第三方支付网关的调用频率，避免被限流
+POST {{baseUrl}}/distribute-queue/admin/queue-instances/payment-gateway-limiter
+Content-Type: {{contentType}}
+
+{
+  "maxLength": 1000,
+  "maxQps": 50,
+  "pollInterval": 1000
+}
+
+###
+
+### 1.2 提交支付请求到限流队列
+# 所有支付请求都通过队列进行流量控制
+POST {{baseUrl}}/distribute-queue/tasks/payment-gateway-limiter
+Content-Type: {{contentType}}
+
+{
+  "payload": "{\"api\":\"payment_charge\",\"endpoint\":\"https://api.stripe.com/v1/charges\",\"method\":\"POST\",\"data\":{\"amount\":29999,\"currency\":\"cny\",\"source\":\"tok_visa\"},\"headers\":{\"Authorization\":\"Bearer sk_test_xxxxx\"}}"
+}
+
+###
+
+### 1.3 同步处理重要的支付确认
+# 对于需要立即确认的支付，使用同步方式并设置较长超时
+POST {{baseUrl}}/distribute-queue/tasks-sync/payment-gateway-limiter?timeoutMs=15000
+Content-Type: {{contentType}}
+
+{
+  "payload": "{\"api\":\"payment_confirm\",\"transactionId\":\"txn_123456\",\"expectedResult\":\"success\"}"
+}
+
+###
+
+### 1.4 动态调整外部API调用频率
+# 根据第三方服务商的实时限流策略调整我们的调用频率
+POST {{baseUrl}}/distribute-queue/admin/queue-config/payment-gateway-limiter/max-qps?maxQps=30
+
+###
+
+### 1.5 创建多个外部服务限流队列
+# 为不同的外部服务创建专门的限流队列
+POST {{baseUrl}}/distribute-queue/admin/queue-instances/batch
+Content-Type: {{contentType}}
+
+{
+  "sms-service-limiter": {
+    "maxLength": 2000,
+    "maxQps": 100,
+    "pollInterval": 500
+  },
+  "email-service-limiter": {
+    "maxLength": 1500,
+    "maxQps": 80,
+    "pollInterval": 800
+  },
+  "ocr-service-limiter": {
+    "maxLength": 500,
+    "maxQps": 20,
+    "pollInterval": 2000
+  }
+}
+
+###
+
+## 场景二：控制外部系统调用本系统的最大QPS
+
+### 2.1 创建第三方系统接入限流队列
+# 控制合作伙伴系统对接入我们系统的请求频率
+POST {{baseUrl}}/distribute-queue/admin/queue-instances/partner-ingress-control
+Content-Type: {{contentType}}
+
+{
+  "maxLength": 5000,
+  "maxQps": 200,
+  "pollInterval": 200
+}
+
+###
+
+### 2.2 处理来自合作伙伴的订单同步请求
+# 接收并处理来自电商合作伙伴的批量订单同步
+POST {{baseUrl}}/distribute-queue/tasks/partner-ingress-control
+Content-Type: {{contentType}}
+
+{
+  "payload": "{\"source\":\"taobao_partner\",\"requestType\":\"order_batch_sync\",\"batchId\":\"TB_SYNC_20240210_001\",\"orders\":[{\"orderId\":\"TB123456\",\"items\":[{\"sku\":\"SKU001\",\"quantity\":2,\"price\":99.99}],\"shippingAddress\":{\"name\":\"李四\",\"phone\":\"13900139000\",\"address\":\"北京市朝阳区xxx街道\"}}],\"priority\":\"normal\"}"
+}
+
+###
+
+### 2.3 同步处理关键业务数据
+# 对于需要实时确认的重要数据同步使用同步处理
+POST {{baseUrl}}/distribute-queue/tasks-sync/partner-ingress-control?timeoutMs=30000
+Content-Type: {{contentType}}
+
+{
+  "payload": "{\"source\":\"inventory_system\",\"requestType\":\"stock_update\",\"productId\":\"PROD001\",\"newStock\":999,\"criticalThreshold\":100}"
+}
+
+###
+
+### 2.4 动态调整第三方接入限流
+# 根据系统负载情况动态调整第三方系统的接入频率
+POST {{baseUrl}}/distribute-queue/admin/queue-config/partner-ingress-control/max-qps?maxQps=150
+
+###
+
+### 2.5 紧急降级处理
+# 系统压力过大时，降低第三方接入频率保护核心服务
+POST {{baseUrl}}/distribute-queue/admin/queue-config/partner-ingress-control/max-qps?maxQps=50
+
+###
+
+## 场景三：混合限流策略实战
+
+### 3.1 批量创建多种用途的队列
+# 一次性创建多个具有不同限流策略的队列
+POST {{baseUrl}}/distribute-queue/admin/queue-instances/batch
+Content-Type: {{contentType}}
+
+{
+  "high-priority-external": {
+    "maxLength": 1000,
+    "maxQps": 100,
+    "pollInterval": 100
+  },
+  "low-priority-external": {
+    "maxLength": 5000,
+    "maxQps": 30,
+    "pollInterval": 2000
+  },
+  "partner-critical-ingress": {
+    "maxLength": 3000,
+    "maxQps": 300,
+    "pollInterval": 100
+  },
+  "partner-bulk-ingress": {
+    "maxLength": 10000,
+    "maxQps": 100,
+    "pollInterval": 500
+  }
+}
+
+###
+
+### 3.2 高峰期统一调整限流策略
+# 在业务高峰期统一上调关键服务的处理能力
+POST {{baseUrl}}/distribute-queue/admin/queue-config/batch
+Content-Type: {{contentType}}
+
+{
+  "high-priority-external": {
+    "maxLength": 2000,
+    "maxQps": 150
+  },
+  "partner-critical-ingress": {
+    "maxLength": 5000,
+    "maxQps": 500
+  }
+}
+
+###
+
+### 3.3 夜间降级策略
+# 夜间业务低谷期降低资源消耗
+POST {{baseUrl}}/distribute-queue/admin/queue-config/batch
+Content-Type: {{contentType}}
+
+{
+  "high-priority-external": {
+    "maxLength": 500,
+    "maxQps": 20
+  },
+  "low-priority-external": {
+    "maxLength": 1000,
+    "maxQps": 10
+  },
+  "partner-critical-ingress": {
+    "maxLength": 1000,
+    "maxQps": 50
+  }
+}
+
+###
+
+## 场景四：监控和运维示例
+
+### 4.1 实时监控队列健康状态
+GET {{baseUrl}}/distribute-queue/health
+
+###
+
+### 4.2 查看特定队列的实时状态
+GET {{baseUrl}}/distribute-queue/queues/payment-gateway-limiter/status
+
+###
+
+### 4.3 获取所有队列的配置信息
+GET {{baseUrl}}/distribute-queue/admin/queue-config
+
+###
+
+### 4.4 检查特定队列的详细配置
+GET {{baseUrl}}/distribute-queue/admin/queue-config/partner-ingress-control
+
+###
+
+### 4.5 获取所有活跃队列实例
+GET {{baseUrl}}/distribute-queue/admin/queue-instances
+
+###
+
+## 场景五：故障处理和恢复
+
+### 5.1 重置异常队列配置
+# 当队列配置出现问题时，重置为默认值
+DELETE {{baseUrl}}/distribute-queue/admin/queue-config/problematic-queue
+
+###
+
+### 5.2 创建备用队列实例
+# 在主队列出现问题时快速创建备用队列
+POST {{baseUrl}}/distribute-queue/admin/queue-instances/backup-queue
+Content-Type: {{contentType}}
+
+{
+  "maxLength": 100,
+  "maxQps": 10,
+  "pollInterval": 5000
+}
+
+###
+
+### 5.3 逐步恢复服务
+# 从严格的限流策略逐步恢复正常
+POST {{baseUrl}}/distribute-queue/admin/queue-config/backup-queue/max-qps?maxQps=20
+
+###
+
+> 📝 **最佳实践提示**:
+> 1. 根据实际业务需求合理设置maxLength和maxQps参数
+> 2. 定期监控队列状态，及时发现和处理异常
+> 3. 建立完善的告警机制，在达到限流阈值时及时通知
+> 4. 准备应急预案，包括备用队列和降级策略
+> 5. 记录详细的操作日志，便于问题追溯和分析
