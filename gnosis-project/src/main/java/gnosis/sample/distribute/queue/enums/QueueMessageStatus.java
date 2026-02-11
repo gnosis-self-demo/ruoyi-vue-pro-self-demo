@@ -4,9 +4,11 @@ package gnosis.sample.distribute.queue.enums;
  * 队列消息状态枚举
  */
 public enum QueueMessageStatus {
-    PENDING("pending"),
-    PROCESSING("processing"),
-    DONE("done");
+    PENDING("pending"),      // 待处理
+    PROCESSING("processing"), // 处理中
+    DONE("done"),            // 处理完成
+    FAILED("failed"),        // 处理失败
+    DEAD_LETTER("dead_letter"); // 死信队列
 
     private final String value;
 

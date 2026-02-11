@@ -3,6 +3,7 @@ package gnosis.sample.distribute.queue.consumer;
 import gnosis.sample.distribute.queue.config.RuntimeQueueConfig;
 import gnosis.sample.distribute.queue.dto.BusinessProcessRequest;
 import gnosis.sample.distribute.queue.dto.BusinessProcessResult;
+import gnosis.sample.distribute.queue.enums.QueueMessageStatus;
 import gnosis.sample.distribute.queue.model.QueueMessage;
 import gnosis.sample.distribute.queue.processor.BusinessProcessorManager;
 import gnosis.sample.distribute.queue.service.DistributedQueueService;
@@ -113,17 +114,38 @@ public class QueueConsumer {
 
                     // 处理消息
                     BusinessProcessResult result = null;
+                    boolean processingSuccess = false;
 
                     try {
                         // 使用策略模式处理消息
                         BusinessProcessRequest request = 
                             new BusinessProcessRequest(requestId, actualPayload, queueName);
                         result = processorManager.processRequest(queueName, request);
+                        processingSuccess = true;
+                        
                     } catch (Exception e) {
                         log.error("处理队列 {} 消息时发生错误: {}", queueName, e.getMessage(), e);
-                        throw e;
+                        // 标记处理失败，但继续执行finally块来保存结果和更新状态
+                        processingSuccess = false;
+                        
+                        // 保存失败结果
+                        if (hasRequestId && requestId != null) {
+                            queueService.saveResult(
+                                requestId, 
+                                false, 
+                                null,
+                                "处理异常: " + e.getMessage());
+                        }
+                        
+                        // 将消息状态更新为FAILED而不是抛出异常
+                        try {
+                            markMessageAsFailed(msg.getId(), consumerId, "处理异常: " + e.getMessage());
+                        } catch (Exception sqlEx) {
+                            log.error("更新消息失败状态异常: {}", sqlEx.getMessage(), sqlEx);
+                        }
+                        
                     } finally {
-                        // 如果是同步消息，保存结果
+                        // 如果是同步消息且有结果，保存结果
                         if (hasRequestId && requestId != null && result != null) {
                             queueService.saveResult(
                                 requestId, 
@@ -131,10 +153,12 @@ public class QueueConsumer {
                                 result.getResultData() != null ? result.getResultData().toString() : null,
                                 result.getErrorMessage());
                         }
+                        
+                        // 只有处理成功才确认消息
+                        if (processingSuccess) {
+                            queueService.ack(msg.getId(), consumerId);
+                        }
                     }
-
-                    // 确认消息处理完成
-                    queueService.ack(msg.getId(), consumerId);
                     
                 } else {
                     // 队列为空，休眠一段时间再尝试
@@ -161,6 +185,18 @@ public class QueueConsumer {
                     Thread.currentThread().interrupt();
                     break;
                 }
+            }
+            
+            /**
+             * 将消息标记为失败状态
+             */
+            private void markMessageAsFailed(long messageId, String consumerId, String errorMessage) throws Exception {
+                queueService.executeUpdate(
+                    "UPDATE sys_distributed_queue SET status = ?, consumer_id = ?, " +
+                    "error_message = ?, updated_at = ? WHERE id = ? AND consumer_id = ?",
+                    QueueMessageStatus.FAILED.getValue(), consumerId, 
+                    errorMessage, new java.sql.Timestamp(System.currentTimeMillis()), 
+                    messageId, consumerId);
             }
         }
     }

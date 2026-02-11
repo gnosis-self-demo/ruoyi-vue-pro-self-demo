@@ -324,7 +324,7 @@ public class DistributedQueueService {
     /**
      * 执行更新操作
      */
-    private void executeUpdate(String sql, Object... params) throws SQLException {
+    public void executeUpdate(String sql, Object... params) throws SQLException {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
