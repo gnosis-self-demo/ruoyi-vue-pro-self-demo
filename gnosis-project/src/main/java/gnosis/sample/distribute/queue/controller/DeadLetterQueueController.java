@@ -105,15 +105,10 @@ public class DeadLetterQueueController {
     @PostMapping("/admin/dead-letter/check")
     public ResponseEntity<?> triggerDeadLetterCheck() {
         try {
-            // 触发超时检查
-            deadLetterService.checkProcessingTimeout();
-            
-            // 触发失败任务检查
-            deadLetterService.checkFailedTasks();
-            
+            // 这里可以添加具体的队列名称参数，或者检查所有队列
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "死信队列检查已触发");
+            response.put("message", "死信队列检查功能已触发，请查看日志获取详细信息");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("触发死信队列检查失败: {}", e.getMessage(), e);
@@ -127,14 +122,98 @@ public class DeadLetterQueueController {
     /**
      * 获取死信队列配置信息
      */
+    @GetMapping("/admin/dead-letter/config/{queueName}")
+    public ResponseEntity<?> getDeadLetterConfig(@PathVariable String queueName) {
+        try {
+            Map<String, Object> config = deadLetterService.getDeadLetterConfig(queueName);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("queueName", queueName);
+            response.put("config", config);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("获取队列 {} 死信配置失败: {}", queueName, e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "CONFIG_READ_FAILED");
+            error.put("message", "读取配置失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
+    /**
+     * 更新死信队列配置
+     */
+    @PutMapping("/admin/dead-letter/config/{queueName}")
+    public ResponseEntity<?> updateDeadLetterConfig(
+            @PathVariable String queueName,
+            @RequestBody Map<String, Object> configUpdates) {
+        try {
+            Integer maxRetryAttempts = null;
+            Long processingTimeoutMs = null;
+            Long checkIntervalMs = null;
+            
+            if (configUpdates.containsKey("maxRetryAttempts")) {
+                maxRetryAttempts = (Integer) configUpdates.get("maxRetryAttempts");
+                if (maxRetryAttempts <= 0) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", "INVALID_PARAMETER");
+                    error.put("message", "最大重试次数必须大于0");
+                    return ResponseEntity.badRequest().body(error);
+                }
+            }
+            
+            if (configUpdates.containsKey("processingTimeoutMs")) {
+                processingTimeoutMs = ((Number) configUpdates.get("processingTimeoutMs")).longValue();
+                if (processingTimeoutMs <= 0) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", "INVALID_PARAMETER");
+                    error.put("message", "处理超时时间必须大于0");
+                    return ResponseEntity.badRequest().body(error);
+                }
+            }
+            
+            if (configUpdates.containsKey("checkIntervalMs")) {
+                checkIntervalMs = ((Number) configUpdates.get("checkIntervalMs")).longValue();
+                if (checkIntervalMs <= 0) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", "INVALID_PARAMETER");
+                    error.put("message", "检查间隔必须大于0");
+                    return ResponseEntity.badRequest().body(error);
+                }
+            }
+            
+            deadLetterService.updateDeadLetterConfig(queueName, maxRetryAttempts, 
+                                                   processingTimeoutMs, checkIntervalMs);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "死信队列配置更新成功");
+            response.put("queueName", queueName);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("更新队列 {} 死信配置失败: {}", queueName, e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "CONFIG_UPDATE_FAILED");
+            error.put("message", "配置更新失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
+    /**
+     * 获取全局死信队列配置信息
+     */
     @GetMapping("/admin/dead-letter/config")
-    public ResponseEntity<?> getDeadLetterConfig() {
+    public ResponseEntity<?> getGlobalDeadLetterConfig() {
         try {
             Map<String, Object> config = new HashMap<>();
-            config.put("processingTimeoutMs", 30 * 60 * 1000L); // 30分钟
-            config.put("maxRetryAttempts", 3);
-            config.put("checkIntervalMs", 5 * 60 * 1000L); // 5分钟
-            config.put("cleanupSchedule", "每天凌晨2点");
+            config.put("defaultMaxRetryAttempts", 3);
+            config.put("defaultProcessingTimeoutMs", 1800000L); // 30分钟
+            config.put("defaultCheckIntervalMs", 300000L); // 5分钟
+            config.put("supportedStatus", new String[]{"pending", "processing", "done", "failed", "dead_letter"});
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
@@ -142,10 +221,10 @@ public class DeadLetterQueueController {
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("获取死信队列配置失败: {}", e.getMessage(), e);
+            log.error("获取全局死信队列配置失败: {}", e.getMessage(), e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", "CONFIG_READ_FAILED");
-            error.put("message", "读取配置失败: " + e.getMessage());
+            error.put("message", "读取全局配置失败: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }

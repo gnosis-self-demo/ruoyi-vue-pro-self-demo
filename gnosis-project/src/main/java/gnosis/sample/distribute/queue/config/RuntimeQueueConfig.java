@@ -25,6 +25,11 @@ public class RuntimeQueueConfig {
     // 空队列轮询间隔（毫秒）
     private volatile long emptyPollIntervalMs = 1000L;
 
+    // 死信队列相关配置
+    private final ConcurrentHashMap<String, Integer> maxRetryAttemptsMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> processingTimeoutMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> deadLetterCheckIntervalMap = new ConcurrentHashMap<>();
+
     /**
      * 获取指定队列的最大长度
      * @param queueName 队列名称
@@ -125,6 +130,9 @@ public class RuntimeQueueConfig {
     public void resetQueueConfig(String queueName) {
         maxLengthMap.remove(queueName);
         maxQpsMap.remove(queueName);
+        maxRetryAttemptsMap.remove(queueName);
+        processingTimeoutMap.remove(queueName);
+        deadLetterCheckIntervalMap.remove(queueName);
     }
 
     /**
@@ -136,7 +144,108 @@ public class RuntimeQueueConfig {
         configs.put("max_length", getMaxLengthMap());
         configs.put("max_qps", getMaxQpsMap());
         configs.put("empty_poll_interval_ms", getEmptyPollIntervalMs());
+        
+        // 添加死信队列配置
+        configs.put("max_retry_attempts", getMaxRetryAttemptsMap());
+        configs.put("processing_timeout_ms", getProcessingTimeoutMap());
+        configs.put("dead_letter_check_interval_ms", getDeadLetterCheckIntervalMap());
+        
         return configs;
+    }
+
+    // 死信队列配置管理方法
+    
+    /**
+     * 获取指定队列的最大重试次数
+     * @param queueName 队列名称
+     * @return 最大重试次数，默认3次
+     */
+    public int getMaxRetryAttempts(String queueName) {
+        Integer attempts = maxRetryAttemptsMap.get(queueName);
+        return attempts != null ? attempts : 3;
+    }
+
+    /**
+     * 设置队列最大重试次数
+     * @param queueName 队列名称
+     * @param maxAttempts 最大重试次数
+     */
+    public void setMaxRetryAttempts(String queueName, int maxAttempts) {
+        if (maxAttempts <= 0) {
+            maxRetryAttemptsMap.remove(queueName);
+        } else {
+            maxRetryAttemptsMap.put(queueName, maxAttempts);
+        }
+    }
+
+    /**
+     * 获取所有重试次数配置
+     * @return 配置映射副本
+     */
+    public Map<String, Integer> getMaxRetryAttemptsMap() {
+        return new ConcurrentHashMap<>(maxRetryAttemptsMap);
+    }
+
+    /**
+     * 获取指定队列的处理超时时间
+     * @param queueName 队列名称
+     * @return 处理超时时间(毫秒)，默认30分钟
+     */
+    public long getProcessingTimeoutMs(String queueName) {
+        Long timeout = processingTimeoutMap.get(queueName);
+        return timeout != null ? timeout : 1800000L; // 30分钟
+    }
+
+    /**
+     * 设置队列处理超时时间
+     * @param queueName 队列名称
+     * @param timeoutMs 超时时间(毫秒)
+     */
+    public void setProcessingTimeoutMs(String queueName, long timeoutMs) {
+        if (timeoutMs <= 0) {
+            processingTimeoutMap.remove(queueName);
+        } else {
+            processingTimeoutMap.put(queueName, timeoutMs);
+        }
+    }
+
+    /**
+     * 获取所有处理超时配置
+     * @return 配置映射副本
+     */
+    public Map<String, Long> getProcessingTimeoutMap() {
+        return new ConcurrentHashMap<>(processingTimeoutMap);
+    }
+
+    /**
+     * 获取指定队列的死信检查间隔
+     * @param queueName 队列名称
+     * @return 检查间隔(毫秒)，默认5分钟
+     */
+    public long getDeadLetterCheckIntervalMs(String queueName) {
+        Long interval = deadLetterCheckIntervalMap.get(queueName);
+        return interval != null ? interval : 300000L; // 5分钟
+    }
+
+    /**
+     * 设置队列死信检查间隔
+     * @param queueName 队列名称
+     * @param intervalMs 检查间隔(毫秒)
+     */
+    public void setDeadLetterCheckIntervalMs(String queueName, long intervalMs) {
+        if (intervalMs <= 0) {
+            deadLetterCheckIntervalMap.remove(queueName);
+        } else {
+            deadLetterCheckIntervalMap.put(queueName, intervalMs);
+        }
+    }
+
+    /**
+     * 获取所有死信检查间隔配置
+     * @return 配置映射副本
+     */
+    public Map<String, Long> getDeadLetterCheckIntervalMap() {
+        return new ConcurrentHashMap<>(deadLetterCheckIntervalMap);
     }
 
     @Override
@@ -145,6 +254,9 @@ public class RuntimeQueueConfig {
                 "maxLengthMap=" + maxLengthMap +
                 ", maxQpsMap=" + maxQpsMap +
                 ", emptyPollIntervalMs=" + emptyPollIntervalMs +
+                ", maxRetryAttemptsMap=" + maxRetryAttemptsMap +
+                ", processingTimeoutMap=" + processingTimeoutMap +
+                ", deadLetterCheckIntervalMap=" + deadLetterCheckIntervalMap +
                 '}';
     }
 }

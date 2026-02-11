@@ -1,5 +1,6 @@
 package gnosis.sample.distribute.queue.service;
 
+import gnosis.sample.distribute.queue.config.RuntimeQueueConfig;
 import gnosis.sample.distribute.queue.enums.QueueMessageStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,38 +27,48 @@ public class DeadLetterQueueService {
     
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
-    // 默认超时时间：30分钟
-    private static final long DEFAULT_PROCESSING_TIMEOUT_MS = 30 * 60 * 1000L;
     
-    // 最大重试次数
-    private static final int MAX_RETRY_ATTEMPTS = 3;
+    @Autowired
+    private RuntimeQueueConfig runtimeConfig;
+
+    // 默认配置常量
+    private static final int DEFAULT_MAX_RETRY_ATTEMPTS = 3;
+    private static final long DEFAULT_PROCESSING_TIMEOUT_MS = 30 * 60 * 1000L; // 30分钟
+    private static final long DEFAULT_CHECK_INTERVAL_MS = 5 * 60 * 1000L; // 5分钟
 
     /**
-     * 每5分钟检查一次超时的任务
+     * 检查处理超时的任务
+     * 使用配置的超时时间和检查间隔
      */
-    @Scheduled(fixedDelay = 5 * 60 * 1000) // 5分钟执行一次
-    public void checkProcessingTimeout() {
+    @Scheduled(fixedDelayString = "#{T(gnosis.sample.distribute.queue.service.DeadLetterQueueService).DEFAULT_CHECK_INTERVAL_MS}",
+            initialDelayString = "#{T(gnosis.sample.distribute.queue.service.DeadLetterQueueService).DEFAULT_CHECK_INTERVAL_MS}")
+    public void checkAllQueuesProcessingTimeout() {
+        // 批量处理所有队列的超时任务
+        log.debug("开始批量检查所有队列的超时任务");
+        // TODO: 获取所有队列名称并遍历检查
+    }
+
+    public void checkProcessingTimeout(String queueName) {
         try {
-            log.debug("开始检查超时处理中的任务...");
-            
+            long timeoutMs = runtimeConfig.getProcessingTimeoutMs(queueName);
             Timestamp timeoutThreshold = Timestamp.valueOf(
-                LocalDateTime.now().minusMinutes(30)); // 30分钟前
+                LocalDateTime.now().minusSeconds(timeoutMs / 1000));
+            
+            int maxRetryAttempts = runtimeConfig.getMaxRetryAttempts(queueName);
             
             // 查找超时的处理中任务
             List<Map<String, Object>> timeoutMessages = jdbcTemplate.queryForList(
                 "SELECT id, queue_name, message_body, attempt_count, consumer_id, created_at " +
                 "FROM sys_distributed_queue " +
-                "WHERE status = ? AND updated_at < ?",
-                QueueMessageStatus.PROCESSING.getValue(), timeoutThreshold);
+                "WHERE queue_name = ? AND status = ? AND updated_at < ?",
+                queueName, QueueMessageStatus.PROCESSING.getValue(), timeoutThreshold);
             
             int movedCount = 0;
             for (Map<String, Object> message : timeoutMessages) {
                 Long messageId = ((Number) message.get("id")).longValue();
-                String queueName = (String) message.get("queue_name");
                 Integer attemptCount = ((Number) message.get("attempt_count")).intValue();
                 
-                if (attemptCount < MAX_RETRY_ATTEMPTS) {
+                if (attemptCount < maxRetryAttempts) {
                     // 重试次数未达到上限，重新入队
                     moveToPending(messageId, queueName, attemptCount + 1);
                     log.info("将超时任务重新入队: messageId={}, queue={}, attempt={}", 
@@ -72,37 +83,42 @@ public class DeadLetterQueueService {
             }
             
             if (movedCount > 0) {
-                log.info("本次共处理 {} 个超时任务", movedCount);
+                log.info("队列 {} 本次共处理 {} 个超时任务", queueName, movedCount);
             }
             
         } catch (Exception e) {
-            log.error("检查超时任务时发生错误: {}", e.getMessage(), e);
+            log.error("检查队列 {} 超时任务时发生错误: {}", queueName, e.getMessage(), e);
         }
     }
 
     /**
-     * 每小时检查失败的任务
+     * 检查失败的任务
      */
-    @Scheduled(cron = "0 0 * * * ?") // 每小时执行
-    public void checkFailedTasks() {
+    @Scheduled(cron = "0 0 * * * ?", initialDelay = 60000) // 每小时执行，启动后1分钟首次执行
+    public void checkAllQueuesFailedTasks() {
+        // 批量处理所有队列的失败任务
+        log.debug("开始批量检查所有队列的失败任务");
+        // TODO: 获取所有队列名称并遍历检查
+    }
+
+    public void checkFailedTasks(String queueName) {
         try {
-            log.debug("开始检查失败的任务...");
+            int maxRetryAttempts = runtimeConfig.getMaxRetryAttempts(queueName);
             
-            // 查找标记为失败但还未处理的任务
+            // 查找标记为失败但还未处理的任务（1小时前）
             List<Map<String, Object>> failedMessages = jdbcTemplate.queryForList(
                 "SELECT id, queue_name, message_body, attempt_count, consumer_id, created_at " +
                 "FROM sys_distributed_queue " +
-                "WHERE status = ? AND updated_at < ?",
-                QueueMessageStatus.FAILED.getValue(), 
-                Timestamp.valueOf(LocalDateTime.now().minusHours(1))); // 1小时前
+                "WHERE queue_name = ? AND status = ? AND updated_at < ?",
+                queueName, QueueMessageStatus.FAILED.getValue(), 
+                Timestamp.valueOf(LocalDateTime.now().minusHours(1)));
             
             int processedCount = 0;
             for (Map<String, Object> message : failedMessages) {
                 Long messageId = ((Number) message.get("id")).longValue();
-                String queueName = (String) message.get("queue_name");
                 Integer attemptCount = ((Number) message.get("attempt_count")).intValue();
                 
-                if (attemptCount < MAX_RETRY_ATTEMPTS) {
+                if (attemptCount < maxRetryAttempts) {
                     // 重新入队尝试
                     moveToPending(messageId, queueName, attemptCount + 1);
                     log.info("将失败任务重新入队: messageId={}, queue={}, attempt={}", 
@@ -117,7 +133,7 @@ public class DeadLetterQueueService {
             }
             
             if (processedCount > 0) {
-                log.info("本次共处理 {} 个失败任务", processedCount);
+                log.info("队列 {} 本次共处理 {} 个失败任务", queueName, processedCount);
             }
             
         } catch (Exception e) {
@@ -231,5 +247,39 @@ public class DeadLetterQueueService {
             log.error("重试死信消息失败: messageId={}, error={}", messageId, e.getMessage(), e);
             return false;
         }
+    }
+    
+    /**
+     * 获取队列的死信配置信息
+     * @param queueName 队列名称
+     * @return 配置信息
+     */
+    public Map<String, Object> getDeadLetterConfig(String queueName) {
+        Map<String, Object> config = new java.util.HashMap<>();
+        config.put("maxRetryAttempts", runtimeConfig.getMaxRetryAttempts(queueName));
+        config.put("processingTimeoutMs", runtimeConfig.getProcessingTimeoutMs(queueName));
+        config.put("checkIntervalMs", runtimeConfig.getDeadLetterCheckIntervalMs(queueName));
+        return config;
+    }
+    
+    /**
+     * 更新队列的死信配置
+     * @param queueName 队列名称
+     * @param maxRetryAttempts 最大重试次数
+     * @param processingTimeoutMs 处理超时时间(毫秒)
+     * @param checkIntervalMs 检查间隔(毫秒)
+     */
+    public void updateDeadLetterConfig(String queueName, Integer maxRetryAttempts, 
+                                     Long processingTimeoutMs, Long checkIntervalMs) {
+        if (maxRetryAttempts != null) {
+            runtimeConfig.setMaxRetryAttempts(queueName, maxRetryAttempts);
+        }
+        if (processingTimeoutMs != null) {
+            runtimeConfig.setProcessingTimeoutMs(queueName, processingTimeoutMs);
+        }
+        if (checkIntervalMs != null) {
+            runtimeConfig.setDeadLetterCheckIntervalMs(queueName, checkIntervalMs);
+        }
+        log.info("更新队列 {} 的死信配置完成", queueName);
     }
 }

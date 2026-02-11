@@ -73,6 +73,18 @@ public class QueueStartupInitializer implements ApplicationListener<ApplicationR
         runtimeConfig.setMaxQps(queueName, maxQps);
         runtimeConfig.setEmptyPollIntervalMs(pollInterval);
         
+        // 设置死信队列配置
+        int maxRetryAttempts = config.getMaxRetryAttempts() != null ? 
+            config.getMaxRetryAttempts() : 3;
+        long processingTimeoutMs = config.getProcessingTimeoutMs() != null ? 
+            config.getProcessingTimeoutMs() : 1800000L; // 30分钟
+        long checkIntervalMs = config.getDeadLetterCheckIntervalMs() != null ? 
+            config.getDeadLetterCheckIntervalMs() : 300000L; // 5分钟
+            
+        runtimeConfig.setMaxRetryAttempts(queueName, maxRetryAttempts);
+        runtimeConfig.setProcessingTimeoutMs(queueName, processingTimeoutMs);
+        runtimeConfig.setDeadLetterCheckIntervalMs(queueName, checkIntervalMs);
+        
         queueFactory.createQueueInstance(queueName, runtimeConfig);
     }
 }

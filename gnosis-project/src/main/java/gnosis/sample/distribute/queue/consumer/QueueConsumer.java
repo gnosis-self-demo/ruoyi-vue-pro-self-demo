@@ -10,6 +10,7 @@ import gnosis.sample.distribute.queue.service.DistributedQueueService;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.PostConstruct;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -140,7 +141,7 @@ public class QueueConsumer {
                         // 将消息状态更新为FAILED而不是抛出异常
                         try {
                             markMessageAsFailed(msg.getId(), consumerId, "处理异常: " + e.getMessage());
-                        } catch (Exception sqlEx) {
+                        } catch (SQLException sqlEx) {
                             log.error("更新消息失败状态异常: {}", sqlEx.getMessage(), sqlEx);
                         }
                         
@@ -186,18 +187,18 @@ public class QueueConsumer {
                     break;
                 }
             }
-            
-            /**
-             * 将消息标记为失败状态
-             */
-            private void markMessageAsFailed(long messageId, String consumerId, String errorMessage) throws Exception {
-                queueService.executeUpdate(
-                    "UPDATE sys_distributed_queue SET status = ?, consumer_id = ?, " +
-                    "error_message = ?, updated_at = ? WHERE id = ? AND consumer_id = ?",
-                    QueueMessageStatus.FAILED.getValue(), consumerId, 
-                    errorMessage, new java.sql.Timestamp(System.currentTimeMillis()), 
-                    messageId, consumerId);
-            }
         }
+    }
+    
+    /**
+     * 将消息标记为失败状态
+     */
+    private void markMessageAsFailed(long messageId, String consumerId, String errorMessage) throws SQLException {
+        queueService.executeUpdate(
+            "UPDATE sys_distributed_queue SET status = ?, consumer_id = ?, " +
+            "error_message = ?, updated_at = ? WHERE id = ? AND consumer_id = ?",
+            QueueMessageStatus.FAILED.getValue(), consumerId, 
+            errorMessage, new java.sql.Timestamp(System.currentTimeMillis()), 
+            messageId, consumerId);
     }
 }
