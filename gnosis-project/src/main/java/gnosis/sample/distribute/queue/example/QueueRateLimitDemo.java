@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Component;
  * 展示如何使用队列控制外部接口调用和第三方系统接入的QPS
  */
 @Component
+@Order(Integer.MIN_VALUE)
+@Lazy
 public class QueueRateLimitDemo implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(QueueRateLimitDemo.class);
@@ -37,16 +41,16 @@ public class QueueRateLimitDemo implements CommandLineRunner {
         demonstrateExternalApiLimiting();
         
         Thread.sleep(3000);
-        
-        // 3. 演示第三方系统接入限流
-        log.info("\n3. 演示第三方系统接入限流...");
-        demonstrateThirdPartyIngressLimiting();
-        
-        Thread.sleep(3000);
-        
-        // 4. 演示动态调整限流策略
-        log.info("\n4. 演示动态调整限流策略...");
-        demonstrateDynamicRateAdjustment();
+//
+//        // 3. 演示第三方系统接入限流
+//        log.info("\n3. 演示第三方系统接入限流...");
+//        demonstrateThirdPartyIngressLimiting();
+//
+//        Thread.sleep(3000);
+//
+//        // 4. 演示动态调整限流策略
+//        log.info("\n4. 演示动态调整限流策略...");
+//        demonstrateDynamicRateAdjustment();
         
         log.info("\n=== 队列限流演示完成 ===");
     }

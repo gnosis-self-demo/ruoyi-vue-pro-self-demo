@@ -255,12 +255,13 @@ public class DistributedQueueService {
             conn = dataSource.getConnection();
             ps = conn.prepareStatement(
                 "UPDATE sys_distributed_queue SET status = ?, consumer_id = ?, " +
-                "attempt_count = attempt_count + 1, updated_at = CURRENT_TIMESTAMP " +
+                "attempt_count = attempt_count + 1, updated_at = ? " +
                 "WHERE id = ? AND status = ?");
             ps.setString(1, QueueMessageStatus.PROCESSING.getValue());
             ps.setString(2, consumerId);
-            ps.setLong(3, candidateId);
-            ps.setString(4, QueueMessageStatus.PENDING.getValue());
+            ps.setTimestamp(3, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setLong(4, candidateId);
+            ps.setString(5, QueueMessageStatus.PENDING.getValue());
             return ps.executeUpdate() == 1 ? new QueueMessage(candidateId, queueName, body, attempts + 1) : null;
         } finally {
             closeQuietly(ps);
@@ -276,9 +277,9 @@ public class DistributedQueueService {
      */
     public void ack(long messageId, String consumerId) throws SQLException {
         executeUpdate(
-            "UPDATE sys_distributed_queue SET status = ?, updated_at = CURRENT_TIMESTAMP " +
+            "UPDATE sys_distributed_queue SET status = ?, updated_at = ? " +
             "WHERE id = ? AND consumer_id = ?",
-            QueueMessageStatus.DONE.getValue(), messageId, consumerId);
+            QueueMessageStatus.DONE.getValue(), new java.sql.Timestamp(System.currentTimeMillis()), messageId, consumerId);
     }
 
     /**
@@ -289,9 +290,9 @@ public class DistributedQueueService {
      */
     public void nack(long messageId, String consumerId) throws SQLException {
         executeUpdate(
-            "UPDATE sys_distributed_queue SET status = ?, consumer_id = NULL, updated_at = CURRENT_TIMESTAMP " +
+            "UPDATE sys_distributed_queue SET status = ?, consumer_id = NULL, updated_at = ? " +
             "WHERE id = ? AND consumer_id = ?",
-            QueueMessageStatus.PENDING.getValue(), messageId, consumerId);
+            QueueMessageStatus.PENDING.getValue(), new java.sql.Timestamp(System.currentTimeMillis()), messageId, consumerId);
     }
 
     /**

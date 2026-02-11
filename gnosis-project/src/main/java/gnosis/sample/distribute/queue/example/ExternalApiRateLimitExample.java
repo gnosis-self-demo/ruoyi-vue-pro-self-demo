@@ -37,8 +37,8 @@ public class ExternalApiRateLimitExample {
     private DistributedQueueSdk distributedQueueSdk;
     
     private static final String EXTERNAL_API_QUEUE = "external-api-rate-limit";
-    private static final int MAX_EXTERNAL_QPS = 50;  // 控制对外部API的最大QPS为50
-    private static final int QUEUE_MAX_LENGTH = 1000; // 队列最大长度
+    private static final int MAX_EXTERNAL_QPS = 20;  // 控制对外部API的最大QPS为50
+    private static final int QUEUE_MAX_LENGTH = 10; // 队列最大长度
     
     /**
      * 初始化外部API限流队列
@@ -83,7 +83,7 @@ public class ExternalApiRateLimitExample {
             );
             
             TaskSubmitResponse response = distributedQueueSdk.getTaskManagementService()
-                .submitTask(request);
+                .submitTaskSync(request);
                 
             log.info("支付请求已提交到限流队列: orderId={}, amount={}, queue={}", 
                     orderId, amount, EXTERNAL_API_QUEUE);
@@ -118,7 +118,7 @@ public class ExternalApiRateLimitExample {
             );
             
             TaskSubmitResponse response = distributedQueueSdk.getTaskManagementService()
-                .submitTask(request);
+                .submitTaskSync(request);
                 
             log.info("短信请求已提交到限流队列: phone={}, message={}, queue={}", 
                     phone, message, EXTERNAL_API_QUEUE);
@@ -159,7 +159,7 @@ public class ExternalApiRateLimitExample {
                     sendSmsRequest("1380013800" + (requestId % 10), 
                                  "您的验证码是: " + (100000 + requestId));
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
