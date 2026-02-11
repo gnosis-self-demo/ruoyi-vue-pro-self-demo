@@ -95,12 +95,12 @@ public class DeadLetterQueueTest {
         try {
             // 测试超时检查功能
             System.out.println("1. 执行超时检查...");
-            deadLetterService.checkProcessingTimeout();
+            deadLetterService.checkProcessingTimeout("test_queue");
             System.out.println("   ✓ 超时检查执行完成");
             
             // 测试失败任务检查
             System.out.println("2. 执行失败任务检查...");
-            deadLetterService.checkFailedTasks();
+            deadLetterService.checkFailedTasks("test_queue");
             System.out.println("   ✓ 失败任务检查执行完成");
             
             System.out.println("   ✓ 处理失败处理机制验证通过");

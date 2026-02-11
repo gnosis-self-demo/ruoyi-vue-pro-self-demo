@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS sys_distributed_queue (
     consumer_id VARCHAR(100),
     attempt_count INTEGER DEFAULT 0,
     error_message TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
 -- 队列结果表（用于同步等待）
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sys_queue_result (
     success BOOLEAN NOT NULL,
     result_data TEXT,
     error_message TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP
 );
 
 -- 索引优化

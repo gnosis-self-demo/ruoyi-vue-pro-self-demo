@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +65,8 @@ public class DistributedQueueService {
             ps = conn.prepareStatement(
                 "DELETE FROM sys_distributed_queue WHERE status = ? AND updated_at < ?");
             ps.setString(1, QueueMessageStatus.DONE.getValue());
-            ps.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis() - (long) keepDays * 24 * 60 * 60 * 1000));
+            long cutoffTimeMillis = System.currentTimeMillis() - (long) keepDays * 24 * 60 * 60 * 1000;
+            ps.setTimestamp(2, new java.sql.Timestamp(cutoffTimeMillis));
             int deleted = ps.executeUpdate();
             log.info("清理了 {} 条超过 {} 天的已完成消息", deleted, keepDays);
             return deleted;
@@ -100,12 +102,15 @@ public class DistributedQueueService {
         PreparedStatement ps = null;
         try {
             conn = dataSource.getConnection();
+            Timestamp now = new java.sql.Timestamp(System.currentTimeMillis());
             ps = conn.prepareStatement(
-                "INSERT INTO sys_distributed_queue (id, queue_name, message_body, status) VALUES (?, ?, ?, ?)");
+                "INSERT INTO sys_distributed_queue (id, queue_name, message_body, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)");
             ps.setLong(1, id);
             ps.setString(2, queueName);
             ps.setString(3, messageBody);
             ps.setString(4, QueueMessageStatus.PENDING.getValue());
+            ps.setTimestamp(5, now);
+            ps.setTimestamp(6, now);
             ps.executeUpdate();
         } finally {
             closeQuietly(ps);
@@ -253,13 +258,14 @@ public class DistributedQueueService {
         ps = null;
         try {
             conn = dataSource.getConnection();
+            Timestamp now = new java.sql.Timestamp(System.currentTimeMillis());
             ps = conn.prepareStatement(
                 "UPDATE sys_distributed_queue SET status = ?, consumer_id = ?, " +
                 "attempt_count = attempt_count + 1, updated_at = ? " +
                 "WHERE id = ? AND status = ?");
             ps.setString(1, QueueMessageStatus.PROCESSING.getValue());
             ps.setString(2, consumerId);
-            ps.setTimestamp(3, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setTimestamp(3, now);
             ps.setLong(4, candidateId);
             ps.setString(5, QueueMessageStatus.PENDING.getValue());
             return ps.executeUpdate() == 1 ? new QueueMessage(candidateId, queueName, body, attempts + 1) : null;

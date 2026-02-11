@@ -1,15 +1,14 @@
 package gnosis.sample.distribute.queue.example;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import gnosis.sample.distribute.queue.example.ExternalApiRateLimitExample;
+import gnosis.sample.distribute.queue.example.ThirdPartyIngressControlExample;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * 队列限流功能测试类
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class QueueRateLimitTest {
 

@@ -8,11 +8,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 死信队列服务
@@ -34,14 +38,29 @@ public class DeadLetterQueueService {
     // 默认配置常量
     private static final int DEFAULT_MAX_RETRY_ATTEMPTS = 3;
     private static final long DEFAULT_PROCESSING_TIMEOUT_MS = 30 * 60 * 1000L; // 30分钟
-    private static final long DEFAULT_CHECK_INTERVAL_MS = 5 * 60 * 1000L; // 5分钟
+    public static final long DEFAULT_CHECK_INTERVAL_MS = 5 * 60 * 1000L; // 5分钟
+    
+    private ScheduledExecutorService scheduler;
+
+    @PostConstruct
+    public void init() {
+        // 初始化调度器，用于处理启动延迟
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "DeadLetterQueueScheduler");
+            t.setDaemon(true);
+            return t;
+        });
+        
+        // 启动后1分钟执行首次检查
+        scheduler.schedule(this::checkAllQueuesProcessingTimeout, 60, TimeUnit.SECONDS);
+        scheduler.schedule(this::checkAllQueuesFailedTasks, 60, TimeUnit.SECONDS);
+    }
 
     /**
      * 检查处理超时的任务
      * 使用配置的超时时间和检查间隔
      */
-    @Scheduled(fixedDelayString = "#{T(gnosis.sample.distribute.queue.service.DeadLetterQueueService).DEFAULT_CHECK_INTERVAL_MS}",
-            initialDelayString = "#{T(gnosis.sample.distribute.queue.service.DeadLetterQueueService).DEFAULT_CHECK_INTERVAL_MS}")
+    @Scheduled(fixedDelayString = "#{T(gnosis.sample.distribute.queue.service.DeadLetterQueueService).DEFAULT_CHECK_INTERVAL_MS}")
     public void checkAllQueuesProcessingTimeout() {
         // 批量处理所有队列的超时任务
         log.debug("开始批量检查所有队列的超时任务");
@@ -94,7 +113,7 @@ public class DeadLetterQueueService {
     /**
      * 检查失败的任务
      */
-    @Scheduled(cron = "0 0 * * * ?", initialDelay = 60000) // 每小时执行，启动后1分钟首次执行
+    @Scheduled(cron = "0 0 * * * ?") // 每小时执行
     public void checkAllQueuesFailedTasks() {
         // 批量处理所有队列的失败任务
         log.debug("开始批量检查所有队列的失败任务");

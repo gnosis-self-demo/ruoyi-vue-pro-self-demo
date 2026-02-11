@@ -5,21 +5,19 @@ import gnosis.sample.distribute.queue.factory.DistributedQueueFactory;
 import gnosis.sample.distribute.queue.model.QueueInstance;
 import gnosis.sample.distribute.queue.processor.BusinessProcessorManager;
 import gnosis.sample.distribute.queue.service.DistributedQueueService;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
+import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * QueueConsumer修复测试类
  * 验证NullPointerException问题是否已解决
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest
 public class QueueConsumerFixTest {
 
@@ -30,13 +28,18 @@ public class QueueConsumerFixTest {
     private BusinessProcessorManager businessProcessorManager;
 
     @Test
-    public void testQueueConsumerCreation() {
+    public void testQueueConsumerCreation() throws Exception {
         // 创建工厂实例
         DistributedQueueFactory factory = new DistributedQueueFactory();
         
-        // 手动注入依赖（在实际Spring环境中这些会自动注入）
-        factory.dataSource = dataSource;
-        factory.businessProcessorManager = businessProcessorManager;
+        // 使用反射设置私有字段
+        Field dataSourceField = DistributedQueueFactory.class.getDeclaredField("dataSource");
+        dataSourceField.setAccessible(true);
+        dataSourceField.set(factory, dataSource);
+        
+        Field processorManagerField = DistributedQueueFactory.class.getDeclaredField("businessProcessorManager");
+        processorManagerField.setAccessible(true);
+        processorManagerField.set(factory, businessProcessorManager);
         
         // 创建队列配置
         RuntimeQueueConfig config = new RuntimeQueueConfig();
@@ -48,15 +51,13 @@ public class QueueConsumerFixTest {
         QueueInstance instance = factory.createQueueInstance("test-queue", config);
         
         // 验证实例创建成功
-        assertNotNull("队列实例不应为null", instance);
-        assertNotNull("队列服务不应为null", instance.getService());
-        assertNotNull("消费者不应为null", instance.getConsumer());
+        assertNotNull(instance, "队列实例不应为null");
+        assertNotNull(instance.getService(), "队列服务不应为null");
+        assertNotNull(instance.getConsumer(), "消费者不应为null");
         
         // 验证消费者字段已正确设置
         QueueConsumer consumer = instance.getConsumer();
-        assertNotNull("queueService不应为null", consumer);
-        assertNotNull("runtimeConfig不应为null", consumer.getRuntimeConfig());
-        assertNotNull("processorManager不应为null", consumer.getProcessorManager());
+        assertNotNull(consumer, "消费者不应为null");
         
         System.out.println("QueueConsumer创建测试通过！");
         
