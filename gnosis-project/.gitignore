@@ -70,3 +70,6 @@ Icon?
 *.bak
 *.swp
 *.tmp
+
+logs/
+log/

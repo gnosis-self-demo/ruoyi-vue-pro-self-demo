@@ -4,14 +4,19 @@ import gnosis.sample.distribute.queue.config.RuntimeQueueConfig;
 import gnosis.sample.distribute.queue.enums.QueueMessageStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -28,9 +33,6 @@ public class DeadLetterQueueService {
 
     @Autowired
     private DataSource dataSource;
-    
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
     
     @Autowired
     private RuntimeQueueConfig runtimeConfig;
@@ -57,7 +59,7 @@ public class DeadLetterQueueService {
     }
 
     /**
-     * 检查处理超时的任务
+     * 批量检查所有队列的超时任务
      * 使用配置的超时时间和检查间隔
      */
     @Scheduled(fixedDelayString = "#{T(gnosis.sample.distribute.queue.service.DeadLetterQueueService).DEFAULT_CHECK_INTERVAL_MS}")
@@ -65,6 +67,23 @@ public class DeadLetterQueueService {
         // 批量处理所有队列的超时任务
         log.debug("开始批量检查所有队列的超时任务");
         // TODO: 获取所有队列名称并遍历检查
+        // 从数据库查询所有存在的队列名称
+        List<String> queueNames = getQueueNamesWithStatus("processing", "pending");
+        
+        if (queueNames.isEmpty()) {
+            log.debug("没有找到需要检查的队列");
+            return;
+        }
+        
+        log.debug("发现 {} 个队列需要检查超时任务: {}", queueNames.size(), queueNames);
+        for (String queueName : queueNames) {
+            try {
+                checkProcessingTimeout(queueName);
+            } catch (Exception e) {
+                log.error("检查队列 {} 超时任务时发生异常", queueName, e);
+            }
+        }
+        log.debug("批量检查所有队列的超时任务完成");
     }
 
     public void checkProcessingTimeout(String queueName) {
@@ -76,11 +95,7 @@ public class DeadLetterQueueService {
             int maxRetryAttempts = runtimeConfig.getMaxRetryAttempts(queueName);
             
             // 查找超时的处理中任务
-            List<Map<String, Object>> timeoutMessages = jdbcTemplate.queryForList(
-                "SELECT id, queue_name, message_body, attempt_count, consumer_id, created_at " +
-                "FROM sys_distributed_queue " +
-                "WHERE queue_name = ? AND status = ? AND updated_at < ?",
-                queueName, QueueMessageStatus.PROCESSING.getValue(), timeoutThreshold);
+            List<Map<String, Object>> timeoutMessages = getTimeoutMessages(queueName, QueueMessageStatus.PROCESSING.getValue(), timeoutThreshold);
             
             int movedCount = 0;
             for (Map<String, Object> message : timeoutMessages) {
@@ -118,6 +133,23 @@ public class DeadLetterQueueService {
         // 批量处理所有队列的失败任务
         log.debug("开始批量检查所有队列的失败任务");
         // TODO: 获取所有队列名称并遍历检查
+        // 从数据库查询所有存在的队列名称（包含失败状态的任务）
+        List<String> queueNames = getQueueNamesWithStatus("failed");
+        
+        if (queueNames.isEmpty()) {
+            log.debug("没有找到需要检查的失败任务队列");
+            return;
+        }
+        
+        log.debug("发现 {} 个队列需要检查失败任务: {}", queueNames.size(), queueNames);
+        for (String queueName : queueNames) {
+            try {
+                checkFailedTasks(queueName);
+            } catch (Exception e) {
+                log.error("检查队列 {} 失败任务时发生异常", queueName, e);
+            }
+        }
+        log.debug("批量检查所有队列的失败任务完成");
     }
 
     public void checkFailedTasks(String queueName) {
@@ -125,11 +157,7 @@ public class DeadLetterQueueService {
             int maxRetryAttempts = runtimeConfig.getMaxRetryAttempts(queueName);
             
             // 查找标记为失败但还未处理的任务（1小时前）
-            List<Map<String, Object>> failedMessages = jdbcTemplate.queryForList(
-                "SELECT id, queue_name, message_body, attempt_count, consumer_id, created_at " +
-                "FROM sys_distributed_queue " +
-                "WHERE queue_name = ? AND status = ? AND updated_at < ?",
-                queueName, QueueMessageStatus.FAILED.getValue(), 
+            List<Map<String, Object>> failedMessages = getFailedMessages(queueName, 
                 Timestamp.valueOf(LocalDateTime.now().minusHours(1)));
             
             int processedCount = 0;
@@ -164,18 +192,23 @@ public class DeadLetterQueueService {
      * 将消息重新设置为待处理状态
      */
     private void moveToPending(Long messageId, String queueName, int newAttemptCount) {
+        Connection conn = null;
+        PreparedStatement ps = null;
         try {
-            int updated = jdbcTemplate.update(
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
                 "UPDATE sys_distributed_queue SET status = ?, consumer_id = NULL, " +
-                "attempt_count = ?, updated_at = ? WHERE id = ?",
-                QueueMessageStatus.PENDING.getValue(), newAttemptCount, 
-                new Timestamp(System.currentTimeMillis()), messageId);
-            
-            if (updated == 0) {
-                log.warn("未能更新消息状态: messageId={}", messageId);
-            }
-        } catch (Exception e) {
+                "attempt_count = ?, updated_at = ? WHERE id = ?");
+            ps.setString(1, QueueMessageStatus.PENDING.getValue());
+            ps.setInt(2, newAttemptCount);
+            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            ps.setLong(4, messageId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
             log.error("移动消息到待处理状态失败: messageId={}, error={}", messageId, e.getMessage(), e);
+        } finally {
+            closeQuietly(ps);
+            closeQuietly(conn);
         }
     }
 
@@ -183,22 +216,23 @@ public class DeadLetterQueueService {
      * 将消息移至死信队列
      */
     private void moveToDeadLetter(Long messageId, String queueName, int attemptCount, String reason) {
+        Connection conn = null;
+        PreparedStatement ps = null;
         try {
-            // 更新原消息状态为死信
-            int updated = jdbcTemplate.update(
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
                 "UPDATE sys_distributed_queue SET status = ?, updated_at = ?, " +
-                "error_message = ? WHERE id = ?",
-                QueueMessageStatus.DEAD_LETTER.getValue(), 
-                new Timestamp(System.currentTimeMillis()), 
-                String.format("失败原因: %s, 重试次数: %d", reason, attemptCount),
-                messageId);
-            
-            if (updated > 0) {
-                log.info("消息已移至死信队列: messageId={}, queue={}, reason={}", 
-                    messageId, queueName, reason);
-            }
-        } catch (Exception e) {
+                "error_message = ? WHERE id = ?");
+            ps.setString(1, QueueMessageStatus.DEAD_LETTER.getValue());
+            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            ps.setString(3, String.format("失败原因: %s, 重试次数: %d", reason, attemptCount));
+            ps.setLong(4, messageId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
             log.error("移动消息到死信队列失败: messageId={}, error={}", messageId, e.getMessage(), e);
+        } finally {
+            closeQuietly(ps);
+            closeQuietly(conn);
         }
     }
 
@@ -206,20 +240,33 @@ public class DeadLetterQueueService {
      * 获取死信队列统计信息
      */
     public Map<String, Object> getDeadLetterStats() {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
         try {
-            Integer totalDeadLetters = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM sys_distributed_queue WHERE status = ?",
-                Integer.class, QueueMessageStatus.DEAD_LETTER.getValue());
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
+                "SELECT COUNT(*) FROM sys_distributed_queue WHERE status = ?");
+            ps.setString(1, QueueMessageStatus.DEAD_LETTER.getValue());
+            rs = ps.executeQuery();
+            Integer totalDeadLetters = 0;
+            if (rs.next()) {
+                totalDeadLetters = rs.getInt(1);
+            }
             
-            Map<String, Object> stats = new java.util.HashMap<>();
+            Map<String, Object> stats = new HashMap<>();
             stats.put("deadLetterCount", totalDeadLetters != null ? totalDeadLetters : 0);
             stats.put("lastCheckTime", System.currentTimeMillis());
             return stats;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error("获取死信队列统计失败: {}", e.getMessage(), e);
-            Map<String, Object> errorStats = new java.util.HashMap<>();
+            Map<String, Object> errorStats = new HashMap<>();
             errorStats.put("error", e.getMessage());
             return errorStats;
+        } finally {
+            closeQuietly(rs);
+            closeQuietly(ps);
+            closeQuietly(conn);
         }
     }
 
@@ -229,17 +276,24 @@ public class DeadLetterQueueService {
      * @return 清理的记录数
      */
     public int cleanupOldDeadLetters(int daysToKeep) {
+        Connection conn = null;
+        PreparedStatement ps = null;
         try {
-            int deleted = jdbcTemplate.update(
-                "DELETE FROM sys_distributed_queue WHERE status = ? AND updated_at < ?",
-                QueueMessageStatus.DEAD_LETTER.getValue(),
-                Timestamp.valueOf(LocalDateTime.now().minusDays(daysToKeep)));
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
+                "DELETE FROM sys_distributed_queue WHERE status = ? AND updated_at < ?");
+            ps.setString(1, QueueMessageStatus.DEAD_LETTER.getValue());
+            ps.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now().minusDays(daysToKeep)));
+            int deleted = ps.executeUpdate();
             
             log.info("清理了 {} 条超过 {} 天的死信消息", deleted, daysToKeep);
             return deleted;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error("清理死信消息失败: {}", e.getMessage(), e);
             return 0;
+        } finally {
+            closeQuietly(ps);
+            closeQuietly(conn);
         }
     }
 
@@ -249,22 +303,30 @@ public class DeadLetterQueueService {
      * @return 是否成功
      */
     public boolean retryDeadLetterMessage(Long messageId) {
+        Connection conn = null;
+        PreparedStatement ps = null;
         try {
-            int updated = jdbcTemplate.update(
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
                 "UPDATE sys_distributed_queue SET status = ?, attempt_count = 1, " +
-                "consumer_id = NULL, updated_at = ? WHERE id = ? AND status = ?",
-                QueueMessageStatus.PENDING.getValue(), 
-                new Timestamp(System.currentTimeMillis()),
-                messageId, QueueMessageStatus.DEAD_LETTER.getValue());
+                "consumer_id = NULL, updated_at = ? WHERE id = ? AND status = ?");
+            ps.setString(1, QueueMessageStatus.PENDING.getValue());
+            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            ps.setLong(3, messageId);
+            ps.setString(4, QueueMessageStatus.DEAD_LETTER.getValue());
+            int updated = ps.executeUpdate();
             
             if (updated > 0) {
                 log.info("死信消息已重新入队: messageId={}", messageId);
                 return true;
             }
             return false;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error("重试死信消息失败: messageId={}, error={}", messageId, e.getMessage(), e);
             return false;
+        } finally {
+            closeQuietly(ps);
+            closeQuietly(conn);
         }
     }
     
@@ -274,7 +336,7 @@ public class DeadLetterQueueService {
      * @return 配置信息
      */
     public Map<String, Object> getDeadLetterConfig(String queueName) {
-        Map<String, Object> config = new java.util.HashMap<>();
+        Map<String, Object> config = new HashMap<>();
         config.put("maxRetryAttempts", runtimeConfig.getMaxRetryAttempts(queueName));
         config.put("processingTimeoutMs", runtimeConfig.getProcessingTimeoutMs(queueName));
         config.put("checkIntervalMs", runtimeConfig.getDeadLetterCheckIntervalMs(queueName));
@@ -300,5 +362,141 @@ public class DeadLetterQueueService {
             runtimeConfig.setDeadLetterCheckIntervalMs(queueName, checkIntervalMs);
         }
         log.info("更新队列 {} 的死信配置完成", queueName);
+    }
+    
+    // ==================== 私有辅助方法 ====================
+    
+    /**
+     * 查询指定状态的队列名称列表
+     */
+    private List<String> getQueueNamesWithStatus(String... statuses) {
+        if (statuses == null || statuses.length == 0) {
+            return new ArrayList<>();
+        }
+        
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            StringBuilder sql = new StringBuilder("SELECT DISTINCT queue_name FROM sys_distributed_queue WHERE status IN (");
+            for (int i = 0; i < statuses.length; i++) {
+                if (i > 0) sql.append(", ");
+                sql.append("?");
+            }
+            sql.append(")");
+            
+            ps = conn.prepareStatement(sql.toString());
+            for (int i = 0; i < statuses.length; i++) {
+                ps.setString(i + 1, statuses[i]);
+            }
+            
+            rs = ps.executeQuery();
+            List<String> queueNames = new ArrayList<>();
+            while (rs.next()) {
+                queueNames.add(rs.getString("queue_name"));
+            }
+            return queueNames;
+        } catch (SQLException e) {
+            log.error("查询队列名称失败: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        } finally {
+            closeQuietly(rs);
+            closeQuietly(ps);
+            closeQuietly(conn);
+        }
+    }
+    
+    /**
+     * 查询超时消息
+     */
+    private List<Map<String, Object>> getTimeoutMessages(String queueName, String status, Timestamp timeoutThreshold) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
+                "SELECT id, queue_name, message_body, attempt_count, consumer_id, created_at " +
+                "FROM sys_distributed_queue " +
+                "WHERE queue_name = ? AND status = ? AND updated_at < ?");
+            ps.setString(1, queueName);
+            ps.setString(2, status);
+            ps.setTimestamp(3, timeoutThreshold);
+            
+            rs = ps.executeQuery();
+            List<Map<String, Object>> messages = new ArrayList<>();
+            while (rs.next()) {
+                Map<String, Object> message = new HashMap<>();
+                message.put("id", rs.getLong("id"));
+                message.put("queue_name", rs.getString("queue_name"));
+                message.put("message_body", rs.getString("message_body"));
+                message.put("attempt_count", rs.getInt("attempt_count"));
+                message.put("consumer_id", rs.getString("consumer_id"));
+                message.put("created_at", rs.getTimestamp("created_at"));
+                messages.add(message);
+            }
+            return messages;
+        } catch (SQLException e) {
+            log.error("查询超时消息失败: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        } finally {
+            closeQuietly(rs);
+            closeQuietly(ps);
+            closeQuietly(conn);
+        }
+    }
+    
+    /**
+     * 查询失败消息
+     */
+    private List<Map<String, Object>> getFailedMessages(String queueName, Timestamp beforeTime) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
+                "SELECT id, queue_name, message_body, attempt_count, consumer_id, created_at " +
+                "FROM sys_distributed_queue " +
+                "WHERE queue_name = ? AND status = ? AND updated_at < ?");
+            ps.setString(1, queueName);
+            ps.setString(2, QueueMessageStatus.FAILED.getValue());
+            ps.setTimestamp(3, beforeTime);
+            
+            rs = ps.executeQuery();
+            List<Map<String, Object>> messages = new ArrayList<>();
+            while (rs.next()) {
+                Map<String, Object> message = new HashMap<>();
+                message.put("id", rs.getLong("id"));
+                message.put("queue_name", rs.getString("queue_name"));
+                message.put("message_body", rs.getString("message_body"));
+                message.put("attempt_count", rs.getInt("attempt_count"));
+                message.put("consumer_id", rs.getString("consumer_id"));
+                message.put("created_at", rs.getTimestamp("created_at"));
+                messages.add(message);
+            }
+            return messages;
+        } catch (SQLException e) {
+            log.error("查询失败消息失败: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        } finally {
+            closeQuietly(rs);
+            closeQuietly(ps);
+            closeQuietly(conn);
+        }
+    }
+    
+    /**
+     * 静默关闭资源
+     */
+    private void closeQuietly(AutoCloseable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
     }
 }
