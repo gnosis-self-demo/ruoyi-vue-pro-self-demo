@@ -17,7 +17,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 分布式队列核心服务
@@ -29,11 +28,6 @@ public class DistributedQueueService {
     private DataSource dataSource;
     private RuntimeQueueConfig runtimeConfig;
 
-    // 结果缓存，用于同步等待结果
-    private final ConcurrentHashMap<String, QueueResult> resultCache = new ConcurrentHashMap<>();
-    
-    // 等待者映射，用于阻塞等待通知
-    private final ConcurrentHashMap<String, Object> waiters = new ConcurrentHashMap<>();
 
     // setter方法，用于工厂注入
     public void setDataSource(DataSource dataSource) {
@@ -140,34 +134,69 @@ public class DistributedQueueService {
      * @return 处理结果，超时返回null
      * @throws InterruptedException 中断异常
      */
+    /**
+     * 阻塞等待处理结果
+     * @param requestId 请求ID
+     * @param timeoutMs 超时时间（毫秒）
+     * @return 处理结果，超时返回null
+     * @throws InterruptedException 中断异常
+     */
     public QueueResult waitForResult(String requestId, long timeoutMs) throws InterruptedException {
         long start = System.currentTimeMillis();
         long remaining = timeoutMs;
 
-        // 先检查缓存中是否已有结果
-        QueueResult cached = resultCache.get(requestId);
-        if (cached != null) {
-            return cached;
-        }
-
-        // 注册等待者
-        Object lock = new Object();
-        waiters.put(requestId, lock);
-
-        try {
-            while (remaining > 0) {
-                synchronized (lock) {
-                    cached = resultCache.get(requestId);
-                    if (cached != null) {
-                        return cached;
-                    }
-                    lock.wait(remaining);
-                    remaining = timeoutMs - (System.currentTimeMillis() - start);
-                }
+        while (remaining > 0) {
+            // 直接从数据库查询结果，避免跨节点通信问题
+            QueueResult result = getResultFromDatabase(requestId);
+            if (result != null) {
+                return result;
             }
-            return null; // 超时
+            
+            // 短暂休眠后重试，避免过度轮询
+            long sleepTime = Math.min(100, remaining);
+            Thread.sleep(sleepTime);
+            remaining = timeoutMs - (System.currentTimeMillis() - start);
+        }
+        return null; // 超时
+    }
+    
+    /**
+     * 从数据库查询处理结果
+     * @param requestId 请求ID
+     * @return 处理结果，不存在返回null
+     */
+    private QueueResult getResultFromDatabase(String requestId) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
+                "SELECT result_status, result_data, error_message FROM sys_distributed_queue_result WHERE request_id = ?");
+            ps.setString(1, requestId);
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                String status = rs.getString("result_status");
+                boolean success = "SUCCESS".equals(status);
+                String resultData = rs.getString("result_data");
+                String errorMessage = rs.getString("error_message");
+                return new QueueResult(requestId, success, resultData, errorMessage);
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error("查询结果失败: {}", e.getMessage(), e);
+            // 发生数据库异常时，短暂休眠后继续重试
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            return null;
         } finally {
-            waiters.remove(requestId);
+            closeQuietly(rs);
+            closeQuietly(ps);
+            closeQuietly(conn);
         }
     }
 
@@ -179,23 +208,22 @@ public class DistributedQueueService {
      * @param errorMessage 错误信息
      * @throws SQLException 数据库异常
      */
+    /**
+     * 保存处理结果
+     * @param requestId 请求ID
+     * @param success 是否成功
+     * @param resultData 结果数据
+     * @param errorMessage 错误信息
+     * @throws SQLException 数据库异常
+     */
     public void saveResult(String requestId, boolean success, String resultData, String errorMessage) throws SQLException {
-        QueueResult result = new QueueResult(requestId, success, resultData, errorMessage);
-        resultCache.put(requestId, result);
-
-        // 通知等待者
-        Object lock = waiters.get(requestId);
-        if (lock != null) {
-            synchronized (lock) {
-                lock.notifyAll();
-            }
-        }
-
-        // 持久化到数据库
+        // 不再使用内存缓存，直接持久化到数据库
         Connection conn = null;
         PreparedStatement ps = null;
         try {
             conn = dataSource.getConnection();
+            // 使用 INSERT ... ON CONFLICT 或 MERGE 语句，但这里使用简单的 INSERT
+            // 如果表结构支持，可以先 DELETE 再 INSERT，或者使用 UPSERT
             ps = conn.prepareStatement(
                 "INSERT INTO sys_distributed_queue_result (request_id, result_status, result_data, error_message) VALUES (?, ?, ?, ?)");
             ps.setString(1, requestId);
