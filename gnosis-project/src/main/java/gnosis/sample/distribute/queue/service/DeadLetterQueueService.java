@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +44,9 @@ public class DeadLetterQueueService {
     public static final long DEFAULT_CHECK_INTERVAL_MS = 5 * 60 * 1000L; // 5分钟
     
     private ScheduledExecutorService scheduler;
+    
+    // 当前节点标识
+    private final String currentNodeId = UUID.randomUUID().toString();
 
     @PostConstruct
     public void init() {
@@ -64,26 +68,37 @@ public class DeadLetterQueueService {
      */
     @Scheduled(fixedDelayString = "#{T(gnosis.sample.distribute.queue.service.DeadLetterQueueService).DEFAULT_CHECK_INTERVAL_MS}")
     public void checkAllQueuesProcessingTimeout() {
-        // 批量处理所有队列的超时任务
-        log.debug("开始批量检查所有队列的超时任务");
-        // TODO: 获取所有队列名称并遍历检查
-        // 从数据库查询所有存在的队列名称
-        List<String> queueNames = getQueueNamesWithStatus("processing", "pending");
-        
-        if (queueNames.isEmpty()) {
-            log.debug("没有找到需要检查的队列");
+        // 获取分布式锁
+        if (!tryAcquireLock("dead_letter_timeout_check", DEFAULT_CHECK_INTERVAL_MS)) {
+            log.debug("无法获取超时检查锁，跳过本次执行");
             return;
         }
         
-        log.debug("发现 {} 个队列需要检查超时任务: {}", queueNames.size(), queueNames);
-        for (String queueName : queueNames) {
-            try {
-                checkProcessingTimeout(queueName);
-            } catch (Exception e) {
-                log.error("检查队列 {} 超时任务时发生异常", queueName, e);
+        try {
+            // 批量处理所有队列的超时任务
+            log.debug("开始批量检查所有队列的超时任务");
+            // TODO: 获取所有队列名称并遍历检查
+            // 从数据库查询所有存在的队列名称
+            List<String> queueNames = getQueueNamesWithStatus("processing", "pending");
+            
+            if (queueNames.isEmpty()) {
+                log.debug("没有找到需要检查的队列");
+                return;
             }
+            
+            log.debug("发现 {} 个队列需要检查超时任务: {}", queueNames.size(), queueNames);
+            for (String queueName : queueNames) {
+                try {
+                    checkProcessingTimeout(queueName);
+                } catch (Exception e) {
+                    log.error("检查队列 {} 超时任务时发生异常", queueName, e);
+                }
+            }
+            log.debug("批量检查所有队列的超时任务完成");
+        } finally {
+            // 释放锁（可选，因为锁会自动过期）
+            releaseLock("dead_letter_timeout_check");
         }
-        log.debug("批量检查所有队列的超时任务完成");
     }
 
     public void checkProcessingTimeout(String queueName) {
@@ -130,26 +145,37 @@ public class DeadLetterQueueService {
      */
     @Scheduled(cron = "0 0 * * * ?") // 每小时执行
     public void checkAllQueuesFailedTasks() {
-        // 批量处理所有队列的失败任务
-        log.debug("开始批量检查所有队列的失败任务");
-        // TODO: 获取所有队列名称并遍历检查
-        // 从数据库查询所有存在的队列名称（包含失败状态的任务）
-        List<String> queueNames = getQueueNamesWithStatus("failed");
-        
-        if (queueNames.isEmpty()) {
-            log.debug("没有找到需要检查的失败任务队列");
+        // 获取分布式锁
+        if (!tryAcquireLock("dead_letter_failed_check", 3600000L)) { // 1小时锁
+            log.debug("无法获取失败任务检查锁，跳过本次执行");
             return;
         }
         
-        log.debug("发现 {} 个队列需要检查失败任务: {}", queueNames.size(), queueNames);
-        for (String queueName : queueNames) {
-            try {
-                checkFailedTasks(queueName);
-            } catch (Exception e) {
-                log.error("检查队列 {} 失败任务时发生异常", queueName, e);
+        try {
+            // 批量处理所有队列的失败任务
+            log.debug("开始批量检查所有队列的失败任务");
+            // TODO: 获取所有队列名称并遍历检查
+            // 从数据库查询所有存在的队列名称（包含失败状态的任务）
+            List<String> queueNames = getQueueNamesWithStatus("failed");
+            
+            if (queueNames.isEmpty()) {
+                log.debug("没有找到需要检查的失败任务队列");
+                return;
             }
+            
+            log.debug("发现 {} 个队列需要检查失败任务: {}", queueNames.size(), queueNames);
+            for (String queueName : queueNames) {
+                try {
+                    checkFailedTasks(queueName);
+                } catch (Exception e) {
+                    log.error("检查队列 {} 失败任务时发生异常", queueName, e);
+                }
+            }
+            log.debug("批量检查所有队列的失败任务完成");
+        } finally {
+            // 释放锁（可选，因为锁会自动过期）
+            releaseLock("dead_letter_failed_check");
         }
-        log.debug("批量检查所有队列的失败任务完成");
     }
 
     public void checkFailedTasks(String queueName) {
@@ -495,6 +521,159 @@ public class DeadLetterQueueService {
             try {
                 closeable.close();
             } catch (Exception e) {
+                // ignore
+            }
+        }
+    }
+    
+    // ==================== 分布式锁相关方法 ====================
+    
+    /**
+     * 尝试获取分布式锁
+     * @param lockName 锁名称
+     * @param lockTimeoutMs 锁超时时间（毫秒）
+     * @return 是否成功获取锁
+     */
+    private boolean tryAcquireLock(String lockName, long lockTimeoutMs) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
+            conn.setAutoCommit(false);
+            
+            // 先清理过期的锁
+            cleanupExpiredLocks(conn);
+            
+            // 尝试插入新锁
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            Timestamp expiresAt = new Timestamp(System.currentTimeMillis() + lockTimeoutMs);
+            
+            ps = conn.prepareStatement(
+                "INSERT INTO sys_distributed_lock (lock_name, locked_by, locked_at, expires_at) " +
+                "VALUES (?, ?, ?, ?)");
+            ps.setString(1, lockName);
+            ps.setString(2, currentNodeId);
+            ps.setTimestamp(3, now);
+            ps.setTimestamp(4, expiresAt);
+            
+            try {
+                ps.executeUpdate();
+                conn.commit();
+                log.debug("成功获取分布式锁: {}, 持有者: {}", lockName, currentNodeId);
+                return true;
+            } catch (SQLException e) {
+                // 插入失败，可能是主键冲突（锁已被其他节点持有）
+                conn.rollback();
+                
+                // 检查是否是当前节点持有的锁（可能上次未正确释放）
+                if (isLockHeldByCurrentNode(conn, lockName)) {
+                    // 更新锁的过期时间
+                    return renewLock(conn, lockName, lockTimeoutMs);
+                }
+                
+                log.debug("无法获取分布式锁: {}, 错误: {}", lockName, e.getMessage());
+                return false;
+            }
+            
+        } catch (SQLException e) {
+            log.error("获取分布式锁失败: {}, 错误: {}", lockName, e.getMessage(), e);
+            rollbackQuietly(conn);
+            return false;
+        } finally {
+            closeQuietly(rs);
+            closeQuietly(ps);
+            closeQuietly(conn);
+        }
+    }
+    
+    /**
+     * 释放分布式锁
+     * @param lockName 锁名称
+     */
+    private void releaseLock(String lockName) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement(
+                "DELETE FROM sys_distributed_lock WHERE lock_name = ? AND locked_by = ?");
+            ps.setString(1, lockName);
+            ps.setString(2, currentNodeId);
+            ps.executeUpdate();
+            log.debug("释放分布式锁: {}", lockName);
+        } catch (SQLException e) {
+            log.error("释放分布式锁失败: {}, 错误: {}", lockName, e.getMessage(), e);
+        } finally {
+            closeQuietly(ps);
+            closeQuietly(conn);
+        }
+    }
+    
+    /**
+     * 清理过期的锁
+     */
+    private void cleanupExpiredLocks(Connection conn) throws SQLException {
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(
+                "DELETE FROM sys_distributed_lock WHERE expires_at < ?");
+            ps.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+            ps.executeUpdate();
+        } finally {
+            closeQuietly(ps);
+        }
+    }
+    
+    /**
+     * 检查锁是否由当前节点持有
+     */
+    private boolean isLockHeldByCurrentNode(Connection conn, String lockName) throws SQLException {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = conn.prepareStatement(
+                "SELECT locked_by FROM sys_distributed_lock WHERE lock_name = ?");
+            ps.setString(1, lockName);
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                String lockedBy = rs.getString("locked_by");
+                return currentNodeId.equals(lockedBy);
+            }
+            return false;
+        } finally {
+            closeQuietly(rs);
+            closeQuietly(ps);
+        }
+    }
+    
+    /**
+     * 续期锁
+     */
+    private boolean renewLock(Connection conn, String lockName, long lockTimeoutMs) throws SQLException {
+        PreparedStatement ps = null;
+        try {
+            Timestamp expiresAt = new Timestamp(System.currentTimeMillis() + lockTimeoutMs);
+            ps = conn.prepareStatement(
+                "UPDATE sys_distributed_lock SET expires_at = ? WHERE lock_name = ? AND locked_by = ?");
+            ps.setTimestamp(1, expiresAt);
+            ps.setString(2, lockName);
+            ps.setString(3, currentNodeId);
+            int updated = ps.executeUpdate();
+            return updated > 0;
+        } finally {
+            closeQuietly(ps);
+        }
+    }
+    
+    /**
+     * 静默回滚事务
+     */
+    private void rollbackQuietly(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.rollback();
+            } catch (SQLException e) {
                 // ignore
             }
         }

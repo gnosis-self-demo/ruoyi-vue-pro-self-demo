@@ -20,11 +20,20 @@ CREATE TABLE IF NOT EXISTS sys_queue_result (
     created_at TIMESTAMP
 );
 
+-- 分布式锁表（用于协调多节点定时任务）
+CREATE TABLE IF NOT EXISTS sys_distributed_lock (
+    lock_name VARCHAR(100) PRIMARY KEY,
+    locked_by VARCHAR(100) NOT NULL,
+    locked_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL
+);
+
 -- 索引优化
 CREATE INDEX IF NOT EXISTS idx_queue_status ON sys_distributed_queue(status);
 CREATE INDEX IF NOT EXISTS idx_queue_name_status ON sys_distributed_queue(queue_name, status);
 CREATE INDEX IF NOT EXISTS idx_queue_updated_at ON sys_distributed_queue(updated_at);
 CREATE INDEX IF NOT EXISTS idx_result_created_at ON sys_queue_result(created_at);
+CREATE INDEX IF NOT EXISTS idx_lock_expires_at ON sys_distributed_lock(expires_at);
 
 -- 添加注释
 COMMENT ON TABLE sys_distributed_queue IS '分布式队列表';
@@ -44,3 +53,9 @@ COMMENT ON COLUMN sys_queue_result.success IS '是否成功';
 COMMENT ON COLUMN sys_queue_result.result_data IS '结果数据';
 COMMENT ON COLUMN sys_queue_result.error_message IS '错误信息';
 COMMENT ON COLUMN sys_queue_result.created_at IS '创建时间';
+
+COMMENT ON TABLE sys_distributed_lock IS '分布式锁表';
+COMMENT ON COLUMN sys_distributed_lock.lock_name IS '锁名称';
+COMMENT ON COLUMN sys_distributed_lock.locked_by IS '锁定者标识';
+COMMENT ON COLUMN sys_distributed_lock.locked_at IS '锁定时间';
+COMMENT ON COLUMN sys_distributed_lock.expires_at IS '锁过期时间';
