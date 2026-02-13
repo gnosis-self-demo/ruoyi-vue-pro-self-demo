@@ -117,11 +117,7 @@
         </dependency>
 
         <!-- LiteFlow SQL规则支持 -->
-        <dependency>
-            <groupId>com.yomahub</groupId>
-            <artifactId>liteflow-rule-sql</artifactId>
-            <version>${liteflow.version}</version>
-        </dependency>
+        <!-- Removed liteflow-rule-sql to prevent DB rule overrides during startup -->
 
     </dependencies>
 

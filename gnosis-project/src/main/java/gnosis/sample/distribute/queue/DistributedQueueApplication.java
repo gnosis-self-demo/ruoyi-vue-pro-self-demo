@@ -3,6 +3,7 @@ package gnosis.sample.distribute.queue;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -11,7 +12,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling
-@MapperScan("gnosis.sample.distribute.queue.mapper")
+@ComponentScan(basePackages = {"gnosis.sample"})
+@MapperScan("gnosis.sample")
 public class DistributedQueueApplication {
 
     public static void main(String[] args) {

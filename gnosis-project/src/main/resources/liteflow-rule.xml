@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <flow>
-    <chain name="testChain">
-        <then>testComponent</then>
-    </chain>
+    <chain name="testChain">THEN(testComponent);</chain>
 </flow>

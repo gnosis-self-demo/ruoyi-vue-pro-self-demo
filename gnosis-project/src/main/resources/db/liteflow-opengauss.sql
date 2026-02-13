@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS liteflow_sys_method_intercept (
     target_class VARCHAR(200) NOT NULL,
     target_method VARCHAR(200) NOT NULL,
     chain_name VARCHAR(100) NOT NULL,
+    method_signature VARCHAR(200),
     enabled BOOLEAN DEFAULT true,
     description VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -68,6 +69,9 @@ COMMENT ON COLUMN liteflow_sys_method_intercept.enabled IS '是否启用';
 COMMENT ON COLUMN liteflow_sys_method_intercept.description IS '描述';
 COMMENT ON COLUMN liteflow_sys_method_intercept.created_at IS '创建时间';
 COMMENT ON COLUMN liteflow_sys_method_intercept.updated_at IS '更新时间';
+
+-- SKIP: Ensure method_signature column exists  
+-- The column is already defined in the table creation schema above
 
 -- LiteFlow规则版本历史表
 CREATE TABLE IF NOT EXISTS liteflow_sys_rule_history (
