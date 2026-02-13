@@ -5,14 +5,14 @@ import com.yomahub.liteflow.slot.DefaultContext;
 import org.springframework.stereotype.Component;
 
 /**
- * 示例组件
+ * 测试组件
  */
-@Component("sampleComponent")
-public class SampleComponent extends NodeComponent {
+@Component("testComponent")
+public class TestComponent extends NodeComponent {
 
     @Override
     public void process() throws Exception {
-        System.out.println("Executing SampleComponent");
+        System.out.println("Executing TestComponent");
         DefaultContext context = this.getSlot().getFirstContextBean();
         
         // 获取上下文中的参数
@@ -27,6 +27,6 @@ public class SampleComponent extends NodeComponent {
         }
         
         // 设置返回结果到上下文
-        context.setData("result", "Result from SampleComponent");
+        context.setData("result", "Modified result from LiteFlow");
     }
 }

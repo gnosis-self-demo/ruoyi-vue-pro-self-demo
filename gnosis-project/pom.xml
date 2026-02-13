@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>gnosis-project</name>
-    <description>基于openGauss的分布式队列系统</description>
+    <description>基于openGauss的分布式队列与LiteFlow动态切面系统</description>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -21,6 +21,7 @@
         <liteflow.version>2.11.3</liteflow.version>
         <hutool.version>5.8.18</hutool.version>
         <mybatis.plus.version>3.5.3.1</mybatis.plus.version>
+        <h2.version>2.2.224</h2.version>
     </properties>
 
     <parent>
@@ -98,6 +99,14 @@
             <version>${hutool.version}</version>
         </dependency>
 
+        <!-- H2数据库，用于单元测试 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- LiteFlow 核心依赖 -->
         <dependency>
             <groupId>com.yomahub</groupId>
@@ -111,7 +120,6 @@
             <artifactId>liteflow-rule-sql</artifactId>
             <version>${liteflow.version}</version>
         </dependency>
-
 
     </dependencies>
 

@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 方法拦截配置Manager
@@ -19,6 +21,11 @@ public class MethodInterceptConfigManager {
     
     @Resource
     private MethodInterceptConfigMapper methodInterceptConfigMapper;
+    
+    // 缓存：cacheKey -> config
+    private final Map<String, MethodInterceptConfig> cache = new ConcurrentHashMap<>();
+    // 缓存：className#methodName -> config（用于方法名匹配）
+    private final Map<String, MethodInterceptConfig> methodNameCache = new ConcurrentHashMap<>();
     
     /**
      * 获取所有启用的拦截配置
@@ -59,7 +66,7 @@ public class MethodInterceptConfigManager {
      * 保存配置
      */
     @Transactional
-    public void saveConfig(MethodInterceptConfig config) {
+    public MethodInterceptConfig saveConfig(MethodInterceptConfig config) {
         LocalDateTime now = LocalDateTime.now();
         if (config.getId() == null) {
             config.setCreatedAt(now);
@@ -72,6 +79,8 @@ public class MethodInterceptConfigManager {
             config.setUpdatedAt(now);
             methodInterceptConfigMapper.updateById(config);
         }
+        refreshCache();
+        return config;
     }
     
     /**
@@ -80,6 +89,7 @@ public class MethodInterceptConfigManager {
     @Transactional
     public void deleteConfig(Long id) {
         methodInterceptConfigMapper.deleteById(id);
+        refreshCache();
     }
     
     /**
@@ -92,6 +102,76 @@ public class MethodInterceptConfigManager {
                     .set(MethodInterceptConfig::getEnabled, enabled)
                     .set(MethodInterceptConfig::getUpdatedAt, LocalDateTime.now());
         methodInterceptConfigMapper.update(null, updateWrapper);
+        refreshCache();
+    }
+    
+    /**
+     * 根据缓存键获取配置
+     */
+    public MethodInterceptConfig getConfigByCacheKey(String cacheKey) {
+        if (cache.isEmpty()) {
+            refreshCache();
+        }
+        return cache.get(cacheKey);
+    }
+    
+    /**
+     * 根据方法名获取配置
+     */
+    public MethodInterceptConfig getConfigByMethodName(String className, String methodName) {
+        if (methodNameCache.isEmpty()) {
+            refreshCache();
+        }
+        return methodNameCache.get(className + "#" + methodName);
+    }
+    
+    /**
+     * 获取所有配置（包括禁用的）
+     */
+    public List<MethodInterceptConfig> getAllConfigs() {
+        LambdaQueryWrapper<MethodInterceptConfig> queryWrapper = new LambdaQueryWrapper<>();
+        return methodInterceptConfigMapper.selectList(queryWrapper);
+    }
+    
+    /**
+     * 刷新缓存
+     */
+    public void refreshCache() {
+        cache.clear();
+        methodNameCache.clear();
+        
+        List<MethodInterceptConfig> allConfigs = getAllConfigs();
+        for (MethodInterceptConfig config : allConfigs) {
+            if (config.getEnabled()) {
+                // 将targetMethod作为cacheKey存储
+                cache.put(config.getTargetMethod(), config);
+                
+                // 解析className#methodName格式（如果targetMethod包含括号，则提取方法名）
+                String targetMethod = config.getTargetMethod();
+                String methodName = targetMethod;
+                if (targetMethod.contains("(")) {
+                    methodName = targetMethod.substring(0, targetMethod.indexOf("("));
+                }
+                methodNameCache.put(config.getTargetClass() + "#" + methodName, config);
+            }
+        }
+    }
+    
+    /**
+     * 根据ID获取配置
+     */
+    public MethodInterceptConfig getConfigById(Long id) {
+        return methodInterceptConfigMapper.selectById(id);
+    }
+    
+    /**
+     * 更新配置
+     */
+    public MethodInterceptConfig updateConfig(MethodInterceptConfig config) {
+        config.setUpdatedAt(LocalDateTime.now());
+        methodInterceptConfigMapper.updateById(config);
+        refreshCache();
+        return config;
     }
     
     /**

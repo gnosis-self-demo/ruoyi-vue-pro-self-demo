@@ -20,44 +20,29 @@ public class MethodInterceptConfigService {
     @Autowired
     private LiteFlowDynamicAspect liteFlowDynamicAspect;
     
-    /**
-     * 获取所有启用的拦截配置
-     */
-    public List<MethodInterceptConfig> getAllEnabledConfigs() {
-        return methodInterceptConfigManager.getAllEnabledConfigs();
+    public MethodInterceptConfig createConfig(MethodInterceptConfig config) {
+        MethodInterceptConfig created = methodInterceptConfigManager.saveConfig(config);
+        return created;
     }
     
-    /**
-     * 保存或更新配置
-     */
-    public void saveConfig(MethodInterceptConfig config) {
-        methodInterceptConfigManager.saveConfig(config);
-        // 刷新切面缓存
-        liteFlowDynamicAspect.refreshConfigCache();
+    public MethodInterceptConfig getConfigById(Long id) {
+        return methodInterceptConfigManager.getConfigById(id);
     }
     
-    /**
-     * 删除配置
-     */
+    public MethodInterceptConfig updateConfig(MethodInterceptConfig config) {
+        MethodInterceptConfig updated = methodInterceptConfigManager.updateConfig(config);
+        return updated;
+    }
+    
     public void deleteConfig(Long id) {
         methodInterceptConfigManager.deleteConfig(id);
-        // 刷新切面缓存
-        liteFlowDynamicAspect.refreshConfigCache();
     }
     
-    /**
-     * 启用/禁用配置
-     */
-    public void toggleConfigStatus(Long id, Boolean enabled) {
-        methodInterceptConfigManager.toggleConfigStatus(id, enabled);
-        // 刷新切面缓存
-        liteFlowDynamicAspect.refreshConfigCache();
+    public List<MethodInterceptConfig> getAllConfigs() {
+        return methodInterceptConfigManager.getAllConfigs();
     }
     
-    /**
-     * 刷新缓存
-     */
     public void refreshCache() {
-        liteFlowDynamicAspect.refreshConfigCache();
+        methodInterceptConfigManager.refreshCache();
     }
 }
