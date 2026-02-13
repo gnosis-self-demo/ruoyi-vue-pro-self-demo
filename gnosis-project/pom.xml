@@ -100,12 +100,14 @@
         </dependency>
 
         <!-- H2数据库，用于单元测试 -->
+        <!--
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>${h2.version}</version>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
+        -->
 
         <!-- LiteFlow 核心依赖 -->
         <dependency>

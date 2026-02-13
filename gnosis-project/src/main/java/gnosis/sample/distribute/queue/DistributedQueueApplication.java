@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling
-@MapperScan("gnosis.sample.**.mapper")
+@MapperScan("gnosis.sample.distribute.queue.mapper")
 public class DistributedQueueApplication {
 
     public static void main(String[] args) {

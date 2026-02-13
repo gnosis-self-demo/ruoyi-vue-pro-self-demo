@@ -79,4 +79,4 @@ CREATE TABLE IF NOT EXISTS liteflow_sys_rule_history (
 
 -- 插入测试规则
 INSERT INTO liteflow_sys_rule (chain_name, rule_content, rule_type, enabled, description) 
-VALUES ('testChain', 'return "Hello from LiteFlow SQL Rule";', 'script', true, 'Test rule for startup verification');
+VALUES ('testChain', 'THEN(testComponent);', 'xml', true, 'Test rule for startup verification');

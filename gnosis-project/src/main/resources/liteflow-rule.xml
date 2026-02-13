@@ -1,17 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <flow>
-    <!-- 测试链 -->
     <chain name="testChain">
         <then>testComponent</then>
-    </chain>
-    
-    <!-- 示例链 -->
-    <chain name="sampleChain">
-        <then>sampleComponent</then>
-    </chain>
-    
-    <!-- 替换方法B的链 -->
-    <chain name="replaceMethodBChain">
-        <then>replaceMethodBComponent</then>
     </chain>
 </flow>
