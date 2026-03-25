@@ -119,6 +119,23 @@
         <!-- LiteFlow SQL规则支持 -->
         <!-- Removed liteflow-rule-sql to prevent DB rule overrides during startup -->
 
+        <!-- JSONPath (参数提取) -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
+        <!-- Jackson (JSON 处理) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

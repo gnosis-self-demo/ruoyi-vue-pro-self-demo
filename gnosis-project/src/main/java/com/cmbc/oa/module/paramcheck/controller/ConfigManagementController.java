@@ -1,0 +1,112 @@
+package com.cmbc.oa.module.paramcheck.controller;
+
+import com.cmbc.oa.module.paramcheck.domain.ValidationFlow;
+import com.cmbc.oa.module.paramcheck.repository.FlowConfigRepository;
+import com.cmbc.oa.module.paramcheck.service.FlowRefreshService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * 配置管理API
+ * 提供流程配置的CRUD操作和版本控制
+ */
+@RestController
+@RequestMapping("/api/paramcheck/config")
+public class ConfigManagementController {
+
+    private static final Logger log = LoggerFactory.getLogger(ConfigManagementController.class);
+
+    @Autowired
+    private FlowConfigRepository flowConfigRepository;
+
+    @Autowired
+    private FlowRefreshService flowRefreshService;
+
+    /**
+     * 获取所有激活的流程配置
+     */
+    @GetMapping("/flows")
+    public ResponseEntity<List<ValidationFlow>> getActiveFlows() {
+        List<ValidationFlow> flows = flowConfigRepository.findAllActive();
+        return ResponseEntity.ok(flows);
+    }
+
+    /**
+     * 获取单个流程配置详情
+     */
+    @GetMapping("/flows/{flowId}")
+    public ResponseEntity<ValidationFlow> getFlow(@PathVariable String flowId) {
+        Optional<ValidationFlow> flow = flowConfigRepository.findById(flowId);
+        return flow.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * 手动刷新指定流程
+     * 用于在配置变更后立即生效
+     */
+    @PostMapping("/flows/{flowId}/refresh")
+    public ResponseEntity<Void> refreshFlow(@PathVariable String flowId) {
+        try {
+            flowRefreshService.refreshFlow(flowId);
+            log.info("[ConfigManagement] refreshed flow: {}", flowId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to refresh flow: {}", flowId, e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * 全量刷新所有流程
+     */
+    @PostMapping("/flows/refresh-all")
+    public ResponseEntity<Void> refreshAllFlows() {
+        try {
+            flowRefreshService.refreshAllFlows();
+            log.info("[ConfigManagement] refreshed all flows");
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to refresh all flows", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * 禁用流程
+     */
+    @PostMapping("/flows/{flowId}/deactivate")
+    public ResponseEntity<Void> deactivateFlow(@PathVariable String flowId) {
+        try {
+            flowConfigRepository.deactivate(flowId);
+            log.info("[ConfigManagement] deactivated flow: {}", flowId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to deactivate flow: {}", flowId, e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * 保存流程配置（创建或更新）
+     */
+    @PostMapping("/flows")
+    public ResponseEntity<Void> saveFlow(@RequestBody ValidationFlow flow) {
+        try {
+            // 保存配置
+            flowConfigRepository.save(flow);
+            // 保存后刷新流程
+            flowRefreshService.refreshFlow(flow.getFlowId());
+            log.info("[ConfigManagement] saved flow: {}", flow.getFlowId());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to save flow: {}", flow.getFlowId(), e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+}

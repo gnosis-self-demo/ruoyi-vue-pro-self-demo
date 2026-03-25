@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling
-@ComponentScan(basePackages = {"gnosis.sample"})
+@ComponentScan(basePackages = {"gnosis.sample", "com.cmbc.oa.module.paramcheck"})
 @MapperScan("gnosis.sample")
 public class DistributedQueueApplication {
 
