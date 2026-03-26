@@ -600,6 +600,244 @@ PARSE_PARAM -> CUSTOM_COMPONENT -> BASIC_RULE
 }
 ```
 
+### 9.3 商品上架校验
+
+**流程**：
+1. 解析参数
+2. 验证商品信息
+3. 检查分类是否存在
+4. 检查品牌是否存在
+
+**配置**：
+
+```json
+{
+  "flowId": "product_上架",
+  "flowName": "商品上架校验",
+  "modeType": "HYBRID",
+  "elExpression": "PARSE_PARAM -> BASIC_RULE -> DB_QUERY",
+  "handlerCode": "productHandler",
+  "componentConfig": {
+    "parse_param": {
+      "json_path": "$.product"
+    },
+    "check_format": {
+      "rules": [
+        {
+          "field": "productId",
+          "pattern": "^P\\d+$",
+          "msg": "商品ID格式错误"
+        },
+        {
+          "field": "price",
+          "pattern": "^\\d+(\\.\\d{1,2})?$",
+          "msg": "价格格式错误"
+        },
+        {
+          "field": "stock",
+          "pattern": "^\\d+$",
+          "msg": "库存必须为数字"
+        }
+      ],
+      "msg": "商品信息格式错误"
+    },
+    "check_db_category": {
+      "sql": "SELECT COUNT(*) FROM categories WHERE category_id = ?",
+      "param_path": "$.categoryId",
+      "msg": "分类不存在"
+    },
+    "check_db_brand": {
+      "sql": "SELECT COUNT(*) FROM brands WHERE brand_id = ?",
+      "param_path": "$.brandId",
+      "msg": "品牌不存在"
+    }
+  }
+}
+```
+
+### 9.4 支付交易校验
+
+**流程**：
+1. 解析参数
+2. 验证交易信息
+3. 检查支付渠道
+4. 检查交易限额
+
+**配置**：
+
+```json
+{
+  "flowId": "payment_transaction",
+  "flowName": "支付交易校验",
+  "modeType": "HYBRID",
+  "elExpression": "PARSE_PARAM -> BASIC_RULE",
+  "handlerCode": "paymentHandler",
+  "componentConfig": {
+    "parse_param": {
+      "json_path": "$.transaction"
+    },
+    "check_format": {
+      "rules": [
+        {
+          "field": "transactionId",
+          "pattern": "^TX\\d+$",
+          "msg": "交易ID格式错误"
+        },
+        {
+          "field": "amount",
+          "pattern": "^\\d+(\\.\\d{1,2})?$",
+          "msg": "金额格式错误"
+        },
+        {
+          "field": "paymentChannel",
+          "pattern": "^(alipay|wechat|bank)$",
+          "msg": "支付渠道错误"
+        }
+      ],
+      "msg": "交易信息格式错误"
+    }
+  }
+}
+```
+
+### 9.5 用户登录校验
+
+**流程**：
+1. 解析参数
+2. 验证登录信息
+3. 检查用户是否存在
+4. 检查密码是否正确
+5. 检查账户状态
+
+**配置**：
+
+```json
+{
+  "flowId": "user_login",
+  "flowName": "用户登录校验",
+  "modeType": "HYBRID",
+  "elExpression": "PARSE_PARAM -> BASIC_RULE",
+  "handlerCode": "loginHandler",
+  "componentConfig": {
+    "parse_param": {
+      "json_path": "$.login"
+    },
+    "check_format": {
+      "rules": [
+        {
+          "field": "username",
+          "pattern": "^[a-zA-Z0-9_]{3,20}$",
+          "msg": "用户名格式错误"
+        },
+        {
+          "field": "password",
+          "pattern": ".{6,20}",
+          "msg": "密码长度错误"
+        }
+      ],
+      "msg": "登录信息格式错误"
+    }
+  }
+}
+```
+
+### 9.6 优惠券使用校验
+
+**流程**：
+1. 解析参数
+2. 验证优惠券信息
+3. 检查优惠券是否存在
+4. 检查优惠券是否过期
+5. 检查优惠券使用条件
+
+**配置**：
+
+```json
+{
+  "flowId": "coupon_usage",
+  "flowName": "优惠券使用校验",
+  "modeType": "HYBRID",
+  "elExpression": "PARSE_PARAM -> BASIC_RULE -> DB_QUERY",
+  "handlerCode": "couponHandler",
+  "componentConfig": {
+    "parse_param": {
+      "json_path": "$.coupon"
+    },
+    "check_format": {
+      "rules": [
+        {
+          "field": "couponCode",
+          "pattern": "^C\\d+$",
+          "msg": "优惠券码格式错误"
+        },
+        {
+          "field": "orderAmount",
+          "pattern": "^\\d+(\\.\\d{1,2})?$",
+          "msg": "订单金额格式错误"
+        }
+      ],
+      "msg": "优惠券信息格式错误"
+    },
+    "check_db_coupon": {
+      "sql": "SELECT COUNT(*) FROM coupons WHERE coupon_code = ? AND end_time > CURRENT_TIMESTAMP",
+      "param_path": "$.couponCode",
+      "msg": "优惠券不存在或已过期"
+    }
+  }
+}
+```
+
+### 9.7 物流发货校验
+
+**流程**：
+1. 解析参数
+2. 验证物流信息
+3. 检查订单是否存在
+4. 检查订单状态
+5. 检查物流地址
+
+**配置**：
+
+```json
+{
+  "flowId": "logistics_shipment",
+  "flowName": "物流发货校验",
+  "modeType": "HYBRID",
+  "elExpression": "PARSE_PARAM -> BASIC_RULE -> DB_QUERY",
+  "handlerCode": "logisticsHandler",
+  "componentConfig": {
+    "parse_param": {
+      "json_path": "$.logistics"
+    },
+    "check_format": {
+      "rules": [
+        {
+          "field": "orderId",
+          "pattern": "^\\d+$",
+          "msg": "订单ID格式错误"
+        },
+        {
+          "field": "trackingNumber",
+          "pattern": "^[A-Z0-9]{6,20}$",
+          "msg": "物流单号格式错误"
+        },
+        {
+          "field": "carrier",
+          "pattern": "^[a-zA-Z0-9\\s]{2,50}$",
+          "msg": "物流公司名称错误"
+        }
+      ],
+      "msg": "物流信息格式错误"
+    },
+    "check_db_order": {
+      "sql": "SELECT COUNT(*) FROM orders WHERE order_id = ? AND status = 'PAYED'",
+      "param_path": "$.orderId",
+      "msg": "订单不存在或状态错误"
+    }
+  }
+}
+```
+
 ## 10. 总结
 
 参数动态校验组件提供了一种灵活、可扩展的参数校验解决方案，支持三种校验模式，可满足不同场景的需求。通过配置管理 API，用户可以方便地管理和版本控制流程配置，实现动态调整校验规则，而无需修改代码。

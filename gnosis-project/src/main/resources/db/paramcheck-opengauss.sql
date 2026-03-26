@@ -12,8 +12,12 @@ CREATE TABLE IF NOT EXISTS gnosis_sample.sys_validation_flows (
     el_expression   TEXT,
     handler_code    VARCHAR(64),
     component_config JSONB,
+    business_type   VARCHAR(255),
     is_active       BOOLEAN DEFAULT TRUE,
     version         INT DEFAULT 1,
+    create_user_id  VARCHAR(128),
+    update_user_id  VARCHAR(128),
+    create_time     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_time    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_flow_handler UNIQUE (flow_id, handler_code)
 );
@@ -24,6 +28,11 @@ COMMENT ON COLUMN gnosis_sample.sys_validation_flows.mode_type IS '校验模式:
 COMMENT ON COLUMN gnosis_sample.sys_validation_flows.el_expression IS 'LiteFlow EL 表达式 (FLOW/HYBRID 必填)';
 COMMENT ON COLUMN gnosis_sample.sys_validation_flows.handler_code IS '自定义处理器编码 (HANDLER/HYBRID 必填)';
 COMMENT ON COLUMN gnosis_sample.sys_validation_flows.component_config IS '组件配置 (JSONB: JSONPath规则/SQL/正则等)';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.business_type IS '业务类型（多个，逗号分隔）';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.create_user_id IS '创建人ID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.update_user_id IS '更新人ID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.create_time IS '创建时间';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.updated_time IS '更新时间';
 
 -- 2. 校验日志表
 CREATE TABLE IF NOT EXISTS gnosis_sample.sys_validation_logs (
@@ -74,10 +83,11 @@ CREATE TABLE IF NOT EXISTS gnosis_sample.sys_users (
 -- ============================================================
 
 -- 场景1: HYBRID 混合模式 — 订单创建校验
-INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, mode_type, el_expression, handler_code, component_config)
+INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
 VALUES (
     'ORDER_CREATE_FLOW',
     '订单创建校验 (混合模式)',
+    'ORDER_CREATE',
     'HYBRID',
     'THEN(parse_param, check_format, check_db_user)',
     'OrderBusinessHandler',
@@ -96,25 +106,31 @@ VALUES (
             "param_path": "$.userId",
             "msg": "用户不存在或已被禁用"
         }
-    }'::jsonb
+    }'::jsonb,
+    'admin',
+    'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
 -- 场景2: HANDLER 纯接口模式 — 用户注册
-INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, mode_type, el_expression, handler_code, component_config)
+INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
 VALUES (
     'USER_REGISTER_FLOW',
     '用户注册 (纯接口模式)',
+    'USER_REGISTER',
     'HANDLER',
     NULL,
     'UserRegisterHandler',
-    NULL
+    NULL,
+    'admin',
+    'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
 -- 场景3: FLOW 纯编排模式 — 简单格式校验
-INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, mode_type, el_expression, handler_code, component_config)
+INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
 VALUES (
     'SIMPLE_CHECK_FLOW',
     '简单格式校验 (纯编排模式)',
+    'BASIC_DATA',
     'FLOW',
     'THEN(parse_param, check_format)',
     NULL,
@@ -126,7 +142,9 @@ VALUES (
                 {"path": "$.phone", "type": "PHONE", "msg": "手机号格式错误"}
             ]
         }
-    }'::jsonb
+    }'::jsonb,
+    'admin',
+    'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
 -- 初始化示例产品库存数据

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,17 +41,27 @@ public class FlowConfigRepository {
      */
     @Cacheable(value = "flowConfig", key = "#flowId")
     public Optional<ValidationFlow> findById(String flowId) {
-        String sql = "SELECT flow_id, flow_name, mode_type, el_expression, handler_code, " +
-                "component_config, is_active, version, updated_time " +
+        String sql = "SELECT flow_id, flow_name, business_type, mode_type, el_expression, handler_code, " +
+                "component_config, is_active, version, create_user_id, update_user_id, create_time, updated_time " +
                 "FROM gnosis_sample.sys_validation_flows WHERE flow_id = ?";
         List<ValidationFlow> list = jdbcTemplate.query(sql, new FlowRowMapper(), flowId);
         return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
 
     public List<ValidationFlow> findAllActive() {
-        String sql = "SELECT flow_id, flow_name, mode_type, el_expression, handler_code, " +
-                "component_config, is_active, version, updated_time " +
+        String sql = "SELECT flow_id, flow_name, business_type, mode_type, el_expression, handler_code, " +
+                "component_config, is_active, version, create_user_id, update_user_id, create_time, updated_time " +
                 "FROM gnosis_sample.sys_validation_flows WHERE is_active = TRUE";
+        return jdbcTemplate.query(sql, new FlowRowMapper());
+    }
+
+    /**
+     * 获取所有流程配置，包括禁用的
+     */
+    public List<ValidationFlow> findAll() {
+        String sql = "SELECT flow_id, flow_name, business_type, mode_type, el_expression, handler_code, " +
+                "component_config, is_active, version, create_user_id, update_user_id, create_time, updated_time " +
+                "FROM gnosis_sample.sys_validation_flows";
         return jdbcTemplate.query(sql, new FlowRowMapper());
     }
 
@@ -75,23 +86,19 @@ public class FlowConfigRepository {
     }
 
     /**
+     * 启用流程（清除缓存）
+     */
+    @CacheEvict(value = "flowConfig", key = "#flowId")
+    public void activate(String flowId) {
+        String sql = "UPDATE gnosis_sample.sys_validation_flows SET is_active = TRUE, updated_time = CURRENT_TIMESTAMP WHERE flow_id = ?";
+        jdbcTemplate.update(sql, flowId);
+    }
+
+    /**
      * 保存流程配置（创建或更新）
      */
     @CacheEvict(value = "flowConfig", key = "#flow.flowId")
     public void save(ValidationFlow flow) {
-        String sql = "INSERT INTO gnosis_sample.sys_validation_flows " +
-                "(flow_id, flow_name, mode_type, el_expression, handler_code, component_config, is_active, version, updated_time) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP) " +
-                "ON CONFLICT (flow_id) DO UPDATE SET " +
-                "flow_name = EXCLUDED.flow_name, " +
-                "mode_type = EXCLUDED.mode_type, " +
-                "el_expression = EXCLUDED.el_expression, " +
-                "handler_code = EXCLUDED.handler_code, " +
-                "component_config = EXCLUDED.component_config, " +
-                "is_active = EXCLUDED.is_active, " +
-                "version = sys_validation_flows.version + 1, " +
-                "updated_time = CURRENT_TIMESTAMP";
-
         String componentConfigJson = null;
         try {
             if (flow.getComponentConfig() != null) {
@@ -101,15 +108,54 @@ public class FlowConfigRepository {
             log.warn("[FlowConfigRepository] failed to serialize component_config", e);
         }
 
-        jdbcTemplate.update(sql, 
-                flow.getFlowId(),
-                flow.getFlowName(),
-                flow.getModeType(),
-                flow.getElExpression(),
-                flow.getHandlerCode(),
-                componentConfigJson,
-                flow.getIsActive(),
-                flow.getVersion());
+        // 先检查记录是否存在
+        String checkSql = "SELECT COUNT(*) FROM gnosis_sample.sys_validation_flows WHERE flow_id = ?";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, flow.getFlowId());
+        
+        if (count != null && count > 0) {
+            // 更新现有记录
+            String updateSql = "UPDATE gnosis_sample.sys_validation_flows SET " +
+                    "flow_name = ?, " +
+                    "business_type = ?, " +
+                    "mode_type = ?, " +
+                    "el_expression = ?, " +
+                    "handler_code = ?, " +
+                    "component_config = ?::jsonb, " +
+                    "is_active = ?, " +
+                    "version = version + 1, " +
+                    "update_user_id = ?, " +
+                    "updated_time = CURRENT_TIMESTAMP " +
+                    "WHERE flow_id = ?";
+            
+            jdbcTemplate.update(updateSql, 
+                    flow.getFlowName(),
+                    flow.getBusinessTypes(),
+                    flow.getModeType(),
+                    flow.getElExpression(),
+                    flow.getHandlerCode(),
+                    componentConfigJson,
+                    flow.getIsActive(),
+                    flow.getUpdateUserId() != null ? flow.getUpdateUserId() : "admin",
+                    flow.getFlowId());
+        } else {
+            // 插入新记录
+            String insertSql = "INSERT INTO gnosis_sample.sys_validation_flows " +
+                    "(flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, is_active, version, create_user_id, update_user_id, create_time, updated_time) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+            
+            jdbcTemplate.update(insertSql, 
+                    flow.getFlowId(),
+                    flow.getFlowName(),
+                    flow.getBusinessTypes(),
+                    flow.getModeType(),
+                    flow.getElExpression(),
+                    flow.getHandlerCode(),
+                    componentConfigJson,
+                    flow.getIsActive(),
+                    flow.getVersion(),
+                    flow.getCreateUserId() != null ? flow.getCreateUserId() : "admin",
+                    flow.getUpdateUserId() != null ? flow.getUpdateUserId() : "admin");
+        }
     }
 
     private class FlowRowMapper implements RowMapper<ValidationFlow> {
@@ -119,11 +165,16 @@ public class FlowConfigRepository {
             ValidationFlow flow = new ValidationFlow();
             flow.setFlowId(rs.getString("flow_id"));
             flow.setFlowName(rs.getString("flow_name"));
+            flow.setBusinessTypes(rs.getString("business_type"));
             flow.setModeType(rs.getString("mode_type"));
             flow.setElExpression(rs.getString("el_expression"));
             flow.setHandlerCode(rs.getString("handler_code"));
             flow.setIsActive(rs.getBoolean("is_active"));
             flow.setVersion(rs.getInt("version"));
+            flow.setCreateUserId(rs.getString("create_user_id"));
+            flow.setUpdateUserId(rs.getString("update_user_id"));
+            flow.setCreateTime(rs.getObject("create_time", OffsetDateTime.class));
+            flow.setUpdatedTime(rs.getObject("updated_time", OffsetDateTime.class));
 
             String configJson = rs.getString("component_config");
             if (configJson != null && !configJson.isEmpty()) {

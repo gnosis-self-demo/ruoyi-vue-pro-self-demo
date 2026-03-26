@@ -38,6 +38,15 @@ public class ConfigManagementController {
     }
 
     /**
+     * 获取所有流程配置，包括禁用的
+     */
+    @GetMapping("/flows/all")
+    public ResponseEntity<List<ValidationFlow>> getAllFlows() {
+        List<ValidationFlow> flows = flowConfigRepository.findAll();
+        return ResponseEntity.ok(flows);
+    }
+
+    /**
      * 获取单个流程配置详情
      */
     @GetMapping("/flows/{flowId}")
@@ -88,6 +97,21 @@ public class ConfigManagementController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to deactivate flow: {}", flowId, e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * 启用流程
+     */
+    @PostMapping("/flows/{flowId}/activate")
+    public ResponseEntity<Void> activateFlow(@PathVariable String flowId) {
+        try {
+            flowConfigRepository.activate(flowId);
+            log.info("[ConfigManagement] activated flow: {}", flowId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to activate flow: {}", flowId, e);
             return ResponseEntity.badRequest().build();
         }
     }

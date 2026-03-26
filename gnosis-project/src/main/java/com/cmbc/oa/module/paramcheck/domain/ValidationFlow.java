@@ -31,11 +31,23 @@ public class ValidationFlow implements Serializable {
     /** 组件配置 (JSONPath/正则/SQL 等) */
     private Map<String, Object> componentConfig;
 
+    /** 业务类型（多个，逗号分隔） */
+    private String businessTypes;
+
     /** 是否激活 */
     private Boolean isActive;
 
     /** 版本号 */
     private Integer version;
+
+    /** 创建人ID */
+    private String createUserId;
+
+    /** 更新人ID */
+    private String updateUserId;
+
+    /** 创建时间 */
+    private OffsetDateTime createTime;
 
     /** 更新时间 */
     private OffsetDateTime updatedTime;

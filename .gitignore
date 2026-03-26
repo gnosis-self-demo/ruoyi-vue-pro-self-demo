@@ -52,3 +52,7 @@ application-my.yaml
 
 /yudao-ui-app/unpackage/
 .vscode/
+/gnosis-project/frontend/node_modules/
+null
+nul
+/logs/
