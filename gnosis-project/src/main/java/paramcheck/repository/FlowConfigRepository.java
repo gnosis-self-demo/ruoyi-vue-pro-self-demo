@@ -1,6 +1,7 @@
 package paramcheck.repository;
 
 import paramcheck.domain.ValidationFlow;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -308,8 +309,10 @@ public class FlowConfigRepository {
             String configJson = rs.getString("component_config");
             if (configJson != null && !configJson.isEmpty()) {
                 try {
+                    // 修复JSON格式：将".01"这样的格式转换为"0.01"
+                    String fixedConfigJson = configJson.replaceAll("\\s*:\\s*\\.", ": 0.");
                     Map<String, Object> config = objectMapper.readValue(
-                            configJson, new TypeReference<Map<String, Object>>() {});
+                            fixedConfigJson, new TypeReference<Map<String, Object>>() {});
                     flow.setComponentConfig(config);
                 } catch (Exception e) {
                     log.warn("[FlowConfigRepository] failed to parse component_config for flow={}",
