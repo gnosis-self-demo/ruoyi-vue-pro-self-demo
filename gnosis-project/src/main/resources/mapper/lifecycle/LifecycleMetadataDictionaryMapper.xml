@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lifecycle.repository.LifecycleMetadataDictionaryMapper">
+
+    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleMetadataDictionary">
+        <id column="id" property="id"/>
+        <result column="business_type_id" property="businessTypeId"/>
+        <result column="field_name" property="fieldName"/>
+        <result column="field_label" property="fieldLabel"/>
+        <result column="field_type" property="fieldType"/>
+        <result column="field_length" property="fieldLength"/>
+        <result column="is_required" property="isRequired"/>
+        <result column="is_searchable" property="isSearchable"/>
+        <result column="is_display" property="isDisplay"/>
+        <result column="display_order" property="displayOrder"/>
+        <result column="enum_values" property="enumValues"/>
+        <result column="validation_rule" property="validationRule"/>
+        <result column="default_value" property="defaultValue"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, business_type_id, field_name, field_label, field_type, field_length, is_required,
+        is_searchable, is_display, display_order, enum_values, validation_rule, default_value,
+        remark, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_metadata_dictionary
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByBusinessTypeId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_metadata_dictionary
+        WHERE business_type_id = #{businessTypeId}
+        ORDER BY display_order ASC, create_time DESC
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_metadata_dictionary
+        <where>
+            <if test="businessTypeId != null and businessTypeId != ''">
+                AND business_type_id = #{businessTypeId}
+            </if>
+            <if test="fieldName != null and fieldName != ''">
+                AND field_name = #{fieldName}
+            </if>
+            <if test="fieldType != null and fieldType != ''">
+                AND field_type = #{fieldType}
+            </if>
+            <if test="isRequired != null">
+                AND is_required = #{isRequired}
+            </if>
+            <if test="isSearchable != null">
+                AND is_searchable = #{isSearchable}
+            </if>
+            <if test="isDisplay != null">
+                AND is_display = #{isDisplay}
+            </if>
+        </where>
+        ORDER BY display_order ASC, create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="lifecycle.domain.LifecycleMetadataDictionary">
+        INSERT INTO lifecycle_metadata_dictionary (
+            id, business_type_id, field_name, field_label, field_type, field_length, is_required,
+            is_searchable, is_display, display_order, enum_values, validation_rule, default_value,
+            remark, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{businessTypeId}, #{fieldName}, #{fieldLabel}, #{fieldType}, #{fieldLength},
+            #{isRequired}, #{isSearchable}, #{isDisplay}, #{displayOrder}, #{enumValues},
+            #{validationRule}, #{defaultValue}, #{remark}, #{createUserId}, #{updateUserId},
+            #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="lifecycle.domain.LifecycleMetadataDictionary">
+        UPDATE lifecycle_metadata_dictionary
+        <set>
+            <if test="businessTypeId != null">business_type_id = #{businessTypeId},</if>
+            <if test="fieldName != null">field_name = #{fieldName},</if>
+            <if test="fieldLabel != null">field_label = #{fieldLabel},</if>
+            <if test="fieldType != null">field_type = #{fieldType},</if>
+            <if test="fieldLength != null">field_length = #{fieldLength},</if>
+            <if test="isRequired != null">is_required = #{isRequired},</if>
+            <if test="isSearchable != null">is_searchable = #{isSearchable},</if>
+            <if test="isDisplay != null">is_display = #{isDisplay},</if>
+            <if test="displayOrder != null">display_order = #{displayOrder},</if>
+            <if test="enumValues != null">enum_values = #{enumValues},</if>
+            <if test="validationRule != null">validation_rule = #{validationRule},</if>
+            <if test="defaultValue != null">default_value = #{defaultValue},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM lifecycle_metadata_dictionary WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM lifecycle_metadata_dictionary WHERE id IN
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

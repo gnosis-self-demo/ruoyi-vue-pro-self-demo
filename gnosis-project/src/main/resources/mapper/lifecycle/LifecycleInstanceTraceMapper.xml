@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lifecycle.repository.LifecycleInstanceTraceMapper">
+
+    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleInstanceTrace">
+        <id column="id" property="id"/>
+        <result column="business_type_id" property="businessTypeId"/>
+        <result column="business_instance_id" property="businessInstanceId"/>
+        <result column="trace_type" property="traceType"/>
+        <result column="trace_data" property="traceData"/>
+        <result column="source_state_id" property="sourceStateId"/>
+        <result column="source_state_code" property="sourceStateCode"/>
+        <result column="target_state_id" property="targetStateId"/>
+        <result column="target_state_code" property="targetStateCode"/>
+        <result column="event_id" property="eventId"/>
+        <result column="event_type" property="eventType"/>
+        <result column="action_type" property="actionType"/>
+        <result column="action_result" property="actionResult"/>
+        <result column="trace_status" property="traceStatus"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="execution_time_ms" property="executionTimeMs"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, business_type_id, business_instance_id, trace_type, trace_data, source_state_id,
+        source_state_code, target_state_id, target_state_code, event_id, event_type, action_type,
+        action_result, trace_status, error_message, execution_time_ms, remark, create_user_id,
+        update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_instance_trace
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByBusinessInstanceId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_instance_trace
+        WHERE business_instance_id = #{businessInstanceId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_instance_trace
+        <where>
+            <if test="businessTypeId != null and businessTypeId != ''">
+                AND business_type_id = #{businessTypeId}
+            </if>
+            <if test="businessInstanceId != null and businessInstanceId != ''">
+                AND business_instance_id = #{businessInstanceId}
+            </if>
+            <if test="traceType != null and traceType != ''">
+                AND trace_type = #{traceType}
+            </if>
+            <if test="sourceStateId != null and sourceStateId != ''">
+                AND source_state_id = #{sourceStateId}
+            </if>
+            <if test="targetStateId != null and targetStateId != ''">
+                AND target_state_id = #{targetStateId}
+            </if>
+            <if test="eventId != null and eventId != ''">
+                AND event_id = #{eventId}
+            </if>
+            <if test="traceStatus != null and traceStatus != ''">
+                AND trace_status = #{traceStatus}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="lifecycle.domain.LifecycleInstanceTrace">
+        INSERT INTO lifecycle_instance_trace (
+            id, business_type_id, business_instance_id, trace_type, trace_data, source_state_id,
+            source_state_code, target_state_id, target_state_code, event_id, event_type, action_type,
+            action_result, trace_status, error_message, execution_time_ms, remark, create_user_id,
+            update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{businessTypeId}, #{businessInstanceId}, #{traceType}, #{traceData}, #{sourceStateId},
+            #{sourceStateCode}, #{targetStateId}, #{targetStateCode}, #{eventId}, #{eventType}, #{actionType},
+            #{actionResult}, #{traceStatus}, #{errorMessage}, #{executionTimeMs}, #{remark}, #{createUserId},
+            #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="lifecycle.domain.LifecycleInstanceTrace">
+        UPDATE lifecycle_instance_trace
+        <set>
+            <if test="businessTypeId != null">business_type_id = #{businessTypeId},</if>
+            <if test="businessInstanceId != null">business_instance_id = #{businessInstanceId},</if>
+            <if test="traceType != null">trace_type = #{traceType},</if>
+            <if test="traceData != null">trace_data = #{traceData},</if>
+            <if test="sourceStateId != null">source_state_id = #{sourceStateId},</if>
+            <if test="sourceStateCode != null">source_state_code = #{sourceStateCode},</if>
+            <if test="targetStateId != null">target_state_id = #{targetStateId},</if>
+            <if test="targetStateCode != null">target_state_code = #{targetStateCode},</if>
+            <if test="eventId != null">event_id = #{eventId},</if>
+            <if test="eventType != null">event_type = #{eventType},</if>
+            <if test="actionType != null">action_type = #{actionType},</if>
+            <if test="actionResult != null">action_result = #{actionResult},</if>
+            <if test="traceStatus != null">trace_status = #{traceStatus},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            <if test="executionTimeMs != null">execution_time_ms = #{executionTimeMs},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM lifecycle_instance_trace WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM lifecycle_instance_trace WHERE id IN
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

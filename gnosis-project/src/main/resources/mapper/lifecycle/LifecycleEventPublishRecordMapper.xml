@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lifecycle.repository.LifecycleEventPublishRecordMapper">
+
+    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleEventPublishRecord">
+        <id column="id" property="id"/>
+        <result column="event_id" property="eventId"/>
+        <result column="business_type_id" property="businessTypeId"/>
+        <result column="business_instance_id" property="businessInstanceId"/>
+        <result column="publish_type" property="publishType"/>
+        <result column="target_type" property="targetType"/>
+        <result column="target_config" property="targetConfig"/>
+        <result column="payload" property="payload"/>
+        <result column="publish_status" property="publishStatus"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="response_data" property="responseData"/>
+        <result column="publish_time" property="publishTime"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, event_id, business_type_id, business_instance_id, publish_type, target_type,
+        target_config, payload, publish_status, retry_count, error_message, response_data,
+        publish_time, remark, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_event_publish_record
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByEventId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_event_publish_record
+        WHERE event_id = #{eventId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lifecycle_event_publish_record
+        <where>
+            <if test="eventId != null and eventId != ''">
+                AND event_id = #{eventId}
+            </if>
+            <if test="businessTypeId != null and businessTypeId != ''">
+                AND business_type_id = #{businessTypeId}
+            </if>
+            <if test="businessInstanceId != null and businessInstanceId != ''">
+                AND business_instance_id = #{businessInstanceId}
+            </if>
+            <if test="publishType != null and publishType != ''">
+                AND publish_type = #{publishType}
+            </if>
+            <if test="targetType != null and targetType != ''">
+                AND target_type = #{targetType}
+            </if>
+            <if test="publishStatus != null and publishStatus != ''">
+                AND publish_status = #{publishStatus}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="lifecycle.domain.LifecycleEventPublishRecord">
+        INSERT INTO lifecycle_event_publish_record (
+            id, event_id, business_type_id, business_instance_id, publish_type, target_type,
+            target_config, payload, publish_status, retry_count, error_message, response_data,
+            publish_time, remark, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{eventId}, #{businessTypeId}, #{businessInstanceId}, #{publishType}, #{targetType},
+            #{targetConfig}, #{payload}, #{publishStatus}, #{retryCount}, #{errorMessage}, #{responseData},
+            #{publishTime}, #{remark}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="lifecycle.domain.LifecycleEventPublishRecord">
+        UPDATE lifecycle_event_publish_record
+        <set>
+            <if test="eventId != null">event_id = #{eventId},</if>
+            <if test="businessTypeId != null">business_type_id = #{businessTypeId},</if>
+            <if test="businessInstanceId != null">business_instance_id = #{businessInstanceId},</if>
+            <if test="publishType != null">publish_type = #{publishType},</if>
+            <if test="targetType != null">target_type = #{targetType},</if>
+            <if test="targetConfig != null">target_config = #{targetConfig},</if>
+            <if test="payload != null">payload = #{payload},</if>
+            <if test="publishStatus != null">publish_status = #{publishStatus},</if>
+            <if test="retryCount != null">retry_count = #{retryCount},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            <if test="responseData != null">response_data = #{responseData},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM lifecycle_event_publish_record WHERE id = #{id}
+    </delete>
+
+</mapper>
