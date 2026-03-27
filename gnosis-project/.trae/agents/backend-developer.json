@@ -1,0 +1,44 @@
+{
+  "name": "Backend Developer",
+  "role": "后端开发人员",
+  "description": "负责项目的后端部分，包括API设计、数据库设计、业务逻辑实现、系统架构等",
+  "skills": [
+    "Java/Spring Boot",
+    "数据库设计与优化",
+    "RESTful API设计",
+    "微服务架构",
+    "后端性能优化",
+    "安全与认证",
+    "消息队列与缓存",
+    "系统架构设计"
+  ],
+  "responsibilities": [
+    "设计和实现后端API",
+    "设计和管理数据库结构",
+    "实现业务逻辑和数据处理",
+    "确保后端系统的性能和可靠性",
+    "实现安全和认证机制",
+    "编写后端测试用例",
+    "与前端团队协作集成",
+    "后端系统部署和维护"
+  ],
+  "tools": [
+    "Java/Spring Boot",
+    "数据库（如MySQL、PostgreSQL）",
+    "开发工具（如IntelliJ IDEA、Eclipse）",
+    "版本控制工具（如Git）",
+    "构建工具（如Maven、Gradle）",
+    "测试工具（如JUnit、Mockito）",
+    "API测试工具（如Postman、Insomnia）"
+  ],
+  "workflow": [
+    "需求分析与技术方案设计",
+    "后端架构设计",
+    "数据库设计与实现",
+    "API设计与实现",
+    "业务逻辑实现",
+    "测试与调试",
+    "代码审查与质量保证",
+    "部署与监控"
+  ]
+}

@@ -15,7 +15,18 @@
           <el-table-column prop="code" label="业务类型编码" width="180" />
           <el-table-column prop="name" label="业务类型名称" width="200" />
           <el-table-column prop="description" label="描述" />
-          <el-table-column prop="createdTime" label="创建时间" width="180" />
+          <el-table-column prop="createUserId" label="创建人ID" width="120" />
+          <el-table-column label="创建时间" width="180">
+            <template #default="scope">
+              <span>{{ formatDateTime(scope.row.createdTime) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="updateUserId" label="更新人ID" width="120" />
+          <el-table-column label="更新时间" width="180">
+            <template #default="scope">
+              <span>{{ formatDateTime(scope.row.updatedTime) }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" @click="handleEdit(scope.row)">
@@ -61,6 +72,20 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { configApi } from '../api/configApi'
+
+// 格式化时间为 yyyy-MM-dd hh:mm:ss
+const formatDateTime = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
 
 const businessTypes = ref([
   { code: 'ORDER_CREATE', name: '订单创建', description: '订单创建相关的参数校验', createdTime: '2026-03-26 10:00:00' },
@@ -89,9 +114,20 @@ const rules = reactive({
 })
 
 // 加载业务类型
-const loadBusinessTypes = () => {
-  // 实际项目中应该调用后端API获取数据
-  // 这里使用模拟数据
+const loadBusinessTypes = async () => {
+  try {
+    const response = await configApi.getAllBusinessTypes()
+    businessTypes.value = response.data
+  } catch (error) {
+    console.error('获取业务类型失败:', error)
+    // 发生错误时，使用模拟数据
+    businessTypes.value = [
+      { code: 'ORDER_CREATE', name: '订单创建', description: '订单创建相关的参数校验', createdTime: '2026-03-26 10:00:00' },
+      { code: 'USER_REGISTER', name: '用户注册', description: '用户注册相关的参数校验', createdTime: '2026-03-26 10:00:00' },
+      { code: 'BASIC_DATA', name: '基础数据录入', description: '基础数据录入相关的参数校验', createdTime: '2026-03-26 10:00:00' },
+      { code: 'OTHER', name: '其他', description: '其他业务类型的参数校验', createdTime: '2026-03-26 10:00:00' }
+    ]
+  }
 }
 
 // 新增业务类型
@@ -118,18 +154,15 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // 实际项目中应该调用后端API保存数据
-        // 这里使用模拟数据
-        const index = businessTypes.value.findIndex(item => item.code === form.code)
-        if (index >= 0) {
-          // 编辑
-          businessTypes.value[index] = { ...form, createdTime: businessTypes.value[index].createdTime }
-        } else {
-          // 新增
-          businessTypes.value.push({ ...form, createdTime: new Date().toLocaleString() })
+        const businessTypeData = {
+          ...form,
+          createUserId: 'admin', // 实际项目中应该从登录用户获取
+          updateUserId: 'admin' // 实际项目中应该从登录用户获取
         }
+        await configApi.saveBusinessType(businessTypeData)
         ElMessage.success('保存成功')
         dialogVisible.value = false
+        loadBusinessTypes()
       } catch (error) {
         console.error('保存失败:', error)
         ElMessage.error('保存失败')
@@ -144,12 +177,11 @@ const handleDelete = (code) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
+  }).then(async () => {
     try {
-      // 实际项目中应该调用后端API删除数据
-      // 这里使用模拟数据
-      businessTypes.value = businessTypes.value.filter(item => item.code !== code)
+      await configApi.deleteBusinessType(code)
       ElMessage.success('删除成功')
+      loadBusinessTypes()
     } catch (error) {
       console.error('删除失败:', error)
       ElMessage.error('删除失败')

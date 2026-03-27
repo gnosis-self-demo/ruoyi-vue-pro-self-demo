@@ -4,19 +4,85 @@
       <template #header>
         <div class="card-header">
           <span>流程配置管理</span>
-          <el-button type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>
-            新增配置
-          </el-button>
+          <div class="header-buttons">
+            <el-button type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>
+              新增配置
+            </el-button>
+            <el-button 
+              type="warning" 
+              @click="handleBatchActivate" 
+              :disabled="selectedFlows.length === 0"
+            >
+              批量启用
+            </el-button>
+            <el-button 
+              type="danger" 
+              @click="handleBatchDeactivate" 
+              :disabled="selectedFlows.length === 0"
+            >
+              批量禁用
+            </el-button>
+            <el-button 
+              type="danger" 
+              @click="handleBatchDelete" 
+              :disabled="selectedFlows.length === 0"
+            >
+              批量删除
+            </el-button>
+          </div>
         </div>
       </template>
+      <!-- 条件查询表单 -->
+      <div class="search-form">
+        <el-form :model="searchForm" inline>
+          <el-form-item label="流程ID">
+            <el-input v-model="searchForm.flowId" placeholder="请输入流程ID" style="width: 150px" />
+          </el-form-item>
+          <el-form-item label="流程名称">
+            <el-input v-model="searchForm.flowName" placeholder="请输入流程名称" style="width: 150px" />
+          </el-form-item>
+          <el-form-item label="业务类型">
+            <el-select v-model="searchForm.businessType" placeholder="请选择业务类型" style="width: 150px">
+              <el-option label="全部" value="" />
+              <el-option v-for="type in businessTypes" :key="type.code" :label="type.name" :value="type.code" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="模式类型">
+            <el-select v-model="searchForm.modeType" placeholder="请选择模式类型" style="width: 150px">
+              <el-option label="全部" value="" />
+              <el-option label="FLOW" value="FLOW" />
+              <el-option label="HANDLER" value="HANDLER" />
+              <el-option label="HYBRID" value="HYBRID" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="searchForm.isActive" placeholder="请选择状态" style="width: 100px">
+              <el-option label="全部" value="" />
+              <el-option label="启用" :value="true" />
+              <el-option label="禁用" :value="false" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch">查询</el-button>
+            <el-button @click="resetSearch">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
       <div class="flow-table">
-        <el-table :data="flows" style="width: 100%">
+        <el-table 
+          :data="flows" 
+          style="width: 100%"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="55" />
           <el-table-column prop="flowId" label="流程ID" width="180" />
           <el-table-column prop="flowName" label="流程名称" width="200" />
           <el-table-column label="业务类型" width="150">
             <template #default="scope">
-              <span>{{ scope.row.businessTypes ? scope.row.businessTypes.split(',').join('、') : '' }}</span>
+              <span>
+                {{ scope.row.businessTypes ? scope.row.businessTypes.split(',').map(getBusinessTypeName).join('、') : '' }}
+              </span>
             </template>
           </el-table-column>
           <el-table-column prop="modeType" label="模式类型" width="120">
@@ -41,9 +107,17 @@
             </template>
           </el-table-column>
           <el-table-column prop="createUserId" label="创建人ID" width="120" />
-          <el-table-column prop="createTime" label="创建时间" width="180" />
+          <el-table-column label="创建时间" width="180">
+            <template #default="scope">
+              <span>{{ formatDateTime(scope.row.createTime) }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="updateUserId" label="更新人ID" width="120" />
-          <el-table-column prop="updatedTime" label="更新时间" width="180" />
+          <el-table-column label="更新时间" width="180">
+            <template #default="scope">
+              <span>{{ formatDateTime(scope.row.updatedTime) }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="250" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" @click="handleEdit(scope.row)">
@@ -62,6 +136,18 @@
             </template>
           </el-table-column>
         </el-table>
+        <!-- 分页组件 -->
+        <div class="pagination-container">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </div>
     </el-card>
 
@@ -80,10 +166,7 @@
         </el-form-item>
         <el-form-item label="业务类型" prop="businessTypes">
           <el-select v-model="form.businessTypes" multiple placeholder="请选择业务类型">
-            <el-option label="订单创建" value="ORDER_CREATE" />
-            <el-option label="用户注册" value="USER_REGISTER" />
-            <el-option label="基础数据录入" value="BASIC_DATA" />
-            <el-option label="其他" value="OTHER" />
+            <el-option v-for="type in businessTypes" :key="type.code" :label="type.name" :value="type.code" />
           </el-select>
         </el-form-item>
         <el-form-item label="模式类型" prop="modeType">
@@ -122,10 +205,53 @@ import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { configApi } from '../api/configApi'
 
+// 计算业务类型名称映射
+const businessTypeMap = computed(() => {
+  const map = {}
+  businessTypes.value.forEach(type => {
+    map[type.code] = type.name
+  })
+  return map
+})
+
+// 获取业务类型中文名称
+const getBusinessTypeName = (code) => {
+  return businessTypeMap.value[code] || code
+}
+
+// 格式化时间为 yyyy-MM-dd hh:mm:ss
+const formatDateTime = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
 const flows = ref([])
+const businessTypes = ref([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增流程配置')
 const formRef = ref(null)
+const selectedFlows = ref([])
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+// 条件查询
+const searchForm = reactive({
+  flowId: '',
+  flowName: '',
+  businessType: '',
+  modeType: '',
+  isActive: null
+})
 
 const form = reactive({
   flowId: '',
@@ -159,11 +285,40 @@ const rules = reactive({
   ]
 })
 
+// 加载业务类型
+const loadBusinessTypes = async () => {
+  try {
+    const response = await configApi.getAllBusinessTypes()
+    businessTypes.value = response.data
+  } catch (error) {
+    console.error('获取业务类型失败:', error)
+    // 发生错误时，使用模拟数据
+    businessTypes.value = [
+      { code: 'ORDER_CREATE', name: '订单创建' },
+      { code: 'USER_REGISTER', name: '用户注册' },
+      { code: 'BASIC_DATA', name: '基础数据录入' },
+      { code: 'OTHER', name: '其他' }
+    ]
+  }
+}
+
 // 加载流程配置
 const loadFlows = async () => {
   try {
-    const response = await configApi.getAllFlows()
-    flows.value = response.data
+    // 构建查询参数
+    const params = {
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      flowId: searchForm.flowId,
+      flowName: searchForm.flowName,
+      businessType: searchForm.businessType,
+      modeType: searchForm.modeType,
+      isActive: searchForm.isActive
+    }
+    
+    const response = await configApi.getAllFlows(params)
+    flows.value = response.data.records || []
+    total.value = response.data.total || 0
     
     // 如果没有数据，添加一些模拟数据
     if (flows.value.length === 0) {
@@ -235,6 +390,7 @@ const loadFlows = async () => {
           updatedTime: now
         }
       ]
+      total.value = flows.value.length
     }
   } catch (error) {
     console.error('获取流程配置失败:', error)
@@ -307,7 +463,40 @@ const loadFlows = async () => {
         updatedTime: now
       }
     ]
+    total.value = flows.value.length
   }
+}
+
+// 处理查询
+const handleSearch = () => {
+  currentPage.value = 1
+  loadFlows()
+}
+
+// 重置查询
+const resetSearch = () => {
+  Object.assign(searchForm, {
+    flowId: '',
+    flowName: '',
+    businessType: '',
+    modeType: '',
+    isActive: null
+  })
+  currentPage.value = 1
+  loadFlows()
+}
+
+// 处理分页大小变化
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  currentPage.value = 1
+  loadFlows()
+}
+
+// 处理页码变化
+const handleCurrentChange = (current) => {
+  currentPage.value = current
+  loadFlows()
 }
 
 // 新增配置
@@ -419,8 +608,68 @@ const handleStatusChange = async (row) => {
   }
 }
 
-onMounted(() => {
-  loadFlows()
+// 处理选择变化
+const handleSelectionChange = (selection) => {
+  selectedFlows.value = selection
+}
+
+// 批量启用
+const handleBatchActivate = async () => {
+  if (selectedFlows.value.length === 0) {
+    ElMessage.warning('请选择要启用的流程')
+    return
+  }
+  try {
+    const flowIds = selectedFlows.value.map(flow => flow.flowId)
+    await configApi.batchActivateFlows(flowIds)
+    ElMessage.success('批量启用成功')
+    loadFlows()
+    selectedFlows.value = []
+  } catch (error) {
+    console.error('批量启用失败:', error)
+    ElMessage.error('批量启用失败')
+  }
+}
+
+// 批量禁用
+const handleBatchDeactivate = async () => {
+  if (selectedFlows.value.length === 0) {
+    ElMessage.warning('请选择要禁用的流程')
+    return
+  }
+  try {
+    const flowIds = selectedFlows.value.map(flow => flow.flowId)
+    await configApi.batchDeactivateFlows(flowIds)
+    ElMessage.success('批量禁用成功')
+    loadFlows()
+    selectedFlows.value = []
+  } catch (error) {
+    console.error('批量禁用失败:', error)
+    ElMessage.error('批量禁用失败')
+  }
+}
+
+// 批量删除
+const handleBatchDelete = async () => {
+  if (selectedFlows.value.length === 0) {
+    ElMessage.warning('请选择要删除的流程')
+    return
+  }
+  try {
+    const flowIds = selectedFlows.value.map(flow => flow.flowId)
+    await configApi.batchDeleteFlows(flowIds)
+    ElMessage.success('批量删除成功')
+    loadFlows()
+    selectedFlows.value = []
+  } catch (error) {
+    console.error('批量删除失败:', error)
+    ElMessage.error('批量删除失败')
+  }
+}
+
+onMounted(async () => {
+  await loadBusinessTypes()
+  await loadFlows()
 })
 </script>
 

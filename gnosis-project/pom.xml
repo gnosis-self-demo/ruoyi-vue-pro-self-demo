@@ -95,6 +95,20 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- JUnit 5 依赖 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -216,7 +230,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.cmbc.oa.module.paramcheck.ParamCheckApplication</mainClass>
+                    <mainClass>paramcheck.ParamCheckApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
