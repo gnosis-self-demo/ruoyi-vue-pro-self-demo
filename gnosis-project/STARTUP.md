@@ -53,7 +53,7 @@ npm run dev
 ```bash
 cd c:\works\project\ruoyi-vue-pro-self-demo\gnosis-project
 mvn clean install
-mvn spring-boot:run -Dspring-boot.run.mainClass=paramcheck.lifecycle.LifecycleApplication
+mvn spring-boot:run -Dspring-boot.run.mainClass=lifecycle.LifecycleApplication
 ```
 
 #### 方式 C：打包后运行
@@ -283,7 +283,7 @@ mvn clean package -DskipTests
 java -jar target/gnosis-project-1.0.0-SNAPSHOT.jar
 
 # 方式 4：指定主类
-mvn spring-boot:run -Dspring-boot.run.mainClass=paramcheck.lifecycle.LifecycleApplication
+mvn spring-boot:run -Dspring-boot.run.mainClass=lifecycle.LifecycleApplication
 ```
 
 ### 前端

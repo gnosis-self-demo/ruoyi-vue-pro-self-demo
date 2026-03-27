@@ -1,4 +1,4 @@
-package paramcheck.lifecycle;
+package lifecycle;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,8 +20,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
  */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @ComponentScan(basePackages = {
-    "paramcheck.lifecycle",
-    "paramcheck"
+    "lifecycle",
 })
 @EnableSwagger2
 @EnableScheduling
