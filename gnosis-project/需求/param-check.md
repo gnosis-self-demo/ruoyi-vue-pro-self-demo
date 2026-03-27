@@ -13,7 +13,7 @@
 | 配置项 | 值/说明 | 备注 |
 | :--- | :--- | :--- |
 | **项目根路径** | `C:\works\project\ruoyi-vue-pro-self-demo\gnosis-project` | **绝对路径** |
-| **开发包名** | `com.cmbc.oa.module.paramcheck` | 所有代码必须在此包下 |
+| **开发包名** | `paramcheck` | 所有代码必须在此包下 |
 | **LiteFlow 版本** | **2.11.3** | `liteflow-spring-boot-starter:2.11.3` |
 | **openGauss 版本** | **3.0.0** | 兼容 PostgreSQL 协议，注意 JDBC 驱动 |
 | **JDBC URL** | `jdbc:opengauss://localserver.gnosis:5432/gnosis_sample` | |
@@ -69,7 +69,7 @@
     *   `HANDLER` 模式：查找注册的 `IValidationHandler` 实现类，直接执行。
     *   `HYBRID` 模式：先执行 LiteFlow 基础校验，再调用自定义 Handler 进行深度业务校验。
 *   **自定义拓展机制**：
-    *   接口：`com.cmbc.oa.module.paramcheck.handler.IValidationHandler`。
+    *   接口：`paramcheck.handler.IValidationHandler`。
     *   注解：`@ValidationHandler("uniqueCode")`。
     *   注册：启动时自动扫描并注册到 `HandlerRegistry`。
 
@@ -145,10 +145,10 @@ INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, mode_type, e
 ## 4. 详细开发指引 (Agent Action Plan)
 
 ### 4.1 项目结构规划
-在 `C:\works\project\ruoyi-vue-pro-self-demo\gnosis-project` 的 `src/main/java/com/cmbc/oa/module/paramcheck` 下创建：
+在 `C:\works\project\ruoyi-vue-pro-self-demo\gnosis-project` 的 `paramcheck` 下创建：
 
 ```text
-com.cmbc.oa.module.paramcheck
+paramcheck
 ├── config
 │   ├── LiteFlowConfig.java          // LiteFlow 2.11.3 配置 (规则来源)
 │   ├── DataSourceConfig.java        // gnosis_sample 专属数据源
@@ -188,10 +188,10 @@ com.cmbc.oa.module.paramcheck
 
 **1. 接口定义**
 ```java
-package com.cmbc.oa.module.paramcheck.handler;
+package paramcheck.handler;
 
-import com.cmbc.oa.module.paramcheck.domain.ValidationContext;
-import com.cmbc.oa.module.paramcheck.domain.ValidationResult;
+import paramcheck.domain.ValidationContext;
+import paramcheck.domain.ValidationResult;
 
 public interface IValidationHandler {
     ValidationResult validate(ValidationContext context);
@@ -201,7 +201,7 @@ public interface IValidationHandler {
 
 **2. 注解定义**
 ```java
-package com.cmbc.oa.module.paramcheck.handler;
+package paramcheck.handler;
 
 import org.springframework.stereotype.Component;
 import java.lang.annotation.*;
@@ -216,7 +216,7 @@ public @interface ValidationHandler {
 
 **3. 注册中心 (`HandlerRegistry`)**
 ```java
-package com.cmbc.oa.module.paramcheck.handler;
+package paramcheck.handler;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -257,12 +257,12 @@ public class HandlerRegistry {
 
 **4. 示例实现 (`OrderBusinessHandler`)**
 ```java
-package com.cmbc.oa.module.paramcheck.handler.impl;
+package paramcheck.handler.impl;
 
-import com.cmbc.oa.module.paramcheck.handler.IValidationHandler;
-import com.cmbc.oa.module.paramcheck.handler.ValidationHandler;
-import com.cmbc.oa.module.paramcheck.domain.ValidationContext;
-import com.cmbc.oa.module.paramcheck.domain.ValidationResult;
+import paramcheck.handler.IValidationHandler;
+import paramcheck.handler.ValidationHandler;
+import paramcheck.domain.ValidationContext;
+import paramcheck.domain.ValidationResult;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.jayway.jsonpath.JsonPath;
@@ -303,7 +303,7 @@ public class OrderBusinessHandler implements IValidationHandler {
 
 **1. `ParseParamComponent.java`**
 ```java
-package com.cmbc.oa.module.paramcheck.component;
+package paramcheck.component;
 
 import com.yomahub.liteflow.core.NodeComponent;
 import com.jayway.jsonpath.DocumentContext;
@@ -328,10 +328,10 @@ public class ParseParamComponent extends NodeComponent {
 
 **2. `DbQueryComponent.java` (动态 SQL 校验)**
 ```java
-package com.cmbc.oa.module.paramcheck.component;
+package paramcheck.component;
 
 import com.yomahub.liteflow.core.NodeComponent;
-import com.cmbc.oa.module.paramcheck.exception.ValidationException;
+import paramcheck.exception.ValidationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.jayway.jsonpath.JsonPath;
@@ -375,11 +375,11 @@ public class DbQueryComponent extends NodeComponent {
 #### C. 统一服务入口 (`DynamicValidationService`)
 
 ```java
-package com.cmbc.oa.module.paramcheck.service;
+package paramcheck.service;
 
-import com.cmbc.oa.module.paramcheck.domain.*;
-import com.cmbc.oa.module.paramcheck.handler.HandlerRegistry;
-import com.cmbc.oa.module.paramcheck.repository.FlowConfigRepository;
+import paramcheck.domain.*;
+import paramcheck.handler.HandlerRegistry;
+import paramcheck.repository.FlowConfigRepository;
 import com.yomahub.liteflow.core.FlowExecutor;
 import com.yomahub.liteflow.flow.LiteflowResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -493,7 +493,7 @@ public class DynamicValidationService {
 ## 6. 验收标准
 
 1.  **代码合规**：
-    *   所有代码位于 `com.cmbc.oa.module.paramcheck`。
+    *   所有代码位于 `paramcheck`。
     *   **零存储过程**：确认无 `CallableStatement` 或 `CREATE FUNCTION` 调用。
     *   **Schema 隔离**：SQL 显式带 `gnosis_sample.` 前缀。
     *   **版本匹配**：LiteFlow 使用 2.11.3，API 调用符合该版本规范。
@@ -512,7 +512,7 @@ public class DynamicValidationService {
 > "请基于以下严格约束，在 `C:\works\project\ruoyi-vue-pro-self-demo\gnosis-project` 项目中开发参数动态校验模块。
 >
 > **核心约束**：
-> 1.  **包路径**：所有代码严格位于 `com.cmbc.oa.module.paramcheck`。
+> 1.  **包路径**：所有代码严格位于 `paramcheck`。
 > 2.  **版本要求**：
 >     *   **LiteFlow**: **2.11.3** (注意 API 差异，如 `FlowExecutor.execute2Resp`)。
 >     *   **openGauss**: **3.0.0** (JDBC 驱动需兼容)。

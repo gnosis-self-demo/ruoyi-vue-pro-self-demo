@@ -8,11 +8,11 @@
 cd C:\works\project\ruoyi-vue-pro-self-demo\gnosis-project
 
 # 方式1: 运行 main 方法
-mvn spring-boot:run -Dspring-boot.mainClass=com.cmbc.oa.module.paramcheck.ParamCheckApplication
+mvn spring-boot:run -Dspring-boot.mainClass=paramcheck.ParamCheckApplication
 
 # 方式2: 先编译再运行
 mvn compile
-java -cp target/classes;target/dependency/* com.cmbc.oa.module.paramcheck.ParamCheckApplication
+java -cp target/classes;target/dependency/* paramcheck.ParamCheckApplication
 ```
 
 ### 方式二：打包后运行
@@ -175,5 +175,5 @@ spring.sql.init.schema-locations=classpath:db/liteflow-opengauss.sql,classpath:d
 
 ---
 
-**启动类位置**: `com.cmbc.oa.module.paramcheck.ParamCheckApplication`  
-**测试 Controller**: `com.cmbc.oa.module.paramcheck.controller.ValidationDemoController`
+**启动类位置**: `paramcheck.ParamCheckApplication`  
+**测试 Controller**: `paramcheck.controller.ValidationDemoController`

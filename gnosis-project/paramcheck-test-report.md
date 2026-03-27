@@ -46,7 +46,7 @@
 | LiteFlow 2.11.3 | ✅ 已遵守 | 版本正确 |
 | openGauss 3.0.0 | ✅ 已遵守 | 版本正确 |
 | 禁止存储过程 | ✅ 已遵守 | 所有逻辑用 Java 代码实现 |
-| 包路径 | ⚠️ 部分遵守 | 代码位于 paramcheck 包，而非 com.cmbc.oa.module.paramcheck |
+| 包路径 | ⚠️ 部分遵守 | 代码位于 paramcheck 包，而非 paramcheck |
 | 字段要求 | ✅ 已遵守 | 所有表都包含 create_user_id、create_time、update_user_id、update_time 字段 |
 | 页面功能 | ✅ 已遵守 | 每个页面都包含分页查询、条件查询、导入、导出、详情、新建、编辑、修改、批量删除、批量启用、批量禁用功能 |
 
@@ -102,13 +102,13 @@
 ### 4.1 存在的问题
 
 1. **后端编译错误**：由于项目中其他模块的编译错误，无法启动后端服务进行完整的功能测试
-2. **包路径不符合要求**：代码位于 paramcheck 包，而非 com.cmbc.oa.module.paramcheck
+2. **包路径不符合要求**：代码位于 paramcheck 包，而非 paramcheck
 3. **部分 LiteFlow 组件实现简单**：ParseParamComponent 等组件的实现较为简单，需要进一步完善
 
 ### 4.2 改进建议
 
 1. **修复编译错误**：解决项目中其他模块的编译错误，确保后端服务能够正常启动
-2. **调整包路径**：将代码移动到 com.cmbc.oa.module.paramcheck 包下
+2. **调整包路径**：将代码移动到 paramcheck 包下
 3. **完善 LiteFlow 组件**：增强 ParseParamComponent、BasicRuleComponent、DbQueryComponent 的功能
 4. **添加更多测试用例**：编写更多的单元测试和集成测试
 5. **优化前端界面**：进一步优化前端界面的用户体验

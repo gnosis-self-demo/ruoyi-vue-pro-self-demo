@@ -334,7 +334,7 @@
 
 ### 9.1 测试代码
 
-测试代码位于 `src/test/java/com/cmbc/oa/module/paramcheck/` 目录下：
+测试代码位于 `paramcheck/` 目录下：
 
 - `ValidationModeTest.java`：测试三种校验模式
 - `ScenarioTest.java`：测试各种业务场景

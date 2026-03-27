@@ -58,10 +58,10 @@ psql -h <host> -U gaussdb -d gnosis_sample -f paramcheck-opengauss.sql
 ```java
 package com.example.module.handler;
 
-import com.cmbc.oa.module.paramcheck.domain.ValidationContext;
-import com.cmbc.oa.module.paramcheck.domain.ValidationResult;
-import com.cmbc.oa.module.paramcheck.handler.IValidationHandler;
-import com.cmbc.oa.module.paramcheck.handler.ValidationHandler;
+import paramcheck.domain.ValidationContext;
+import paramcheck.domain.ValidationResult;
+import paramcheck.handler.IValidationHandler;
+import paramcheck.handler.ValidationHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -132,8 +132,8 @@ VALUES
 ```java
 package com.example.controller;
 
-import com.cmbc.oa.module.paramcheck.annotation.ParamCheck;
-import com.cmbc.oa.module.paramcheck.domain.ValidationResult;
+import paramcheck.annotation.ParamCheck;
+import paramcheck.domain.ValidationResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -353,7 +353,7 @@ CREATE TABLE gnosis_sample.sys_validation_logs (
 mvn test -Dtest=ValidationModeTest
 
 # 运行所有测试
-mvn test -Dtest="com.cmbc.oa.module.paramcheck.*Test"
+mvn test -Dtest="paramcheck.*Test"
 ```
 
 ### 测试用例说明
