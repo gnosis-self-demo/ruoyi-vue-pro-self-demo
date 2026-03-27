@@ -1,4 +1,4 @@
-package paramcheck.lifecycle.entry;
+package lifecycle.entry;
 
 import lifecycle.dto.*;
 import lifecycle.entry.BusinessTypeManager;

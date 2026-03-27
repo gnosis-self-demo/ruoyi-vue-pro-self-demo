@@ -1,16 +1,16 @@
-package paramcheck.lifecycle;
+package lifecycle;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import paramcheck.lifecycle.adapter.WorkflowEventAdapterTest;
-import paramcheck.lifecycle.api.EntryApiTest;
-import paramcheck.lifecycle.api.EventApiTest;
-import paramcheck.lifecycle.api.GovernanceApiTest;
-import paramcheck.lifecycle.entry.EntryServiceTest;
-import paramcheck.lifecycle.engine.router.ConditionRouterEngineTest;
-import paramcheck.lifecycle.engine.transition.StateTransitionExecutorTest;
-import paramcheck.lifecycle.performance.PerformanceTest;
-import paramcheck.lifecycle.service.TraceServiceTest;
+import lifecycle.adapter.WorkflowEventAdapterTest;
+import lifecycle.api.EntryApiTest;
+import lifecycle.api.EventApiTest;
+import lifecycle.api.GovernanceApiTest;
+import lifecycle.entry.EntryServiceTest;
+import lifecycle.engine.router.ConditionRouterEngineTest;
+import lifecycle.engine.transition.StateTransitionExecutorTest;
+import lifecycle.performance.PerformanceTest;
+import lifecycle.service.TraceServiceTest;
 
 /**
  * 业务生命周期管理组件 - 完整测试套件

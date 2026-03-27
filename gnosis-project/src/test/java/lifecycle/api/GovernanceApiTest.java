@@ -1,4 +1,4 @@
-package paramcheck.lifecycle.api;
+package lifecycle.api;
 
 import com.alibaba.fastjson.JSON;
 import lifecycle.dto.*;

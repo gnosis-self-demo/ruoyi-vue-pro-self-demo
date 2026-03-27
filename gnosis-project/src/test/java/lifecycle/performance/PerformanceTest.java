@@ -1,4 +1,4 @@
-package paramcheck.lifecycle.performance;
+package lifecycle.performance;
 
 import org.junit.Before;
 import org.junit.Test;

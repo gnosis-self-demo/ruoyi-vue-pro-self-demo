@@ -1,4 +1,4 @@
-package paramcheck.lifecycle;
+package lifecycle;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

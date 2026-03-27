@@ -1,4 +1,4 @@
-package paramcheck.lifecycle.service;
+package lifecycle.service;
 
 import lifecycle.dto.*;
 import lifecycle.service.GovernanceServiceImpl;

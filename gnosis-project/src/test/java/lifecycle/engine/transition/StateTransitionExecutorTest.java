@@ -1,4 +1,4 @@
-package paramcheck.lifecycle.engine.transition;
+package lifecycle.engine.transition;
 
 import lifecycle.engine.transition.StateTransitionExecutor;
 import lifecycle.engine.transition.TransitionContext;

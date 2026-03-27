@@ -1,4 +1,4 @@
-package paramcheck.lifecycle;
+package lifecycle;
 
 import lifecycle.dto.EventSubmitRequest;
 import lifecycle.dto.EventVO;

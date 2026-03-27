@@ -1,4 +1,4 @@
-package paramcheck.lifecycle.adapter;
+package lifecycle.adapter;
 
 import lifecycle.adapter.StandardEvent;
 import lifecycle.adapter.WorkflowEventAdapter;
