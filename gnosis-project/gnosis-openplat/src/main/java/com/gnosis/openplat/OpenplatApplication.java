@@ -22,7 +22,7 @@ import java.net.UnknownHostException;
 @EnableScheduling
 @MapperScan("com.gnosis.openplat.mapper")
 @ComponentScan(basePackages = {
-    "com.gnosis.openapi"
+    "com.gnosis.openplat"
 }, excludeFilters = {
     @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com.gnosis.paramcheck.*"),
     @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com.gnosis.lifecycle.*"),
