@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<flow>
-    <!-- 场景1: HYBRID混合模式 — 订单创建校验 -->
-    <chain name="ORDER_CREATE_FLOW">THEN(parse_param, check_format, check_db_user);</chain>
-
-    <!-- 场景2: FLOW纯编排模式 — 简单格式校验 -->
-    <chain name="SIMPLE_CHECK_FLOW">THEN(parse_param, check_format);</chain>
-</flow>

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-  开放平台模块 LiteFlow 配置文件
-  此文件为空配置，仅用于 openplat 独立启动时避免 LiteFlow 初始化错误
--->
-<flow>
-    <!-- 开放平台模块暂无需流程编排 -->
-</flow>
