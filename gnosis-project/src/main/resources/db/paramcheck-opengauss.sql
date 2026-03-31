@@ -5,117 +5,104 @@
 -- ============================================================
 
 -- 1. 校验流程配置表
-CREATE TABLE IF NOT EXISTS gnosis_sample.sys_validation_flows (
+CREATE TABLE IF NOT EXISTS sys_validation_flows (
     flow_id         VARCHAR(64) PRIMARY KEY,
     flow_name       VARCHAR(128) NOT NULL,
-    mode_type       VARCHAR(20) DEFAULT 'FLOW' CHECK (mode_type IN ('FLOW', 'HANDLER', 'HYBRID')),
+    mode_type       VARCHAR(20) DEFAULT 'FLOW',
     el_expression   TEXT,
     handler_code    VARCHAR(64),
-    component_config JSONB,
+    component_config TEXT,
     business_type   VARCHAR(255),
-    is_active       BOOLEAN DEFAULT TRUE,
+    is_active       boolean DEFAULT true,
     version         INT DEFAULT 1,
     create_user_id  VARCHAR(128),
     update_user_id  VARCHAR(128),
-    create_time     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_time    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_flow_handler UNIQUE (flow_id, handler_code)
 );
 
-COMMENT ON TABLE gnosis_sample.sys_validation_flows IS '参数校验流程配置表 — 支持 LiteFlow 编排 + 自定义 Handler 混合模式';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.flow_id IS '流程唯一标识';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.mode_type IS '校验模式: FLOW=纯编排, HANDLER=纯代码, HYBRID=混合';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.el_expression IS 'LiteFlow EL 表达式 (FLOW/HYBRID 必填)';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.handler_code IS '自定义处理器编码 (HANDLER/HYBRID 必填)';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.component_config IS '组件配置 (JSONB: JSONPath规则/SQL/正则等)';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.business_type IS '业务类型（多个，逗号分隔）';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.create_user_id IS '创建人ID';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.update_user_id IS '更新人ID';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.create_time IS '创建时间';
-COMMENT ON COLUMN gnosis_sample.sys_validation_flows.updated_time IS '更新时间';
+COMMENT ON TABLE sys_validation_flows IS '参数校验流程配置表';
+COMMENT ON COLUMN sys_validation_flows.flow_id IS '流程唯一标识';
+COMMENT ON COLUMN sys_validation_flows.mode_type IS '校验模式: FLOW/HANDLER/HYBRID';
+COMMENT ON COLUMN sys_validation_flows.el_expression IS 'LiteFlow EL 表达式';
+COMMENT ON COLUMN sys_validation_flows.handler_code IS '自定义处理器编码';
+COMMENT ON COLUMN sys_validation_flows.component_config IS '组件配置';
+COMMENT ON COLUMN sys_validation_flows.business_type IS '业务类型';
+COMMENT ON COLUMN sys_validation_flows.is_active IS '是否启用';
+COMMENT ON COLUMN sys_validation_flows.version IS '版本号';
+COMMENT ON COLUMN sys_validation_flows.create_user_id IS '创建人ID';
+COMMENT ON COLUMN sys_validation_flows.update_user_id IS '更新人ID';
+COMMENT ON COLUMN sys_validation_flows.create_time IS '创建时间';
+COMMENT ON COLUMN sys_validation_flows.updated_time IS '更新时间';
 
 -- 2. 校验日志表
-CREATE TABLE IF NOT EXISTS gnosis_sample.sys_validation_logs (
+CREATE TABLE IF NOT EXISTS sys_validation_logs (
     log_id          BIGSERIAL PRIMARY KEY,
     flow_id         VARCHAR(64),
     request_id      VARCHAR(64),
     mode_type       VARCHAR(20),
-    input_snapshot  JSONB,
+    input_snapshot  TEXT,
     failed_node     VARCHAR(64),
     error_msg       TEXT,
-    created_time    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE gnosis_sample.sys_validation_logs IS '参数校验执行日志表';
-COMMENT ON COLUMN gnosis_sample.sys_validation_logs.input_snapshot IS '请求入参快照 (JSONB)';
-COMMENT ON COLUMN gnosis_sample.sys_validation_logs.failed_node IS '失败节点ID';
+COMMENT ON TABLE sys_validation_logs IS '参数校验执行日志表';
+COMMENT ON COLUMN sys_validation_logs.input_snapshot IS '请求入参快照';
+COMMENT ON COLUMN sys_validation_logs.failed_node IS '失败节点ID';
 
--- 3. 辅助表: 示例产品库存 (用于 Handler 中 Java 代码 DB 校验演示)
-CREATE TABLE IF NOT EXISTS gnosis_sample.product_stock (
+-- 3. 辅助表: 示例产品库存
+CREATE TABLE IF NOT EXISTS product_stock (
     sku_id          VARCHAR(64) PRIMARY KEY,
     sku_name        VARCHAR(128),
     stock_qty       INT DEFAULT 0,
-    updated_time    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    updated_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. 辅助表: 示例订单记录 (用于 Handler 中防重提交校验演示)
-CREATE TABLE IF NOT EXISTS gnosis_sample.order_record (
+-- 4. 辅助表: 示例订单记录
+CREATE TABLE IF NOT EXISTS order_record (
     order_id        BIGSERIAL PRIMARY KEY,
     order_no        VARCHAR(64) NOT NULL,
     user_id         VARCHAR(64),
     amount          DECIMAL(15,2),
     status          VARCHAR(20),
-    created_time    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. 辅助表: 示例用户表 (用于 DB 查询校验)
-CREATE TABLE IF NOT EXISTS gnosis_sample.sys_users (
+-- 5. 辅助表: 示例用户表
+CREATE TABLE IF NOT EXISTS sys_users (
     user_id         VARCHAR(64) PRIMARY KEY,
     username        VARCHAR(64) NOT NULL UNIQUE,
     password        VARCHAR(128),
     email           VARCHAR(128),
     status          INT DEFAULT 1,
-    created_time    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================================
 -- 初始化测试数据 (三种模式全覆盖)
 -- ============================================================
 
--- 场景1: HYBRID 混合模式 — 订单创建校验
-INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
+-- 场景1: HYBRID 混合模式 - 订单创建校验
+INSERT INTO sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
 VALUES (
     'ORDER_CREATE_FLOW',
-    '订单创建校验 (混合模式)',
+    'Order creation validation (Hybrid mode)',
     'ORDER_CREATE',
     'HYBRID',
     'THEN(parse_param, check_format, check_db_user)',
     'OrderBusinessHandler',
-    '{
-        "parse_param": {"json_path": "$"},
-        "check_format": {
-            "rules": [
-                {"path": "$.orderNo", "type": "REGEX", "pattern": "^ORD[0-9]{10}$", "msg": "订单号格式错误，格式应为 ORD+10位数字"},
-                {"path": "$.amount", "type": "RANGE", "min": 0.01, "max": 1000000, "msg": "订单金额超出范围(0.01~1000000)"},
-                {"path": "$.userId", "type": "NOT_NULL", "msg": "用户ID不能为空"}
-            ]
-        },
-        "check_db_user": {
-            "type": "DB_QUERY",
-            "sql": "SELECT COUNT(1) FROM gnosis_sample.sys_users WHERE user_id = ? AND status = 1",
-            "param_path": "$.userId",
-            "msg": "用户不存在或已被禁用"
-        }
-    }'::jsonb,
+    '{"parse_param": {"json_path": "$"}, "check_format": {"rules": [{"path": "$.orderNo", "type": "REGEX", "pattern": "^ORD[0-9]{10}$", "msg": "Order number format error"}, {"path": "$.amount", "type": "RANGE", "min": 0.01, "max": 1000000, "msg": "Order amount out of range"}, {"path": "$.userId", "type": "NOT_NULL", "msg": "User ID cannot be empty"}]}, "check_db_user": {"type": "DB_QUERY", "sql": "SELECT COUNT(1) FROM sys_users WHERE user_id = ? AND status = 1", "param_path": "$.userId", "msg": "User does not exist or is disabled"}}',
     'admin',
     'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
--- 场景2: HANDLER 纯接口模式 — 用户注册
-INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
+-- 场景2: HANDLER 纯接口模式 - 用户注册
+INSERT INTO sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
 VALUES (
     'USER_REGISTER_FLOW',
-    '用户注册 (纯接口模式)',
+    'User registration (Handler mode)',
     'USER_REGISTER',
     'HANDLER',
     NULL,
@@ -125,54 +112,32 @@ VALUES (
     'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
--- 场景3: FLOW 纯编排模式 — 简单格式校验
-INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
+-- 场景3: FLOW 纯编排模式 - 简单格式校验
+INSERT INTO sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
 VALUES (
     'SIMPLE_CHECK_FLOW',
-    '简单格式校验 (纯编排模式)',
+    'Simple format validation (Flow mode)',
     'BASIC_DATA',
     'FLOW',
     'THEN(parse_param, check_format)',
     NULL,
-    '{
-        "parse_param": {"json_path": "$"},
-        "check_format": {
-            "rules": [
-                {"path": "$.email", "type": "EMAIL", "msg": "邮箱格式错误"},
-                {"path": "$.phone", "type": "PHONE", "msg": "手机号格式错误"}
-            ]
-        }
-    }'::jsonb,
+    '{"parse_param": {"json_path": "$"}, "check_format": {"rules": [{"path": "$.email", "type": "EMAIL", "msg": "Email format error"}, {"path": "$.phone", "type": "PHONE", "msg": "Phone format error"}]}}',
     'admin',
     'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
 -- 初始化示例产品库存数据
-INSERT INTO gnosis_sample.product_stock (sku_id, sku_name, stock_qty) VALUES
+INSERT INTO product_stock (sku_id, sku_name, stock_qty) VALUES
     ('SKU001', 'iPhone 15 Pro', 100),
     ('SKU002', 'MacBook Pro 14', 50),
     ('SKU003', 'AirPods Pro', 200)
 ON CONFLICT (sku_id) DO NOTHING;
 
 -- 初始化示例用户数据
-INSERT INTO gnosis_sample.sys_users (user_id, username, email, status) VALUES
+INSERT INTO sys_users (user_id, username, email, status) VALUES
     ('U001', 'zhangsan', 'zhangsan@example.com', 1),
     ('U002', 'lisi', 'lisi@example.com', 1),
     ('U003', 'wangwu', 'wangwu@example.com', 0)
 ON CONFLICT (user_id) DO NOTHING;
 
 COMMIT;
-
--- ============================================================
--- 验证查询
--- ============================================================
-SELECT '=== sys_validation_flows ===' AS info;
-SELECT flow_id, flow_name, mode_type, el_expression, handler_code, is_active, version
-FROM gnosis_sample.sys_validation_flows
-ORDER BY mode_type;
-
-SELECT '=== product_stock ===' AS info;
-SELECT * FROM gnosis_sample.product_stock;
-
-SELECT '=== sys_users ===' AS info;
-SELECT user_id, username, status FROM gnosis_sample.sys_users;
