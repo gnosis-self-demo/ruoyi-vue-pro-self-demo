@@ -71,6 +71,34 @@ grep -r "import paramcheck.lifecycle" src/main/java/lifecycle/
 ✅ 前端已启动成功
 ⚠️ 后端因项目现有问题暂时无法启动
 
+## 快速启动（推荐）
+
+### 方式一：仅启动 openplat 模块（不影响现有项目）
+
+#### 1. 初始化数据库
+```bash
+psql -h localserver.gnosis -p 5432 -U gaussdb -d gnosis_sample -f src/main/resources/db/openplat-opengauss.sql
+```
+
+#### 2. 启动后端（openplat 独立模式）
+```bash
+cd c:\works\project\ruoyi-vue-pro-self-demo\gnosis-project
+mvn spring-boot:run -Dspring-boot.run.mainClass=openplat.OpenplatApplication
+```
+
+#### 3. 启动前端
+```bash
+cd c:\works\project\ruoyi-vue-pro-self-demo\gnosis-project\frontend-openplat
+npm run dev
+```
+
+#### 4. 访问系统
+- 前端页面：http://localhost:3000
+- Swagger 文档：http://localhost:8080/swagger-ui.html
+- API 基础路径：http://localhost:8080/api/openplat/*
+
+---
+
 ## 下一步
 1. 修复 lifecycle 包路径冲突
 2. 重新编译项目：`mvn clean compile`

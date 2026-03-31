@@ -230,7 +230,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>paramcheck.ParamCheckApplication</mainClass>
+                    <mainClass>openplat.OpenplatApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
