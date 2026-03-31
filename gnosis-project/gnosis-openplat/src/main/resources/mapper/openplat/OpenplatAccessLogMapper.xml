@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="openplat.mapper.OpenplatAccessLogMapper">
+    
+    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatAccessLog">
+        <id column="id" property="id"/>
+        <result column="app_id" property="appId"/>
+        <result column="api_code" property="apiCode"/>
+        <result column="request_method" property="requestMethod"/>
+        <result column="request_path" property="requestPath"/>
+        <result column="request_params" property="requestParams"/>
+        <result column="request_body" property="requestBody"/>
+        <result column="response_code" property="responseCode"/>
+        <result column="response_body" property="responseBody"/>
+        <result column="cost_time" property="costTime"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="user_agent" property="userAgent"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, app_id, api_code, request_method, request_path, request_params, request_body,
+        response_code, response_body, cost_time, ip_address, user_agent, error_message, create_time
+    </sql>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM openplat_access_log
+        WHERE id = #{id}
+    </select>
+    
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM openplat_access_log
+        <where>
+            <if test="appId != null and appId != ''">
+                AND app_id = #{appId}
+            </if>
+            <if test="apiCode != null and apiCode != ''">
+                AND api_code = #{apiCode}
+            </if>
+            <if test="createTime != null">
+                AND create_time >= #{createTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+    
+    <insert id="insert" parameterType="openplat.domain.OpenplatAccessLog">
+        INSERT INTO openplat_access_log (
+            id, app_id, api_code, request_method, request_path, request_params, request_body,
+            response_code, response_body, cost_time, ip_address, user_agent, error_message, create_time
+        ) VALUES (
+            #{id}, #{appId}, #{apiCode}, #{requestMethod}, #{requestPath}, #{requestParams}, #{requestBody},
+            #{responseCode}, #{responseBody}, #{costTime}, #{ipAddress}, #{userAgent}, #{errorMessage}, #{createTime}
+        )
+    </insert>
+    
+    <delete id="deleteById">
+        DELETE FROM openplat_access_log WHERE id = #{id}
+    </delete>
+    
+    <delete id="deleteByIds">
+        DELETE FROM openplat_access_log WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteExpired">
+        DELETE FROM openplat_access_log WHERE create_time &lt; #{expireDate}
+    </delete>
+    
+</mapper>

@@ -1,0 +1,22 @@
+package com.gnosis.distribute.queue;
+
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+/**
+ * 分布式队列服务启动类
+ * 基于openGauss的分布式队列系统
+ */
+@SpringBootApplication
+@EnableScheduling
+@ComponentScan(basePackages = {"com.gnosis.distribute.queue"})
+@MapperScan("com.gnosis.distribute.queue")
+public class DistributedQueueApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(DistributedQueueApplication.class, args);
+    }
+}

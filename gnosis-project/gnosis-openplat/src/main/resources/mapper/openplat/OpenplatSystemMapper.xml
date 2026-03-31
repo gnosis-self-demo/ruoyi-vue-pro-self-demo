@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="openplat.mapper.OpenplatSystemMapper">
+    
+    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatSystem">
+        <id column="id" property="id"/>
+        <result column="system_code" property="systemCode"/>
+        <result column="system_name" property="systemName"/>
+        <result column="system_type" property="systemType"/>
+        <result column="principal" property="principal"/>
+        <result column="status" property="status"/>
+        <result column="description" property="description"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, system_code, system_name, system_type, principal, status, description,
+        create_user_id, create_time, update_user_id, update_time
+    </sql>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM openplat_system
+        WHERE id = #{id}
+    </select>
+    
+    <select id="selectBySystemCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM openplat_system
+        WHERE system_code = #{systemCode}
+    </select>
+    
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM openplat_system
+        <where>
+            <if test="systemCode != null and systemCode != ''">
+                AND system_code LIKE CONCAT('%', #{systemCode}, '%')
+            </if>
+            <if test="systemName != null and systemName != ''">
+                AND system_name LIKE CONCAT('%', #{systemName}, '%')
+            </if>
+            <if test="systemType != null and systemType != ''">
+                AND system_type = #{systemType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+    
+    <insert id="insert" parameterType="openplat.domain.OpenplatSystem">
+        INSERT INTO openplat_system (
+            id, system_code, system_name, system_type, principal, status, description,
+            create_user_id, create_time, update_user_id, update_time
+        ) VALUES (
+            #{id}, #{systemCode}, #{systemName}, #{systemType}, #{principal}, #{status}, #{description},
+            #{createUserId}, #{createTime}, #{updateUserId}, #{updateTime}
+        )
+    </insert>
+    
+    <update id="update" parameterType="openplat.domain.OpenplatSystem">
+        UPDATE openplat_system
+        <set>
+            <if test="systemCode != null and systemCode != ''">system_code = #{systemCode},</if>
+            <if test="systemName != null and systemName != ''">system_name = #{systemName},</if>
+            <if test="systemType != null and systemType != ''">system_type = #{systemType},</if>
+            <if test="principal != null">principal = #{principal},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteById">
+        DELETE FROM openplat_system WHERE id = #{id}
+    </delete>
+    
+    <delete id="deleteByIds">
+        DELETE FROM openplat_system WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+</mapper>

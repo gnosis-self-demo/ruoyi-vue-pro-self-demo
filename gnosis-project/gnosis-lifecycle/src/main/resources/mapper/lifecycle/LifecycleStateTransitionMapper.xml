@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lifecycle.repository.LifecycleStateTransitionMapper">
+
+    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleStateTransition">
+        <id column="id" property="id"/>
+        <result column="business_type_id" property="businessTypeId"/>
+        <result column="from_state_id" property="fromStateId"/>
+        <result column="to_state_id" property="toStateId"/>
+        <result column="transition_name" property="transitionName"/>
+        <result column="transition_code" property="transitionCode"/>
+        <result column="condition_expression" property="conditionExpression"/>
+        <result column="priority" property="priority"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, business_type_id, from_state_id, to_state_id, transition_name, transition_code,
+        condition_expression, priority, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM lifecycle_state_transition
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByBusinessTypeId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM lifecycle_state_transition
+        WHERE business_type_id = #{businessTypeId}
+        ORDER BY priority DESC
+    </select>
+
+    <select id="selectList" parameterType="lifecycle.domain.LifecycleStateTransition" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM lifecycle_state_transition
+        <where>
+            <if test="businessTypeId != null and businessTypeId != ''">
+                AND business_type_id = #{businessTypeId}
+            </if>
+            <if test="fromStateId != null and fromStateId != ''">
+                AND from_state_id = #{fromStateId}
+            </if>
+            <if test="toStateId != null and toStateId != ''">
+                AND to_state_id = #{toStateId}
+            </if>
+            <if test="transitionCode != null and transitionCode != ''">
+                AND transition_code = #{transitionCode}
+            </if>
+        </where>
+        ORDER BY priority DESC, create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="lifecycle.domain.LifecycleStateTransition">
+        INSERT INTO lifecycle_state_transition (
+            id, business_type_id, from_state_id, to_state_id, transition_name, transition_code,
+            condition_expression, priority,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{businessTypeId}, #{fromStateId}, #{toStateId}, #{transitionName}, #{transitionCode},
+            #{conditionExpression}, #{priority},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="lifecycle.domain.LifecycleStateTransition">
+        UPDATE lifecycle_state_transition
+        <set>
+            <if test="fromStateId != null and fromStateId != ''">
+                from_state_id = #{fromStateId},
+            </if>
+            <if test="toStateId != null and toStateId != ''">
+                to_state_id = #{toStateId},
+            </if>
+            <if test="transitionName != null and transitionName != ''">
+                transition_name = #{transitionName},
+            </if>
+            <if test="transitionCode != null and transitionCode != ''">
+                transition_code = #{transitionCode},
+            </if>
+            <if test="conditionExpression != null">
+                condition_expression = #{conditionExpression},
+            </if>
+            <if test="priority != null">
+                priority = #{priority},
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                update_user_id = #{updateUserId},
+            </if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM lifecycle_state_transition WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds" parameterType="java.lang.String">
+        DELETE FROM lifecycle_state_transition WHERE id IN
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByBusinessTypeId" parameterType="java.lang.String">
+        DELETE FROM lifecycle_state_transition WHERE business_type_id = #{businessTypeId}
+    </delete>
+
+</mapper>
