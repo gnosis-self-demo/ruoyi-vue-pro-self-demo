@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="openplat.mapper.OpenplatApiConfigMapper">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatApiConfigMapper">
     
-    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatApiConfig">
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatApiConfig">
         <id column="id" property="id"/>
         <result column="api_code" property="apiCode"/>
         <result column="api_name" property="apiName"/>
@@ -68,7 +68,7 @@
         ORDER BY create_time DESC
     </select>
     
-    <insert id="insert" parameterType="openplat.domain.OpenplatApiConfig">
+    <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatApiConfig">
         INSERT INTO openplat_api_config (
             id, api_code, api_name, api_path, api_method, example_url, need_auth,
             need_timestamp, need_nonce, rate_limit, status, description,
@@ -80,7 +80,7 @@
         )
     </insert>
     
-    <update id="update" parameterType="openplat.domain.OpenplatApiConfig">
+    <update id="update" parameterType="com.gnosis.openplat.domain.OpenplatApiConfig">
         UPDATE openplat_api_config
         <set>
             <if test="apiName != null and apiName != ''">api_name = #{apiName},</if>

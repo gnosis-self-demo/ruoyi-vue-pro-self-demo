@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="openplat.mapper.OpenplatAccessLogMapper">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatAccessLogMapper">
     
-    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatAccessLog">
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatAccessLog">
         <id column="id" property="id"/>
         <result column="app_id" property="appId"/>
         <result column="api_code" property="apiCode"/>
@@ -47,7 +47,7 @@
         ORDER BY create_time DESC
     </select>
     
-    <insert id="insert" parameterType="openplat.domain.OpenplatAccessLog">
+    <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatAccessLog">
         INSERT INTO openplat_access_log (
             id, app_id, api_code, request_method, request_path, request_params, request_body,
             response_code, response_body, cost_time, ip_address, user_agent, error_message, create_time

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="openplat.mapper.OpenplatNonceCacheMapper">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatNonceCacheMapper">
     
-    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatNonceCache">
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatNonceCache">
         <id column="id" property="id"/>
         <result column="app_id" property="appId"/>
         <result column="nonce" property="nonce"/>
@@ -37,7 +37,7 @@
         ORDER BY create_time DESC
     </select>
     
-    <insert id="insert" parameterType="openplat.domain.OpenplatNonceCache">
+    <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatNonceCache">
         INSERT INTO openplat_nonce_cache (
             id, app_id, nonce, expire_time, create_time
         ) VALUES (

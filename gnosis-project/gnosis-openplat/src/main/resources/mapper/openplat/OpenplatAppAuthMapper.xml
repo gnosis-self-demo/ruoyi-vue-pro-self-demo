@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="openplat.mapper.OpenplatAppAuthMapper">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatAppAuthMapper">
     
-    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatAppAuth">
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatAppAuth">
         <id column="id" property="id"/>
         <result column="app_id" property="appId"/>
         <result column="app_secret" property="appSecret"/>
@@ -13,7 +13,7 @@
         <result column="create_time" property="createTime"/>
         <result column="update_user_id" property="updateUserId"/>
         <result column="update_time" property="updateTime"/>
-        <association property="system" javaType="openplat.domain.OpenplatSystem">
+        <association property="system" javaType="com.gnosis.openplat.domain.OpenplatSystem">
             <id column="sys_id" property="id"/>
             <result column="sys_system_code" property="systemCode"/>
             <result column="sys_system_name" property="systemName"/>
@@ -60,7 +60,7 @@
         ORDER BY a.create_time DESC
     </select>
     
-    <insert id="insert" parameterType="openplat.domain.OpenplatAppAuth">
+    <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatAppAuth">
         INSERT INTO openplat_app_auth (
             id, app_id, app_secret, system_id, status, description,
             create_user_id, create_time, update_user_id, update_time
@@ -70,7 +70,7 @@
         )
     </insert>
     
-    <update id="update" parameterType="openplat.domain.OpenplatAppAuth">
+    <update id="update" parameterType="com.gnosis.openplat.domain.OpenplatAppAuth">
         UPDATE openplat_app_auth
         <set>
             <if test="appSecret != null and appSecret != ''">app_secret = #{appSecret},</if>

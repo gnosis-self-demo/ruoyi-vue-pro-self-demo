@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="openplat.mapper.OpenplatWebhookConfigMapper">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatWebhookConfigMapper">
     
-    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatWebhookConfig">
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatWebhookConfig">
         <id column="id" property="id"/>
         <result column="webhook_name" property="webhookName"/>
         <result column="event_type" property="eventType"/>
@@ -53,7 +53,7 @@
         ORDER BY create_time DESC
     </select>
     
-    <insert id="insert" parameterType="openplat.domain.OpenplatWebhookConfig">
+    <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatWebhookConfig">
         INSERT INTO openplat_webhook_config (
             id, webhook_name, event_type, callback_url, secret, retry_times, retry_interval,
             timeout, status, description, create_user_id, create_time, update_user_id, update_time
@@ -63,7 +63,7 @@
         )
     </insert>
     
-    <update id="update" parameterType="openplat.domain.OpenplatWebhookConfig">
+    <update id="update" parameterType="com.gnosis.openplat.domain.OpenplatWebhookConfig">
         UPDATE openplat_webhook_config
         <set>
             <if test="webhookName != null and webhookName != ''">webhook_name = #{webhookName},</if>

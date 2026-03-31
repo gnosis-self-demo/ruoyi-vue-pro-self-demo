@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="openplat.mapper.OpenplatRateLimitMapper">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatRateLimitMapper">
     
-    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatRateLimit">
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatRateLimit">
         <id column="id" property="id"/>
         <result column="limit_name" property="limitName"/>
         <result column="limit_type" property="limitType"/>
@@ -49,7 +49,7 @@
         ORDER BY create_time DESC
     </select>
     
-    <insert id="insert" parameterType="openplat.domain.OpenplatRateLimit">
+    <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatRateLimit">
         INSERT INTO openplat_rate_limit (
             id, limit_name, limit_type, limit_key, rate_limit, burst_limit, window_size,
             status, description, create_user_id, create_time, update_user_id, update_time
@@ -59,7 +59,7 @@
         )
     </insert>
     
-    <update id="update" parameterType="openplat.domain.OpenplatRateLimit">
+    <update id="update" parameterType="com.gnosis.openplat.domain.OpenplatRateLimit">
         UPDATE openplat_rate_limit
         <set>
             <if test="limitName != null and limitName != ''">limit_name = #{limitName},</if>

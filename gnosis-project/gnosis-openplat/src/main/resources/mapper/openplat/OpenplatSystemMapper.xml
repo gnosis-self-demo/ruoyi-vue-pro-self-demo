@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="openplat.mapper.OpenplatSystemMapper">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatSystemMapper">
     
-    <resultMap id="BaseResultMap" type="openplat.domain.OpenplatSystem">
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatSystem">
         <id column="id" property="id"/>
         <result column="system_code" property="systemCode"/>
         <result column="system_name" property="systemName"/>
@@ -53,7 +53,7 @@
         ORDER BY create_time DESC
     </select>
     
-    <insert id="insert" parameterType="openplat.domain.OpenplatSystem">
+    <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatSystem">
         INSERT INTO openplat_system (
             id, system_code, system_name, system_type, principal, status, description,
             create_user_id, create_time, update_user_id, update_time
@@ -63,7 +63,7 @@
         )
     </insert>
     
-    <update id="update" parameterType="openplat.domain.OpenplatSystem">
+    <update id="update" parameterType="com.gnosis.openplat.domain.OpenplatSystem">
         UPDATE openplat_system
         <set>
             <if test="systemCode != null and systemCode != ''">system_code = #{systemCode},</if>
