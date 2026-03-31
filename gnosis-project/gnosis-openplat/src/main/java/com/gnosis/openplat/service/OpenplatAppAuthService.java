@@ -58,4 +58,9 @@ public interface OpenplatAppAuthService {
      * 验证应用认证
      */
     boolean validateAppAuth(String appId, String appSecret);
+    
+    /**
+     * 根据appId获取应用密钥
+     */
+    String getAppSecretByAppId(String appId);
 }

@@ -30,11 +30,57 @@ public class DbInitializer {
     @PostConstruct
     public void init() {
         try {
+            // 先检查并添加缺失的列
+            addMissingColumns();
             // 执行初始化脚本
             executeSqlScript("classpath:db/openplat/openplat-opengauss.sql");
             log.info("[DbInitializer] Successfully initialized openplat database");
         } catch (Exception e) {
             log.error("[DbInitializer] Failed to initialize database", e);
+        }
+    }
+    
+    /**
+     * 添加缺失的列
+     */
+    private void addMissingColumns() {
+        try {
+            // 检查openplat_api_config表是否存在system_id列
+            boolean hasSystemIdColumn = false;
+            try {
+                jdbcTemplate.queryForObject("SELECT system_id FROM openplat_api_config LIMIT 1", String.class);
+                hasSystemIdColumn = true;
+            } catch (Exception e) {
+                // 列不存在，需要添加
+                log.info("[DbInitializer] system_id column not found, adding it");
+            }
+            
+            if (!hasSystemIdColumn) {
+                // 添加system_id列
+                jdbcTemplate.execute("ALTER TABLE openplat_api_config ADD COLUMN system_id VARCHAR(128)");
+                // 更新现有数据
+                jdbcTemplate.execute("UPDATE openplat_api_config SET system_id = 'sys_001'");
+                // 设置为非空
+                jdbcTemplate.execute("ALTER TABLE openplat_api_config ALTER COLUMN system_id SET NOT NULL");
+            }
+            
+            // 添加外键约束
+            try {
+                jdbcTemplate.execute("ALTER TABLE openplat_api_config ADD CONSTRAINT fk_api_system FOREIGN KEY (system_id) REFERENCES openplat_system(id)");
+            } catch (Exception e) {
+                // 外键约束可能已经存在，忽略错误
+                log.warn("[DbInitializer] Foreign key constraint fk_api_system may already exist", e);
+            }
+            
+            // 添加索引
+            try {
+                jdbcTemplate.execute("CREATE INDEX idx_api_config_system ON openplat_api_config(system_id)");
+            } catch (Exception e) {
+                // 索引可能已经存在，忽略错误
+                log.warn("[DbInitializer] Index idx_api_config_system may already exist", e);
+            }
+        } catch (Exception e) {
+            log.error("[DbInitializer] Failed to add missing columns", e);
         }
     }
 

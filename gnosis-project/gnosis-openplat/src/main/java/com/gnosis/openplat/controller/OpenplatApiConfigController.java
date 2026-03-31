@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * API 配置管理 Controller
@@ -23,7 +24,8 @@ public class OpenplatApiConfigController {
     
     @ApiOperation("分页查询 API 配置列表")
     @GetMapping("/list")
-    public CommonResponse<List<OpenplatApiConfig>> list(OpenplatApiConfig apiConfig) {
+    @PostMapping("/list")
+    public CommonResponse<List<OpenplatApiConfig>> list(@RequestBody(required = false) OpenplatApiConfig apiConfig) {
         List<OpenplatApiConfig> list = apiConfigService.list(apiConfig);
         return CommonResponse.success(list);
     }
@@ -75,5 +77,25 @@ public class OpenplatApiConfigController {
     public CommonResponse<String> batchDisable(@RequestBody String[] ids) {
         apiConfigService.batchDisable(ids);
         return CommonResponse.success("批量禁用成功");
+    }
+    
+    @ApiOperation("检查 API 配置是否存在")
+    @GetMapping("/check")
+    public CommonResponse<Boolean> checkApiConfig(@RequestParam String apiCode, @RequestParam String apiPath) {
+        OpenplatApiConfig byApiCode = apiConfigService.getByApiCode(apiCode);
+        OpenplatApiConfig byApiPath = apiConfigService.getByApiPath(apiPath);
+        boolean exists = byApiCode != null || byApiPath != null;
+        return CommonResponse.success(exists);
+    }
+    
+    @ApiOperation("检查 API 配置是否存在（POST方式）")
+    @PostMapping("/check")
+    public CommonResponse<Boolean> checkApiConfigPost(@RequestBody Map<String, Object> requestBody) {
+        String apiCode = (String) requestBody.get("apiCode");
+        String apiPath = (String) requestBody.get("apiPath");
+        OpenplatApiConfig byApiCode = apiConfigService.getByApiCode(apiCode);
+        OpenplatApiConfig byApiPath = apiConfigService.getByApiPath(apiPath);
+        boolean exists = byApiCode != null || byApiPath != null;
+        return CommonResponse.success(exists);
     }
 }

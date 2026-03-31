@@ -94,4 +94,13 @@ public class OpenplatAppAuthServiceImpl implements OpenplatAppAuthService {
         }
         return appSecret.equals(appAuth.getAppSecret());
     }
+    
+    @Override
+    public String getAppSecretByAppId(String appId) {
+        OpenplatAppAuth appAuth = appAuthMapper.selectByAppId(appId);
+        if (appAuth == null || !"ENABLED".equals(appAuth.getStatus())) {
+            return null;
+        }
+        return appAuth.getAppSecret();
+    }
 }

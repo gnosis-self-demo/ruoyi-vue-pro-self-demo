@@ -23,7 +23,8 @@ public class OpenplatSystemController {
     
     @ApiOperation("分页查询系统列表")
     @GetMapping("/list")
-    public CommonResponse<List<OpenplatSystem>> list(OpenplatSystem system) {
+    @PostMapping("/list")
+    public CommonResponse<List<OpenplatSystem>> list(@RequestBody(required = false) OpenplatSystem system) {
         List<OpenplatSystem> list = systemService.list(system);
         return CommonResponse.success(list);
     }

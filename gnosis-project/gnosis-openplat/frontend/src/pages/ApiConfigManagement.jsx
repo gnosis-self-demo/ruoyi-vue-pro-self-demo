@@ -10,6 +10,9 @@ import {
   batchEnableApiConfigs,
   batchDisableApiConfigs
 } from '../services/apiConfigService'
+import {
+  getSystemList
+} from '../services/systemService'
 
 const { Option } = Select
 
@@ -21,9 +24,11 @@ const ApiConfigManagement = () => {
   const [editingRecord, setEditingRecord] = useState(null)
   const [form] = Form.useForm()
   const [searchForm, setSearchForm] = useState({})
+  const [systems, setSystems] = useState([])
 
   useEffect(() => {
     fetchData()
+    fetchSystems()
   }, [searchForm])
 
   const fetchData = async () => {
@@ -35,6 +40,15 @@ const ApiConfigManagement = () => {
       message.error('获取数据失败')
     }
     setLoading(false)
+  }
+
+  const fetchSystems = async () => {
+    try {
+      const res = await getSystemList({ status: 'ENABLED' })
+      setSystems(res.data || [])
+    } catch (error) {
+      console.error('获取系统列表失败', error)
+    }
   }
 
   const handleAdd = () => {
@@ -143,6 +157,11 @@ const ApiConfigManagement = () => {
       key: 'apiMethod'
     },
     {
+      title: '关联系统',
+      dataIndex: ['system', 'systemName'],
+      key: 'systemName'
+    },
+    {
       title: '示例链接',
       dataIndex: 'exampleUrl',
       key: 'exampleUrl',
@@ -209,6 +228,16 @@ const ApiConfigManagement = () => {
           allowClear
           style={{ width: 200 }}
         />
+        <Select
+          placeholder="选择系统"
+          onChange={(value) => setSearchForm({ ...searchForm, systemId: value })}
+          allowClear
+          style={{ width: 200 }}
+        >
+          {systems.map(sys => (
+            <Option key={sys.id} value={sys.id}>{sys.systemName}</Option>
+          ))}
+        </Select>
         <Button type="primary" onClick={fetchData}>查询</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增</Button>
         <Button danger icon={<DeleteOutlined />} onClick={handleBatchDelete} disabled={selectedRowKeys.length === 0}>批量删除</Button>
@@ -249,6 +278,13 @@ const ApiConfigManagement = () => {
               <Option value="POST">POST</Option>
               <Option value="PUT">PUT</Option>
               <Option value="DELETE">DELETE</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="systemId" label="关联系统" rules={[{ required: true, message: '请选择关联系统' }]}>
+            <Select>
+              {systems.map(sys => (
+                <Option key={sys.id} value={sys.id}>{sys.systemName}</Option>
+              ))}
             </Select>
           </Form.Item>
           <Form.Item name="exampleUrl" label="示例文档链接">

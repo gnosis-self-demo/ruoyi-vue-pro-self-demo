@@ -58,12 +58,14 @@ CREATE TABLE IF NOT EXISTS openplat_api_config (
     need_timestamp boolean DEFAULT true,
     need_nonce boolean DEFAULT true,
     rate_limit INTEGER DEFAULT 1000,
+    system_id VARCHAR(128) NOT NULL,
     status VARCHAR(16) DEFAULT 'ENABLED',
     description VARCHAR(512),
     create_user_id VARCHAR(128) NOT NULL,
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_user_id VARCHAR(128),
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_api_system FOREIGN KEY (system_id) REFERENCES openplat_system(id)
 );
 
 COMMENT ON TABLE openplat_api_config IS 'API配置表';
@@ -72,8 +74,10 @@ COMMENT ON COLUMN openplat_api_config.need_auth IS '是否需要认证';
 COMMENT ON COLUMN openplat_api_config.need_timestamp IS '是否需要时间戳';
 COMMENT ON COLUMN openplat_api_config.need_nonce IS '是否需要nonce';
 COMMENT ON COLUMN openplat_api_config.rate_limit IS '限流阈值';
+COMMENT ON COLUMN openplat_api_config.system_id IS '关联系统ID';
 
 CREATE INDEX idx_api_config_path ON openplat_api_config(api_path);
+CREATE INDEX idx_api_config_system ON openplat_api_config(system_id);
 
 -- 4. API 文档表
 CREATE TABLE IF NOT EXISTS openplat_api_doc (
@@ -196,10 +200,10 @@ VALUES
 ('app_002', 'app_erp_001', 'secret_erp_2024', 'sys_002', 'ENABLED', 'ERP purchasing application', 'admin', 'admin');
 
 -- 示例 API
-INSERT INTO openplat_api_config (id, api_code, api_name, api_path, api_method, example_url, need_auth, need_timestamp, need_nonce, rate_limit, status, description, create_user_id, update_user_id)
+INSERT INTO openplat_api_config (id, api_code, api_name, api_path, api_method, example_url, need_auth, need_timestamp, need_nonce, rate_limit, system_id, status, description, create_user_id, update_user_id)
 VALUES
-('api_001', 'ORDER_CREATE', 'Order creation interface', '/api/v1/order/create', 'POST', 'http://api-docs.example.com/order/create', true, true, true, 1000, 'ENABLED', 'Create purchase order', 'admin', 'admin'),
-('api_002', 'CONTRACT_UPDATE', 'Contract status update', '/api/v1/contract/update', 'POST', 'http://api-docs.example.com/contract/update', true, true, true, 500, 'ENABLED', 'Update contract status', 'admin', 'admin');
+('api_001', 'ORDER_CREATE', 'Order creation interface', '/api/v1/order/create', 'POST', 'http://api-docs.example.com/order/create', true, true, true, 1000, 'sys_001', 'ENABLED', 'Create purchase order', 'admin', 'admin'),
+('api_002', 'CONTRACT_UPDATE', 'Contract status update', '/api/v1/contract/update', 'POST', 'http://api-docs.example.com/contract/update', true, true, true, 500, 'sys_002', 'ENABLED', 'Update contract status', 'admin', 'admin');
 
 -- 示例 Webhook
 INSERT INTO openplat_webhook_config (id, webhook_name, event_type, callback_url, secret, retry_times, retry_interval, timeout, status, description, create_user_id, update_user_id)

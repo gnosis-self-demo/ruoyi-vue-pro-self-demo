@@ -58,6 +58,11 @@ public class OpenplatApiConfig extends BaseDomain {
     private Integer rateLimit;
     
     /**
+     * 关联系统ID
+     */
+    private String systemId;
+    
+    /**
      * 状态：ENABLED/DISABLED
      */
     private String status;
@@ -66,4 +71,9 @@ public class OpenplatApiConfig extends BaseDomain {
      * 描述
      */
     private String description;
+    
+    /**
+     * 关联的系统信息
+     */
+    private OpenplatSystem system;
 }
