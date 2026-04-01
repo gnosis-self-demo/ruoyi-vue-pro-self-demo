@@ -4,26 +4,26 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 应用认证信息
+ * API与系统关系配置
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class OpenplatAppAuth extends BaseDomain {
+public class OpenplatApiSystemRelation extends BaseDomain {
     
     private static final long serialVersionUID = 1L;
     
     /**
-     * 应用 ID
+     * 关系ID
      */
-    private String appId;
+    private String relationId;
     
     /**
-     * 应用密钥
+     * API配置ID
      */
-    private String appSecret;
+    private String apiId;
     
     /**
-     * 关联系统 ID
+     * 系统ID
      */
     private String systemId;
     
@@ -38,7 +38,12 @@ public class OpenplatAppAuth extends BaseDomain {
     private String description;
     
     /**
-     * 关联系统信息
+     * 关联的API配置信息
      */
-    private transient OpenplatSystem system;
+    private OpenplatApiConfig apiConfig;
+    
+    /**
+     * 关联的系统信息
+     */
+    private OpenplatSystem system;
 }

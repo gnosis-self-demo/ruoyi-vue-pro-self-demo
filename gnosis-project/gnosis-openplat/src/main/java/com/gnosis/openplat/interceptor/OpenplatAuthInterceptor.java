@@ -1,10 +1,12 @@
 package com.gnosis.openplat.interceptor;
 
-import cn.hutool.crypto.SecureUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.gnosis.openplat.dto.CommonResponse;
-import com.gnosis.openplat.service.OpenplatAppAuthService;
+import com.gnosis.openplat.domain.OpenplatApiConfig;
+import com.gnosis.openplat.domain.OpenplatApiSystemRelation;
+import com.gnosis.openplat.service.OpenplatApiConfigService;
+import com.gnosis.openplat.service.OpenplatApiSystemRelationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -15,8 +17,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 开放平台鉴权拦截器
@@ -26,13 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OpenplatAuthInterceptor implements HandlerInterceptor {
 
     @Autowired
-    private OpenplatAppAuthService appAuthService;
-
-    // 用于存储nonce，防止重放攻击
-    private final Map<String, Long> nonceCache = new ConcurrentHashMap<>();
-
-    // 过期时间（毫秒）
-    private static final long TIMEOUT = 5 * 60 * 1000;
+    private OpenplatApiConfigService apiConfigService;
+    
+    @Autowired
+    private OpenplatApiSystemRelationService apiSystemRelationService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -41,54 +38,65 @@ public class OpenplatAuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 从请求体中获取鉴权数据
+        // 获取请求路径和方法
+        String requestPath = request.getRequestURI();
+        String requestMethod = request.getMethod();
+
+        // 检查API配置
+        OpenplatApiConfig apiConfig = apiConfigService.getByApiPath(requestPath);
+        if (apiConfig == null) {
+            sendError(response, "API不存在");
+            return false;
+        }
+
+        // 检查API状态
+        if (!"ENABLED".equals(apiConfig.getStatus())) {
+            sendError(response, "API已禁用");
+            return false;
+        }
+
+        // 检查请求方法是否匹配
+        if (!apiConfig.getApiMethod().equals(requestMethod)) {
+            sendError(response, "请求方法不匹配");
+            return false;
+        }
+
+        // 从请求体中获取通用校验数据
         JSONObject requestBody = getRequestBody(request);
         if (requestBody == null) {
             sendError(response, "请求体不能为空");
             return false;
         }
 
-        // 提取鉴权数据
-        String appId = requestBody.getString("appId");
+        // 提取通用校验数据
         Long timestamp = requestBody.getLong("timestamp");
         String nonce = requestBody.getString("nonce");
-        String signature = requestBody.getString("signature");
+        String systemId = requestBody.getString("systemId");
 
         // 验证参数
-        if (appId == null || timestamp == null || nonce == null || signature == null) {
-            sendError(response, "鉴权参数不完整");
+        if (timestamp == null || nonce == null || systemId == null) {
+            sendError(response, "通用校验参数不完整");
             return false;
         }
 
-        // 验证时间戳是否过期
-        if (System.currentTimeMillis() - timestamp > TIMEOUT) {
+        // 验证时间戳是否过期（5分钟）
+        if (System.currentTimeMillis() - timestamp > 5 * 60 * 1000) {
             sendError(response, "请求已过期");
             return false;
         }
 
-        // 验证nonce是否重复
-        if (nonceCache.containsKey(nonce)) {
-            sendError(response, "重复的请求");
-            return false;
-        }
-        nonceCache.put(nonce, timestamp);
-
-        // 获取应用密钥
-        String appSecret = appAuthService.getAppSecretByAppId(appId);
-        if (appSecret == null) {
-            sendError(response, "无效的应用ID");
+        // 验证系统是否有权限访问此API（通过关系配置）
+        OpenplatApiSystemRelation relation = apiSystemRelationService.getByApiPathAndSystemId(requestPath, systemId);
+        if (relation == null) {
+            sendError(response, "系统无权限访问此API");
             return false;
         }
 
-        // 验证签名
-        String expectedSignature = generateSignature(requestBody, appId, appSecret);
-        if (!signature.equals(expectedSignature)) {
-            sendError(response, "签名验证失败");
+        // 验证关系状态
+        if (!"ENABLED".equals(relation.getStatus())) {
+            sendError(response, "系统访问此API的权限已被禁用");
             return false;
         }
-
-        // 检查接口授权（这里简化实现，实际需要根据API配置检查）
-        // TODO: 实现接口授权检查逻辑
 
         return true;
     }
@@ -121,33 +129,6 @@ public class OpenplatAuthInterceptor implements HandlerInterceptor {
         }
         
         return JSON.parseObject(body);
-    }
-
-    /**
-     * 生成签名
-     */
-    private String generateSignature(JSONObject requestBody, String appId, String appSecret) {
-        StringBuilder signatureBuilder = new StringBuilder();
-        signatureBuilder.append("appId=").append(appId)
-                .append("&timestamp=").append(requestBody.getLong("timestamp"))
-                .append("&nonce=").append(requestBody.getString("nonce"));
-
-        // 添加业务数据参数
-        JSONObject data = requestBody.getJSONObject("data");
-        if (data != null) {
-            data.entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> {
-                        signatureBuilder.append("&").append(entry.getKey())
-                                .append("=").append(entry.getValue());
-                    });
-        }
-
-        // 添加应用密钥
-        signatureBuilder.append("&appSecret=").append(appSecret);
-
-        // 计算MD5签名
-        return SecureUtil.md5(signatureBuilder.toString());
     }
 
     /**

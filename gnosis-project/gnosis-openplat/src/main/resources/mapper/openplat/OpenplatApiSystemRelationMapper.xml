@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.openplat.mapper.OpenplatApiSystemRelationMapper">
+    
+    <resultMap id="BaseResultMap" type="com.gnosis.openplat.domain.OpenplatApiSystemRelation">
+        <id column="relation_id" property="relationId" />
+        <result column="api_id" property="apiId" />
+        <result column="system_id" property="systemId" />
+        <result column="status" property="status" />
+        <result column="description" property="description" />
+        <result column="create_user_id" property="createUserId" />
+        <result column="create_time" property="createTime" />
+        <result column="update_user_id" property="updateUserId" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+    
+    <select id="getById" parameterType="string" resultMap="BaseResultMap">
+        SELECT * FROM openplat_api_system_relation WHERE relation_id = #{relationId}
+    </select>
+    
+    <select id="getByApiId" parameterType="string" resultMap="BaseResultMap">
+        SELECT * FROM openplat_api_system_relation WHERE api_id = #{apiId}
+    </select>
+    
+    <select id="getBySystemId" parameterType="string" resultMap="BaseResultMap">
+        SELECT * FROM openplat_api_system_relation WHERE system_id = #{systemId}
+    </select>
+    
+    <select id="getByApiPathAndSystemId" resultMap="BaseResultMap">
+        SELECT r.* FROM openplat_api_system_relation r
+        LEFT JOIN openplat_api_config a ON r.api_id = a.id
+        WHERE a.api_path = #{apiPath} AND r.system_id = #{systemId}
+    </select>
+    
+    <select id="list" parameterType="com.gnosis.openplat.domain.OpenplatApiSystemRelation" resultMap="BaseResultMap">
+        SELECT * FROM openplat_api_system_relation
+        <where>
+            <if test="apiId != null and apiId != ''">
+                AND api_id = #{apiId}
+            </if>
+            <if test="systemId != null and systemId != ''">
+                AND system_id = #{systemId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+    
+    <insert id="save" parameterType="com.gnosis.openplat.domain.OpenplatApiSystemRelation">
+        INSERT INTO openplat_api_system_relation
+        (relation_id, api_id, system_id, status, description, create_user_id, create_time, update_user_id, update_time)
+        VALUES
+        (#{relationId}, #{apiId}, #{systemId}, #{status}, #{description}, #{createUserId}, #{createTime}, #{updateUserId}, #{updateTime})
+    </insert>
+    
+    <update id="update" parameterType="com.gnosis.openplat.domain.OpenplatApiSystemRelation">
+        UPDATE openplat_api_system_relation
+        SET
+            api_id = #{apiId},
+            system_id = #{systemId},
+            status = #{status},
+            description = #{description},
+            update_user_id = #{updateUserId},
+            update_time = #{updateTime}
+        WHERE relation_id = #{relationId}
+    </update>
+    
+    <delete id="delete" parameterType="string">
+        DELETE FROM openplat_api_system_relation WHERE relation_id = #{relationId}
+    </delete>
+    
+    <delete id="batchDelete" parameterType="string[]">
+        DELETE FROM openplat_api_system_relation WHERE relation_id IN
+        <foreach collection="array" item="relationId" open="(" separator="," close=")">
+            #{relationId}
+        </foreach>
+    </delete>
+    
+    <update id="batchEnable" parameterType="string[]">
+        UPDATE openplat_api_system_relation SET status = 'ENABLED' WHERE relation_id IN
+        <foreach collection="array" item="relationId" open="(" separator="," close=")">
+            #{relationId}
+        </foreach>
+    </update>
+    
+    <update id="batchDisable" parameterType="string[]">
+        UPDATE openplat_api_system_relation SET status = 'DISABLED' WHERE relation_id IN
+        <foreach collection="array" item="relationId" open="(" separator="," close=")">
+            #{relationId}
+        </foreach>
+    </update>
+</mapper>
