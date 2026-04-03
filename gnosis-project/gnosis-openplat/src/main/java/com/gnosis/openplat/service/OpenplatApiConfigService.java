@@ -58,4 +58,14 @@ public interface OpenplatApiConfigService {
      * 批量禁用 API
      */
     int batchDisable(String[] ids);
+    
+    /**
+     * 批量关联系统到API
+     */
+    boolean relateSystems(String apiId, String[] systemIds);
+    
+    /**
+     * 批量解除API与系统的关联
+     */
+    boolean unrelateSystems(String apiId, String[] systemIds);
 }

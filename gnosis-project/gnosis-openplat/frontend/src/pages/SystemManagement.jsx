@@ -8,7 +8,8 @@ import {
   deleteSystem,
   batchDeleteSystems,
   batchEnableSystems,
-  batchDisableSystems
+  batchDisableSystems,
+  getSystemApis
 } from '../services/systemService'
 
 const { Option } = Select
@@ -18,7 +19,11 @@ const SystemManagement = () => {
   const [data, setData] = useState([])
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
   const [modalVisible, setModalVisible] = useState(false)
+  const [apiModalVisible, setApiModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState(null)
+  const [selectedSystemId, setSelectedSystemId] = useState(null)
+  const [systemApis, setSystemApis] = useState([])
+  const [apiLoading, setApiLoading] = useState(false)
   const [form] = Form.useForm()
   const [searchForm, setSearchForm] = useState({})
 
@@ -29,8 +34,8 @@ const SystemManagement = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await getSystemList(searchForm)
-      setData(res.data || [])
+      const data = await getSystemList(searchForm)
+      setData(data || [])
     } catch (error) {
       message.error('获取数据失败')
     }
@@ -120,6 +125,19 @@ const SystemManagement = () => {
       message.error('批量禁用失败')
     }
   }
+  
+  const handleViewApis = async (systemId) => {
+    setSelectedSystemId(systemId)
+    setApiLoading(true)
+    try {
+      const data = await getSystemApis(systemId)
+      setSystemApis(data || [])
+      setApiModalVisible(true)
+    } catch (error) {
+      message.error('获取API列表失败')
+    }
+    setApiLoading(false)
+  }
 
   const columns = [
     {
@@ -169,6 +187,7 @@ const SystemManagement = () => {
       render: (_, record) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          <Button type="link" onClick={() => handleViewApis(record.id)}>查看API</Button>
           <Popconfirm title="确定删除吗？" onConfirm={() => handleDelete(record.id)}>
             <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
           </Popconfirm>
@@ -245,6 +264,64 @@ const SystemManagement = () => {
             <Input.TextArea rows={4} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 系统关联API列表模态框 */}
+      <Modal
+        title="系统关联API列表"
+        open={apiModalVisible}
+        onCancel={() => setApiModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setApiModalVisible(false)}>关闭</Button>
+        ]}
+        width={800}
+      >
+        <Table
+          loading={apiLoading}
+          columns={[
+            {
+              title: 'API 编码',
+              dataIndex: 'apiCode',
+              key: 'apiCode'
+            },
+            {
+              title: 'API 名称',
+              dataIndex: 'apiName',
+              key: 'apiName'
+            },
+            {
+              title: 'API 路径',
+              dataIndex: 'apiPath',
+              key: 'apiPath'
+            },
+            {
+              title: '请求方法',
+              dataIndex: 'apiMethod',
+              key: 'apiMethod'
+            },
+            {
+              title: '需要认证',
+              dataIndex: 'needAuth',
+              key: 'needAuth',
+              render: (val) => val ? '是' : '否'
+            },
+            {
+              title: '限流阈值',
+              dataIndex: 'rateLimit',
+              key: 'rateLimit'
+            },
+            {
+              title: '状态',
+              dataIndex: 'status',
+              key: 'status',
+              render: (status) => status === 'ENABLED' ? '启用' : '禁用'
+            }
+          ]}
+          dataSource={systemApis}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 1000 }}
+        />
       </Modal>
     </div>
   )

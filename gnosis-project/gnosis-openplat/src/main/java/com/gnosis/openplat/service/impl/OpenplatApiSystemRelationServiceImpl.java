@@ -2,6 +2,7 @@ package com.gnosis.openplat.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatApiSystemRelation;
 import com.gnosis.openplat.mapper.OpenplatApiSystemRelationMapper;
 import com.gnosis.openplat.service.OpenplatApiSystemRelationService;
@@ -56,17 +57,49 @@ public class OpenplatApiSystemRelationServiceImpl extends ServiceImpl<OpenplatAp
     }
     
     @Override
-    public boolean batchDelete(String[] relationIds) {
-        return baseMapper.batchDelete(relationIds) > 0;
+    public boolean batchDelete(String[] ids) {
+        return baseMapper.batchDelete(ids) > 0;
     }
     
     @Override
-    public boolean batchEnable(String[] relationIds) {
-        return baseMapper.batchEnable(relationIds) > 0;
+    public boolean batchEnable(String[] ids) {
+        return baseMapper.batchEnable(ids) > 0;
     }
     
     @Override
-    public boolean batchDisable(String[] relationIds) {
-        return baseMapper.batchDisable(relationIds) > 0;
+    public boolean batchDisable(String[] ids) {
+        return baseMapper.batchDisable(ids) > 0;
+    }
+    
+    @Override
+    public boolean batchRelateSystems(String apiId, String[] systemIds) {
+        // 先删除已有的关联关系
+        baseMapper.deleteByApiIdAndSystemIds(apiId, systemIds);
+        
+        // 批量添加新的关联关系
+        for (String systemId : systemIds) {
+            OpenplatApiSystemRelation relation = new OpenplatApiSystemRelation();
+            relation.setRelationId("rel_" + System.currentTimeMillis() + "_" + systemId);
+            relation.setApiId(apiId);
+            relation.setSystemId(systemId);
+            relation.setStatus("ENABLED");
+            relation.setCreateUserId("admin");
+            relation.setCreateTime(new java.util.Date());
+            relation.setUpdateUserId("admin");
+            relation.setUpdateTime(new java.util.Date());
+            baseMapper.insert(relation);
+        }
+        
+        return true;
+    }
+    
+    @Override
+    public boolean batchUnrelateSystems(String apiId, String[] systemIds) {
+        return baseMapper.deleteByApiIdAndSystemIds(apiId, systemIds) > 0;
+    }
+    
+    @Override
+    public List<OpenplatApiConfig> getApisBySystemId(String systemId) {
+        return baseMapper.selectApisBySystemId(systemId);
     }
 }

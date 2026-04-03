@@ -1,5 +1,6 @@
 package com.gnosis.openplat.service;
 
+import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatApiSystemRelation;
 
 import java.util.List;
@@ -52,15 +53,30 @@ public interface OpenplatApiSystemRelationService {
     /**
      * 批量删除关系配置
      */
-    boolean batchDelete(String[] relationIds);
+    boolean batchDelete(String[] ids);
     
     /**
      * 批量启用关系配置
      */
-    boolean batchEnable(String[] relationIds);
+    boolean batchEnable(String[] ids);
     
     /**
      * 批量禁用关系配置
      */
-    boolean batchDisable(String[] relationIds);
+    boolean batchDisable(String[] ids);
+    
+    /**
+     * 批量关联系统到API
+     */
+    boolean batchRelateSystems(String apiId, String[] systemIds);
+    
+    /**
+     * 批量解除API与系统的关联
+     */
+    boolean batchUnrelateSystems(String apiId, String[] systemIds);
+    
+    /**
+     * 根据系统ID查询关联的API配置列表
+     */
+    List<OpenplatApiConfig> getApisBySystemId(String systemId);
 }

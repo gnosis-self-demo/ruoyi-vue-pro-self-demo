@@ -2,8 +2,10 @@ package com.gnosis.openplat.service.impl;
 
 import cn.hutool.core.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
+import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatSystem;
 import com.gnosis.openplat.mapper.OpenplatSystemMapper;
+import com.gnosis.openplat.service.OpenplatApiSystemRelationService;
 import com.gnosis.openplat.service.OpenplatSystemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,9 @@ public class OpenplatSystemServiceImpl implements OpenplatSystemService {
     @Autowired
     private OpenplatSystemMapper systemMapper;
     
+    @Autowired
+    private OpenplatApiSystemRelationService apiSystemRelationService;
+
     @Override
     public OpenplatSystem getById(String id) {
         return systemMapper.selectById(id);
@@ -84,5 +89,10 @@ public class OpenplatSystemServiceImpl implements OpenplatSystemService {
             count += systemMapper.update(system);
         }
         return count;
+    }
+    
+    @Override
+    public List<OpenplatApiConfig> getSystemApis(String systemId) {
+        return apiSystemRelationService.getApisBySystemId(systemId);
     }
 }

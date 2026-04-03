@@ -1,5 +1,6 @@
 package com.gnosis.openplat.service;
 
+import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatSystem;
 
 import java.util.List;
@@ -53,4 +54,9 @@ public interface OpenplatSystemService {
      * 批量禁用系统
      */
     int batchDisable(String[] ids);
+    
+    /**
+     * 查询系统关联的API列表
+     */
+    List<OpenplatApiConfig> getSystemApis(String systemId);
 }

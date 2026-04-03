@@ -45,8 +45,8 @@ export const batchDeleteSystems = (ids) => {
     data: ids
   })
 }
-
-export const batchEnableSystems = (ids) => {
+// 批量启用系统
+export const batchEnableSystems = async (ids) => {
   return request({
     url: '/openplat/system/enable',
     method: 'put',
@@ -54,10 +54,19 @@ export const batchEnableSystems = (ids) => {
   })
 }
 
-export const batchDisableSystems = (ids) => {
+// 批量禁用系统
+export const batchDisableSystems = async (ids) => {
   return request({
     url: '/openplat/system/disable',
     method: 'put',
     data: ids
+  })
+}
+
+// 查询系统关联的API列表
+export const getSystemApis = async (systemId) => {
+  return request({
+    url: `/openplat/system/apis/${systemId}`,
+    method: 'get'
   })
 }

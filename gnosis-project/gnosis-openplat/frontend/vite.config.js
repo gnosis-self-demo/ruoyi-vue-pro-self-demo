@@ -7,7 +7,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/openplat': {
-        target: 'http://localhost:8083',
+        target: 'http://127.0.0.1:8084',
         changeOrigin: true
       }
     }

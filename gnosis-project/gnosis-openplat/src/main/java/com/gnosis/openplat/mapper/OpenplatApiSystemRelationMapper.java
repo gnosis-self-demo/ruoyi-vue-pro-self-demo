@@ -1,7 +1,9 @@
 package com.gnosis.openplat.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatApiSystemRelation;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -53,15 +55,25 @@ public interface OpenplatApiSystemRelationMapper extends BaseMapper<OpenplatApiS
     /**
      * 批量删除关系配置
      */
-    int batchDelete(String[] relationIds);
+    int batchDelete(String[] ids);
     
     /**
      * 批量启用关系配置
      */
-    int batchEnable(String[] relationIds);
+    int batchEnable(String[] ids);
     
     /**
      * 批量禁用关系配置
      */
-    int batchDisable(String[] relationIds);
+    int batchDisable(String[] ids);
+    
+    /**
+     * 根据API ID和系统ID列表批量删除关系配置
+     */
+    int deleteByApiIdAndSystemIds(@Param("apiId") String apiId, @Param("systemIds") String[] systemIds);
+    
+    /**
+     * 根据系统ID查询关联的API配置列表
+     */
+    List<OpenplatApiConfig> selectApisBySystemId(String systemId);
 }

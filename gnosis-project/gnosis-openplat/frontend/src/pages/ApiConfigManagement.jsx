@@ -8,7 +8,8 @@ import {
   deleteApiConfig,
   batchDeleteApiConfigs,
   batchEnableApiConfigs,
-  batchDisableApiConfigs
+  batchDisableApiConfigs,
+  relateSystemsToApi
 } from '../services/apiConfigService'
 import {
   getSystemList
@@ -34,8 +35,8 @@ const ApiConfigManagement = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await getApiConfigList(searchForm)
-      setData(res.data || [])
+      const data = await getApiConfigList(searchForm)
+      setData(data || [])
     } catch (error) {
       message.error('获取数据失败')
     }
@@ -44,8 +45,8 @@ const ApiConfigManagement = () => {
 
   const fetchSystems = async () => {
     try {
-      const res = await getSystemList({ status: 'ENABLED' })
-      setSystems(res.data || [])
+      const data = await getSystemList({ status: 'ENABLED' })
+      setSystems(data || [])
     } catch (error) {
       console.error('获取系统列表失败', error)
     }
@@ -59,7 +60,12 @@ const ApiConfigManagement = () => {
 
   const handleEdit = (record) => {
     setEditingRecord(record)
-    form.setFieldsValue(record)
+    // 设置表单值，将systemId转换为systemIds数组
+    const formValues = { ...record }
+    if (record.systemId) {
+      formValues.systemIds = [record.systemId]
+    }
+    form.setFieldsValue(formValues)
     setModalVisible(true)
   }
 
@@ -76,11 +82,17 @@ const ApiConfigManagement = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
+      const { systemIds, ...apiConfigValues } = values
+      
       if (editingRecord) {
-        await updateApiConfig({ ...editingRecord, ...values })
+        await updateApiConfig({ ...editingRecord, ...apiConfigValues })
+        // 关联系统
+        await relateSystemsToApi(editingRecord.id, systemIds)
         message.success('修改成功')
       } else {
-        await saveApiConfig(values)
+        const savedApiConfig = await saveApiConfig(apiConfigValues)
+        // 关联系统
+        await relateSystemsToApi(savedApiConfig.id, systemIds)
         message.success('新增成功')
       }
       setModalVisible(false)
@@ -158,8 +170,17 @@ const ApiConfigManagement = () => {
     },
     {
       title: '关联系统',
-      dataIndex: ['system', 'systemName'],
-      key: 'systemName'
+      key: 'systemName',
+      render: (_, record) => {
+        // 这里需要根据实际数据结构调整
+        // 假设record.systems是关联系统的数组
+        if (record.systems && record.systems.length > 0) {
+          return record.systems.map(sys => sys.systemName).join(', ')
+        } else if (record.system && record.system.systemName) {
+          return record.system.systemName
+        }
+        return '-'
+      }
     },
     {
       title: '示例链接',
@@ -280,8 +301,8 @@ const ApiConfigManagement = () => {
               <Option value="DELETE">DELETE</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="systemId" label="关联系统" rules={[{ required: true, message: '请选择关联系统' }]}>
-            <Select>
+          <Form.Item name="systemIds" label="关联系统" rules={[{ required: true, message: '请选择关联系统' }]}>
+            <Select mode="multiple" placeholder="请选择关联系统">
               {systems.map(sys => (
                 <Option key={sys.id} value={sys.id}>{sys.systemName}</Option>
               ))}

@@ -2,6 +2,7 @@ package com.gnosis.openplat.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatSystem;
 import com.gnosis.openplat.dto.CommonResponse;
 import com.gnosis.openplat.service.OpenplatSystemService;
@@ -23,6 +24,12 @@ public class OpenplatSystemController {
     
     @ApiOperation("分页查询系统列表")
     @GetMapping("/list")
+    public CommonResponse<List<OpenplatSystem>> list() {
+        List<OpenplatSystem> list = systemService.list(new OpenplatSystem());
+        return CommonResponse.success(list);
+    }
+    
+    @ApiOperation("分页查询系统列表")
     @PostMapping("/list")
     public CommonResponse<List<OpenplatSystem>> list(@RequestBody(required = false) OpenplatSystem system) {
         List<OpenplatSystem> list = systemService.list(system);
@@ -76,5 +83,12 @@ public class OpenplatSystemController {
     public CommonResponse<String> batchDisable(@RequestBody String[] ids) {
         systemService.batchDisable(ids);
         return CommonResponse.success("批量禁用成功");
+    }
+    
+    @ApiOperation("查询系统关联的API列表")
+    @GetMapping("/apis/{systemId}")
+    public CommonResponse<List<OpenplatApiConfig>> getSystemApis(@PathVariable String systemId) {
+        List<OpenplatApiConfig> apis = systemService.getSystemApis(systemId);
+        return CommonResponse.success(apis);
     }
 }

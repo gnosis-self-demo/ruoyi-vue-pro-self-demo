@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.mapper.OpenplatApiConfigMapper;
 import com.gnosis.openplat.service.OpenplatApiConfigService;
+import com.gnosis.openplat.service.OpenplatApiSystemRelationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,9 @@ public class OpenplatApiConfigServiceImpl implements OpenplatApiConfigService {
     @Autowired
     private OpenplatApiConfigMapper apiConfigMapper;
     
+    @Autowired
+    private OpenplatApiSystemRelationService apiSystemRelationService;
+
     @Override
     public OpenplatApiConfig getById(String id) {
         return apiConfigMapper.selectById(id);
@@ -89,5 +93,15 @@ public class OpenplatApiConfigServiceImpl implements OpenplatApiConfigService {
             count += apiConfigMapper.update(apiConfig);
         }
         return count;
+    }
+    
+    @Override
+    public boolean relateSystems(String apiId, String[] systemIds) {
+        return apiSystemRelationService.batchRelateSystems(apiId, systemIds);
+    }
+    
+    @Override
+    public boolean unrelateSystems(String apiId, String[] systemIds) {
+        return apiSystemRelationService.batchUnrelateSystems(apiId, systemIds);
     }
 }

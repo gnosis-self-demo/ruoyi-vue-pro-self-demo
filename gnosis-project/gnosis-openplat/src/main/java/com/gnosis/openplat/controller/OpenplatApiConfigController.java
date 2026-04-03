@@ -24,6 +24,12 @@ public class OpenplatApiConfigController {
     
     @ApiOperation("分页查询 API 配置列表")
     @GetMapping("/list")
+    public CommonResponse<List<OpenplatApiConfig>> list() {
+        List<OpenplatApiConfig> list = apiConfigService.list(new OpenplatApiConfig());
+        return CommonResponse.success(list);
+    }
+    
+    @ApiOperation("分页查询 API 配置列表")
     @PostMapping("/list")
     public CommonResponse<List<OpenplatApiConfig>> list(@RequestBody(required = false) OpenplatApiConfig apiConfig) {
         List<OpenplatApiConfig> list = apiConfigService.list(apiConfig);
@@ -97,5 +103,23 @@ public class OpenplatApiConfigController {
         OpenplatApiConfig byApiPath = apiConfigService.getByApiPath(apiPath);
         boolean exists = byApiCode != null || byApiPath != null;
         return CommonResponse.success(exists);
+    }
+    
+    @ApiOperation("批量关联系统到API")
+    @PostMapping("/relate-systems")
+    public CommonResponse<String> relateSystems(@RequestBody Map<String, Object> requestBody) {
+        String apiId = (String) requestBody.get("apiId");
+        String[] systemIds = (String[]) requestBody.get("systemIds");
+        apiConfigService.relateSystems(apiId, systemIds);
+        return CommonResponse.success("关联成功");
+    }
+    
+    @ApiOperation("批量解除API与系统的关联")
+    @PostMapping("/unrelate-systems")
+    public CommonResponse<String> unrelateSystems(@RequestBody Map<String, Object> requestBody) {
+        String apiId = (String) requestBody.get("apiId");
+        String[] systemIds = (String[]) requestBody.get("systemIds");
+        apiConfigService.unrelateSystems(apiId, systemIds);
+        return CommonResponse.success("解除关联成功");
     }
 }

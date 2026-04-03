@@ -70,24 +70,37 @@
         DELETE FROM openplat_api_system_relation WHERE relation_id = #{relationId}
     </delete>
     
-    <delete id="batchDelete" parameterType="string[]">
+    <delete id="batchDelete">
         DELETE FROM openplat_api_system_relation WHERE relation_id IN
-        <foreach collection="array" item="relationId" open="(" separator="," close=")">
+        <foreach collection="ids" item="relationId" open="(" separator="," close=")">
             #{relationId}
         </foreach>
     </delete>
     
-    <update id="batchEnable" parameterType="string[]">
+    <update id="batchEnable">
         UPDATE openplat_api_system_relation SET status = 'ENABLED' WHERE relation_id IN
-        <foreach collection="array" item="relationId" open="(" separator="," close=")">
+        <foreach collection="ids" item="relationId" open="(" separator="," close=")">
             #{relationId}
         </foreach>
     </update>
     
-    <update id="batchDisable" parameterType="string[]">
+    <update id="batchDisable">
         UPDATE openplat_api_system_relation SET status = 'DISABLED' WHERE relation_id IN
-        <foreach collection="array" item="relationId" open="(" separator="," close=")">
+        <foreach collection="ids" item="relationId" open="(" separator="," close=")">
             #{relationId}
         </foreach>
     </update>
+    
+    <delete id="deleteByApiIdAndSystemIds">
+        DELETE FROM openplat_api_system_relation WHERE api_id = #{apiId} AND system_id IN
+        <foreach collection="systemIds" item="systemId" open="(" separator="," close=")">
+            #{systemId}
+        </foreach>
+    </delete>
+    
+    <select id="selectApisBySystemId" resultType="com.gnosis.openplat.domain.OpenplatApiConfig">
+        SELECT a.* FROM openplat_api_config a
+        LEFT JOIN openplat_api_system_relation r ON a.id = r.api_id
+        WHERE r.system_id = #{systemId} AND r.status = 'ENABLED'
+    </select>
 </mapper>
