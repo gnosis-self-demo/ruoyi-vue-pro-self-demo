@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.dto.CommonResponse;
 import com.gnosis.openplat.service.OpenplatApiConfigService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 /**
  * API 配置管理 Controller
  */
+@Slf4j
 @Api(tags = "API 配置管理")
 @RestController
 @RequestMapping("/openplat/api-config")
@@ -108,17 +110,38 @@ public class OpenplatApiConfigController {
     @ApiOperation("批量关联系统到API")
     @PostMapping("/relate-systems")
     public CommonResponse<String> relateSystems(@RequestBody Map<String, Object> requestBody) {
+        log.info("relate-systems called, request body: {}", requestBody);
         String apiId = (String) requestBody.get("apiId");
-        String[] systemIds = (String[]) requestBody.get("systemIds");
-        apiConfigService.relateSystems(apiId, systemIds);
-        return CommonResponse.success("关联成功");
+        Object systemIdsObj = requestBody.get("systemIds");
+        String[] systemIds;
+        if (systemIdsObj instanceof List) {
+            List<?> list = (List<?>) systemIdsObj;
+            systemIds = list.toArray(new String[0]);
+        } else if (systemIdsObj instanceof String[]) {
+            systemIds = (String[]) systemIdsObj;
+        } else {
+            systemIds = new String[0];
+        }
+        log.info("Parsed params: apiId={}, systemIds={}", apiId, (Object) systemIds);
+        boolean result = apiConfigService.relateSystems(apiId, systemIds);
+        log.info("relate-systems result: {}", result);
+        return CommonResponse.success(result ? "关联成功" : "关联失败");
     }
     
     @ApiOperation("批量解除API与系统的关联")
     @PostMapping("/unrelate-systems")
     public CommonResponse<String> unrelateSystems(@RequestBody Map<String, Object> requestBody) {
         String apiId = (String) requestBody.get("apiId");
-        String[] systemIds = (String[]) requestBody.get("systemIds");
+        Object systemIdsObj = requestBody.get("systemIds");
+        String[] systemIds;
+        if (systemIdsObj instanceof List) {
+            List<?> list = (List<?>) systemIdsObj;
+            systemIds = list.toArray(new String[0]);
+        } else if (systemIdsObj instanceof String[]) {
+            systemIds = (String[]) systemIdsObj;
+        } else {
+            systemIds = new String[0];
+        }
         apiConfigService.unrelateSystems(apiId, systemIds);
         return CommonResponse.success("解除关联成功");
     }

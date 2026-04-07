@@ -58,14 +58,13 @@ CREATE TABLE IF NOT EXISTS openplat_api_config (
     need_timestamp boolean DEFAULT true,
     need_nonce boolean DEFAULT true,
     rate_limit INTEGER DEFAULT 1000,
-    system_id VARCHAR(128) NOT NULL,
+    system_id VARCHAR(128),
     status VARCHAR(16) DEFAULT 'ENABLED',
     description VARCHAR(512),
     create_user_id VARCHAR(128) NOT NULL,
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_user_id VARCHAR(128),
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_api_system FOREIGN KEY (system_id) REFERENCES openplat_system(id)
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMENT ON TABLE openplat_api_config IS 'API配置表';
@@ -172,7 +171,31 @@ COMMENT ON COLUMN openplat_rate_limit.limit_key IS '限流键';
 
 CREATE INDEX idx_rate_limit_key ON openplat_rate_limit(limit_type, limit_key);
 
--- 8. 防重放缓存表
+-- 8. API与系统关系配置表（多对多关联）
+CREATE TABLE IF NOT EXISTS openplat_api_system_relation (
+    relation_id VARCHAR(128) PRIMARY KEY,
+    api_id VARCHAR(128) NOT NULL,
+    system_id VARCHAR(128) NOT NULL,
+    status VARCHAR(16) DEFAULT 'ENABLED',
+    description VARCHAR(512),
+    create_user_id VARCHAR(128) NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_user_id VARCHAR(128),
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_rel_api FOREIGN KEY (api_id) REFERENCES openplat_api_config(id),
+    CONSTRAINT fk_rel_system FOREIGN KEY (system_id) REFERENCES openplat_system(id)
+);
+
+COMMENT ON TABLE openplat_api_system_relation IS 'API与系统关系配置表';
+COMMENT ON COLUMN openplat_api_system_relation.relation_id IS '关系ID';
+COMMENT ON COLUMN openplat_api_system_relation.api_id IS 'API配置ID';
+COMMENT ON COLUMN openplat_api_system_relation.system_id IS '系统ID';
+COMMENT ON COLUMN openplat_api_system_relation.status IS '状态：ENABLED/DISABLED';
+
+CREATE INDEX idx_api_sys_rel_api ON openplat_api_system_relation(api_id);
+CREATE INDEX idx_api_sys_rel_system ON openplat_api_system_relation(system_id);
+
+-- 9. 防重放缓存表
 CREATE TABLE IF NOT EXISTS openplat_nonce_cache (
     id VARCHAR(128) PRIMARY KEY,
     app_id VARCHAR(64) NOT NULL,

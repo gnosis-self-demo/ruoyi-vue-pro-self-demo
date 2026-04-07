@@ -6,13 +6,16 @@ import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatApiSystemRelation;
 import com.gnosis.openplat.mapper.OpenplatApiSystemRelationMapper;
 import com.gnosis.openplat.service.OpenplatApiSystemRelationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * API与系统关系配置服务实现类
  */
+@Slf4j
 @Service
 public class OpenplatApiSystemRelationServiceImpl extends ServiceImpl<OpenplatApiSystemRelationMapper, OpenplatApiSystemRelation> implements OpenplatApiSystemRelationService {
     
@@ -73,24 +76,36 @@ public class OpenplatApiSystemRelationServiceImpl extends ServiceImpl<OpenplatAp
     
     @Override
     public boolean batchRelateSystems(String apiId, String[] systemIds) {
-        // 先删除已有的关联关系
-        baseMapper.deleteByApiIdAndSystemIds(apiId, systemIds);
+        log.info("batchRelateSystems called, apiId={}, systemIds={}", apiId, (Object) systemIds);
         
-        // 批量添加新的关联关系
+        int deleted = baseMapper.deleteByApiId(apiId);
+        log.info("deleteByApiId deleted {} records for apiId={}", deleted, apiId);
+        
+        int savedCount = 0;
         for (String systemId : systemIds) {
-            OpenplatApiSystemRelation relation = new OpenplatApiSystemRelation();
-            relation.setRelationId("rel_" + System.currentTimeMillis() + "_" + systemId);
-            relation.setApiId(apiId);
-            relation.setSystemId(systemId);
-            relation.setStatus("ENABLED");
-            relation.setCreateUserId("admin");
-            relation.setCreateTime(new java.util.Date());
-            relation.setUpdateUserId("admin");
-            relation.setUpdateTime(new java.util.Date());
-            baseMapper.insert(relation);
+            try {
+                OpenplatApiSystemRelation relation = new OpenplatApiSystemRelation();
+                String relationId = "rel_" + UUID.randomUUID().toString() + "_" + systemId;
+                relation.setRelationId(relationId);
+                relation.setApiId(apiId);
+                relation.setSystemId(systemId);
+                relation.setStatus("ENABLED");
+                relation.setCreateUserId("admin");
+                relation.setCreateTime(new java.util.Date());
+                relation.setUpdateUserId("admin");
+                relation.setUpdateTime(new java.util.Date());
+                
+                log.info("Saving relation: relationId={}, apiId={}, systemId={}", relationId, apiId, systemId);
+                int result = baseMapper.save(relation);
+                log.info("Save result: {}, relationId={}", result, relationId);
+                savedCount += result;
+            } catch (Exception e) {
+                log.error("Failed to save relation for apiId={}, systemId={}", apiId, systemId, e);
+            }
         }
         
-        return true;
+        log.info("batchRelateSystems completed, total saved={} out of {}", savedCount, systemIds.length);
+        return savedCount > 0;
     }
     
     @Override

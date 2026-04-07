@@ -42,7 +42,7 @@
     
     <sql id="ApiConfigWithSystem_Column_List">
         a.id, a.api_code, a.api_name, a.api_path, a.api_method, a.example_url, a.need_auth, a.need_timestamp,
-        a.need_nonce, a.rate_limit, a.status, a.description, a.create_user_id, a.create_time,
+        a.need_nonce, a.rate_limit, a.system_id, a.status, a.description, a.create_user_id, a.create_time,
         a.update_user_id, a.update_time,
         s.system_code, s.system_name, s.system_type, s.principal, s.status as system_status, s.description as system_description
     </sql>
@@ -95,11 +95,11 @@
     <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatApiConfig">
         INSERT INTO openplat_api_config (
             id, api_code, api_name, api_path, api_method, example_url, need_auth,
-            need_timestamp, need_nonce, rate_limit, status, description,
+            need_timestamp, need_nonce, rate_limit, system_id, status, description,
             create_user_id, create_time, update_user_id, update_time
         ) VALUES (
             #{id}, #{apiCode}, #{apiName}, #{apiPath}, #{apiMethod}, #{exampleUrl}, #{needAuth},
-            #{needTimestamp}, #{needNonce}, #{rateLimit}, #{status}, #{description},
+            #{needTimestamp}, #{needNonce}, #{rateLimit}, #{systemId}, #{status}, #{description},
             #{createUserId}, #{createTime}, #{updateUserId}, #{updateTime}
         )
     </insert>
@@ -133,5 +133,11 @@
             #{id}
         </foreach>
     </delete>
+    
+    <select id="selectBySystemId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM openplat_api_config
+        WHERE system_id = #{systemId}
+    </select>
     
 </mapper>

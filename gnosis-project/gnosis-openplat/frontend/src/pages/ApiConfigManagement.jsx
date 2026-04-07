@@ -60,10 +60,14 @@ const ApiConfigManagement = () => {
 
   const handleEdit = (record) => {
     setEditingRecord(record)
-    // 设置表单值，将systemId转换为systemIds数组
+    // 设置表单值，从systems数组中提取所有关联的systemId
     const formValues = { ...record }
-    if (record.systemId) {
+    if (record.systems && record.systems.length > 0) {
+      formValues.systemIds = record.systems.map(sys => sys.id)
+    } else if (record.systemId) {
       formValues.systemIds = [record.systemId]
+    } else {
+      formValues.systemIds = []
     }
     form.setFieldsValue(formValues)
     setModalVisible(true)

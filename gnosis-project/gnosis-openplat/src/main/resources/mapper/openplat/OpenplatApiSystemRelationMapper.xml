@@ -98,6 +98,10 @@
         </foreach>
     </delete>
     
+    <delete id="deleteByApiId">
+        DELETE FROM openplat_api_system_relation WHERE api_id = #{apiId}
+    </delete>
+    
     <select id="selectApisBySystemId" resultType="com.gnosis.openplat.domain.OpenplatApiConfig">
         SELECT a.* FROM openplat_api_config a
         LEFT JOIN openplat_api_system_relation r ON a.id = r.api_id

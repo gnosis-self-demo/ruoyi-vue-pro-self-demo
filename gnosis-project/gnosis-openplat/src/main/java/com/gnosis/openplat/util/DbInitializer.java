@@ -32,6 +32,8 @@ public class DbInitializer {
         try {
             // 先检查并添加缺失的列
             addMissingColumns();
+            // 创建缺失的表
+            createMissingTables();
             // 执行初始化脚本
             executeSqlScript("classpath:db/openplat/openplat-opengauss.sql");
             log.info("[DbInitializer] Successfully initialized openplat database");
@@ -81,6 +83,67 @@ public class DbInitializer {
             }
         } catch (Exception e) {
             log.error("[DbInitializer] Failed to add missing columns", e);
+        }
+    }
+
+    /**
+     * 创建缺失的表
+     */
+    private void createMissingTables() {
+        try {
+            // 检查openplat_api_system_relation表是否存在
+            boolean tableExists = false;
+            try {
+                jdbcTemplate.queryForObject("SELECT 1 FROM openplat_api_system_relation LIMIT 1", Integer.class);
+                tableExists = true;
+            } catch (Exception e) {
+                log.info("[DbInitializer] openplat_api_system_relation table not found, creating it");
+            }
+            
+            if (!tableExists) {
+                jdbcTemplate.execute(
+                    "CREATE TABLE IF NOT EXISTS openplat_api_system_relation (" +
+                    "relation_id VARCHAR(128) PRIMARY KEY, " +
+                    "api_id VARCHAR(128) NOT NULL, " +
+                    "system_id VARCHAR(128) NOT NULL, " +
+                    "status VARCHAR(16) DEFAULT 'ENABLED', " +
+                    "description VARCHAR(512), " +
+                    "create_user_id VARCHAR(128) NOT NULL, " +
+                    "create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
+                    "update_user_id VARCHAR(128), " +
+                    "update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+                );
+                
+                // 添加外键约束
+                try {
+                    jdbcTemplate.execute("ALTER TABLE openplat_api_system_relation ADD CONSTRAINT fk_rel_api FOREIGN KEY (api_id) REFERENCES openplat_api_config(id)");
+                } catch (Exception e) {
+                    log.warn("[DbInitializer] Foreign key fk_rel_api may already exist", e);
+                }
+                
+                try {
+                    jdbcTemplate.execute("ALTER TABLE openplat_api_system_relation ADD CONSTRAINT fk_rel_system FOREIGN KEY (system_id) REFERENCES openplat_system(id)");
+                } catch (Exception e) {
+                    log.warn("[DbInitializer] Foreign key fk_rel_system may already exist", e);
+                }
+                
+                // 添加索引
+                try {
+                    jdbcTemplate.execute("CREATE INDEX idx_api_sys_rel_api ON openplat_api_system_relation(api_id)");
+                } catch (Exception e) {
+                    log.warn("[DbInitializer] Index idx_api_sys_rel_api may already exist", e);
+                }
+                
+                try {
+                    jdbcTemplate.execute("CREATE INDEX idx_api_sys_rel_system ON openplat_api_system_relation(system_id)");
+                } catch (Exception e) {
+                    log.warn("[DbInitializer] Index idx_api_sys_rel_system may already exist", e);
+                }
+                
+                log.info("[DbInitializer] Successfully created openplat_api_system_relation table");
+            }
+        } catch (Exception e) {
+            log.error("[DbInitializer] Failed to create missing tables", e);
         }
     }
 

@@ -51,4 +51,9 @@ public interface OpenplatApiConfigMapper {
      * 批量删除 API 配置信息
      */
     int deleteByIds(@Param("ids") String[] ids);
+    
+    /**
+     * 根据系统ID查询API配置列表（通过system_id字段）
+     */
+    List<OpenplatApiConfig> selectBySystemId(@Param("systemId") String systemId);
 }

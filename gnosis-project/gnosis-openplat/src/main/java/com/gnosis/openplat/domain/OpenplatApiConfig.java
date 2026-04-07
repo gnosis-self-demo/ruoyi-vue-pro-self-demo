@@ -2,6 +2,7 @@ package com.gnosis.openplat.domain;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import java.util.List;
 
 /**
  * API 配置信息
@@ -58,6 +59,11 @@ public class OpenplatApiConfig extends BaseDomain {
     private Integer rateLimit;
     
     /**
+     * 关联系统ID
+     */
+    private String systemId;
+    
+    /**
      * 状态：ENABLED/DISABLED
      */
     private String status;
@@ -71,4 +77,9 @@ public class OpenplatApiConfig extends BaseDomain {
      * 关联的系统信息
      */
     private OpenplatSystem system;
+    
+    /**
+     * 关联的多个系统信息
+     */
+    private List<OpenplatSystem> systems;
 }

@@ -25,7 +25,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                     "/openplat/api-config/**", // 排除API配置管理接口
                     "/openplat/api-system-relation/**", // 排除API与系统关系配置管理接口
-                    "/openplat/system/**" // 排除系统管理接口
+                    "/openplat/system/**", // 排除系统管理接口
+                    "/openplat/webhook-config/**" // 排除Webhook配置管理接口
                 ); // 排除管理接口，方便配置
     }
 

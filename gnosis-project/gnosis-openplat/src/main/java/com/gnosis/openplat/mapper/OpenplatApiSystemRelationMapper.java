@@ -73,6 +73,11 @@ public interface OpenplatApiSystemRelationMapper extends BaseMapper<OpenplatApiS
     int deleteByApiIdAndSystemIds(@Param("apiId") String apiId, @Param("systemIds") String[] systemIds);
     
     /**
+     * 根据API ID删除所有关联关系
+     */
+    int deleteByApiId(@Param("apiId") String apiId);
+    
+    /**
      * 根据系统ID查询关联的API配置列表
      */
     List<OpenplatApiConfig> selectApisBySystemId(String systemId);
