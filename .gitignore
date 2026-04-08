@@ -57,3 +57,5 @@ application-my.yaml
 null
 nul
 /logs/
+
+package-lock.json

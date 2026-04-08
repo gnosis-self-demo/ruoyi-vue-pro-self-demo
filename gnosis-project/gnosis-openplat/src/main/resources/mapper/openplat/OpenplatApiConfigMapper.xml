@@ -56,13 +56,13 @@
     <select id="selectByApiCode" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM openplat_api_config
-        WHERE api_code = #{apiCode}
+        WHERE api_code = #{apiCode} AND status = 'ENABLED'
     </select>
     
     <select id="selectByApiPath" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM openplat_api_config
-        WHERE api_path = #{apiPath}
+        WHERE api_path = #{apiPath} AND status = 'ENABLED'
     </select>
     
     <select id="selectList" resultMap="ApiConfigWithSystemResultMap">
@@ -137,7 +137,7 @@
     <select id="selectBySystemId" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM openplat_api_config
-        WHERE system_id = #{systemId}
+        WHERE system_id = #{systemId} AND status = 'ENABLED'
     </select>
     
 </mapper>

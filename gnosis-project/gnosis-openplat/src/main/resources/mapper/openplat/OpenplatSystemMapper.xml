@@ -30,7 +30,7 @@
     <select id="selectBySystemCode" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM openplat_system
-        WHERE system_code = #{systemCode}
+        WHERE system_code = #{systemCode} AND status = 'ENABLED'
     </select>
     
     <select id="selectList" resultMap="BaseResultMap">

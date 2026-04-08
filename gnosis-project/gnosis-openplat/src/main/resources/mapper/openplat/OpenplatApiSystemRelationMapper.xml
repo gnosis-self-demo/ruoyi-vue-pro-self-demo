@@ -19,17 +19,17 @@
     </select>
     
     <select id="getByApiId" parameterType="string" resultMap="BaseResultMap">
-        SELECT * FROM openplat_api_system_relation WHERE api_id = #{apiId}
+        SELECT * FROM openplat_api_system_relation WHERE api_id = #{apiId} AND status = 'ENABLED'
     </select>
     
     <select id="getBySystemId" parameterType="string" resultMap="BaseResultMap">
-        SELECT * FROM openplat_api_system_relation WHERE system_id = #{systemId}
+        SELECT * FROM openplat_api_system_relation WHERE system_id = #{systemId} AND status = 'ENABLED'
     </select>
     
     <select id="getByApiPathAndSystemId" resultMap="BaseResultMap">
         SELECT r.* FROM openplat_api_system_relation r
         LEFT JOIN openplat_api_config a ON r.api_id = a.id
-        WHERE a.api_path = #{apiPath} AND r.system_id = #{systemId}
+        WHERE a.api_path = #{apiPath} AND r.system_id = #{systemId} AND r.status = 'ENABLED' AND a.status = 'ENABLED'
     </select>
     
     <select id="list" parameterType="com.gnosis.openplat.domain.OpenplatApiSystemRelation" resultMap="BaseResultMap">
@@ -105,6 +105,6 @@
     <select id="selectApisBySystemId" resultType="com.gnosis.openplat.domain.OpenplatApiConfig">
         SELECT a.* FROM openplat_api_config a
         LEFT JOIN openplat_api_system_relation r ON a.id = r.api_id
-        WHERE r.system_id = #{systemId} AND r.status = 'ENABLED'
+        WHERE r.system_id = #{systemId} AND r.status = 'ENABLED' AND a.status = 'ENABLED'
     </select>
 </mapper>
