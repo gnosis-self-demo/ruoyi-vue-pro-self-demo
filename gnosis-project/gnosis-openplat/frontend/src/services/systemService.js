@@ -1,23 +1,24 @@
 import request from '../utils/request'
 
-export const getSystemList = (params) => {
+export const getSystemList = (data) => {
   return request({
     url: '/openplat/system/list',
-    method: 'get',
-    params
+    method: 'post',
+    data: data || {}
   })
 }
 
 export const getSystemById = (id) => {
   return request({
-    url: `/openplat/system/${id}`,
-    method: 'get'
+    url: '/openplat/system/detail',
+    method: 'post',
+    data: { id }
   })
 }
 
 export const saveSystem = (data) => {
   return request({
-    url: '/openplat/system',
+    url: '/openplat/system/save',
     method: 'post',
     data
   })
@@ -25,48 +26,48 @@ export const saveSystem = (data) => {
 
 export const updateSystem = (data) => {
   return request({
-    url: '/openplat/system',
-    method: 'put',
+    url: '/openplat/system/update',
+    method: 'post',
     data
   })
 }
 
 export const deleteSystem = (id) => {
   return request({
-    url: `/openplat/system/${id}`,
-    method: 'delete'
+    url: '/openplat/system/delete',
+    method: 'post',
+    data: { id }
   })
 }
 
 export const batchDeleteSystems = (ids) => {
   return request({
-    url: '/openplat/system/batch',
-    method: 'delete',
-    data: ids
-  })
-}
-// 批量启用系统
-export const batchEnableSystems = async (ids) => {
-  return request({
-    url: '/openplat/system/enable',
-    method: 'put',
-    data: ids
+    url: '/openplat/system/batchDelete',
+    method: 'post',
+    data: { ids }
   })
 }
 
-// 批量禁用系统
-export const batchDisableSystems = async (ids) => {
+export const batchEnableSystems = (ids) => {
   return request({
-    url: '/openplat/system/disable',
-    method: 'put',
-    data: ids
+    url: '/openplat/system/batchEnable',
+    method: 'post',
+    data: { ids }
   })
 }
 
-// 查询系统关联的API列表
-export const getSystemApis = async (systemId) => {
+export const batchDisableSystems = (ids) => {
   return request({
-    url: `/openplat/system/apis/${systemId}`,
-    method: 'get'
+    url: '/openplat/system/batchDisable',
+    method: 'post',
+    data: { ids }
+  })
+}
+
+export const getSystemApis = (systemId) => {
+  return request({
+    url: '/openplat/system/getSystemApis',
+    method: 'post',
+    data: { id: systemId }
   })
 }

@@ -7,6 +7,8 @@
         <result column="system_code" property="systemCode"/>
         <result column="system_name" property="systemName"/>
         <result column="system_type" property="systemType"/>
+        <result column="app_id" property="appId"/>
+        <result column="app_secret" property="appSecret"/>
         <result column="principal" property="principal"/>
         <result column="status" property="status"/>
         <result column="description" property="description"/>
@@ -17,7 +19,7 @@
     </resultMap>
     
     <sql id="Base_Column_List">
-        id, system_code, system_name, system_type, principal, status, description,
+        id, system_code, system_name, system_type, app_id, app_secret, principal, status, description,
         create_user_id, create_time, update_user_id, update_time
     </sql>
     
@@ -31,6 +33,12 @@
         SELECT <include refid="Base_Column_List"/>
         FROM openplat_system
         WHERE system_code = #{systemCode} AND status = 'ENABLED'
+    </select>
+
+    <select id="selectByAppId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM openplat_system
+        WHERE app_id = #{appId} AND status = 'ENABLED'
     </select>
     
     <select id="selectList" resultMap="BaseResultMap">
@@ -55,10 +63,10 @@
     
     <insert id="insert" parameterType="com.gnosis.openplat.domain.OpenplatSystem">
         INSERT INTO openplat_system (
-            id, system_code, system_name, system_type, principal, status, description,
+            id, system_code, system_name, system_type, app_id, app_secret, principal, status, description,
             create_user_id, create_time, update_user_id, update_time
         ) VALUES (
-            #{id}, #{systemCode}, #{systemName}, #{systemType}, #{principal}, #{status}, #{description},
+            #{id}, #{systemCode}, #{systemName}, #{systemType}, #{appId}, #{appSecret}, #{principal}, #{status}, #{description},
             #{createUserId}, #{createTime}, #{updateUserId}, #{updateTime}
         )
     </insert>
@@ -69,6 +77,8 @@
             <if test="systemCode != null and systemCode != ''">system_code = #{systemCode},</if>
             <if test="systemName != null and systemName != ''">system_name = #{systemName},</if>
             <if test="systemType != null and systemType != ''">system_type = #{systemType},</if>
+            <if test="appId != null and appId != ''">app_id = #{appId},</if>
+            <if test="appSecret != null and appSecret != ''">app_secret = #{appSecret},</if>
             <if test="principal != null">principal = #{principal},</if>
             <if test="status != null">status = #{status},</if>
             <if test="description != null">description = #{description},</if>

@@ -30,10 +30,8 @@ public class DbInitializer {
     @PostConstruct
     public void init() {
         try {
-            // 先检查并添加缺失的列
-            addMissingColumns();
-            // 创建缺失的表
-            createMissingTables();
+            // 先检查并更新表结构
+            updateTableStructures();
             // 执行初始化脚本
             executeSqlScript("classpath:db/openplat/openplat-opengauss.sql");
             log.info("[DbInitializer] Successfully initialized openplat database");
@@ -43,107 +41,44 @@ public class DbInitializer {
     }
     
     /**
-     * 添加缺失的列
+     * 更新表结构，添加缺失字段
      */
-    private void addMissingColumns() {
+    private void updateTableStructures() {
         try {
-            // 检查openplat_api_config表是否存在system_id列
-            boolean hasSystemIdColumn = false;
-            try {
-                jdbcTemplate.queryForObject("SELECT system_id FROM openplat_api_config LIMIT 1", String.class);
-                hasSystemIdColumn = true;
-            } catch (Exception e) {
-                // 列不存在，需要添加
-                log.info("[DbInitializer] system_id column not found, adding it");
-            }
+            // 1. 更新 openplat_system 表
+            checkAndAddColumn("openplat_system", "app_id", "VARCHAR(64)");
+            checkAndAddColumn("openplat_system", "app_secret", "VARCHAR(128)");
+
+            // 2. 更新 openplat_api_config 表
+            checkAndAddColumn("openplat_api_config", "need_anti_replay", "BOOLEAN DEFAULT FALSE");
+            checkAndRemoveColumn("openplat_api_config", "need_timestamp");
+            checkAndRemoveColumn("openplat_api_config", "need_nonce");
             
-            if (!hasSystemIdColumn) {
-                // 添加system_id列
-                jdbcTemplate.execute("ALTER TABLE openplat_api_config ADD COLUMN system_id VARCHAR(128)");
-                // 更新现有数据
-                jdbcTemplate.execute("UPDATE openplat_api_config SET system_id = 'sys_001'");
-                // 设置为非空
-                jdbcTemplate.execute("ALTER TABLE openplat_api_config ALTER COLUMN system_id SET NOT NULL");
-            }
-            
-            // 添加外键约束
-            try {
-                jdbcTemplate.execute("ALTER TABLE openplat_api_config ADD CONSTRAINT fk_api_system FOREIGN KEY (system_id) REFERENCES openplat_system(id)");
-            } catch (Exception e) {
-                // 外键约束可能已经存在，忽略错误
-                log.warn("[DbInitializer] Foreign key constraint fk_api_system may already exist", e);
-            }
-            
-            // 添加索引
-            try {
-                jdbcTemplate.execute("CREATE INDEX idx_api_config_system ON openplat_api_config(system_id)");
-            } catch (Exception e) {
-                // 索引可能已经存在，忽略错误
-                log.warn("[DbInitializer] Index idx_api_config_system may already exist", e);
-            }
         } catch (Exception e) {
-            log.error("[DbInitializer] Failed to add missing columns", e);
+            log.error("[DbInitializer] Failed to update table structures", e);
         }
     }
 
-    /**
-     * 创建缺失的表
-     */
-    private void createMissingTables() {
+    private void checkAndAddColumn(String tableName, String columnName, String columnType) {
         try {
-            // 检查openplat_api_system_relation表是否存在
-            boolean tableExists = false;
-            try {
-                jdbcTemplate.queryForObject("SELECT 1 FROM openplat_api_system_relation LIMIT 1", Integer.class);
-                tableExists = true;
-            } catch (Exception e) {
-                log.info("[DbInitializer] openplat_api_system_relation table not found, creating it");
-            }
-            
-            if (!tableExists) {
-                jdbcTemplate.execute(
-                    "CREATE TABLE IF NOT EXISTS openplat_api_system_relation (" +
-                    "relation_id VARCHAR(128) PRIMARY KEY, " +
-                    "api_id VARCHAR(128) NOT NULL, " +
-                    "system_id VARCHAR(128) NOT NULL, " +
-                    "status VARCHAR(16) DEFAULT 'ENABLED', " +
-                    "description VARCHAR(512), " +
-                    "create_user_id VARCHAR(128) NOT NULL, " +
-                    "create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-                    "update_user_id VARCHAR(128), " +
-                    "update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
-                );
-                
-                // 添加外键约束
-                try {
-                    jdbcTemplate.execute("ALTER TABLE openplat_api_system_relation ADD CONSTRAINT fk_rel_api FOREIGN KEY (api_id) REFERENCES openplat_api_config(id)");
-                } catch (Exception e) {
-                    log.warn("[DbInitializer] Foreign key fk_rel_api may already exist", e);
-                }
-                
-                try {
-                    jdbcTemplate.execute("ALTER TABLE openplat_api_system_relation ADD CONSTRAINT fk_rel_system FOREIGN KEY (system_id) REFERENCES openplat_system(id)");
-                } catch (Exception e) {
-                    log.warn("[DbInitializer] Foreign key fk_rel_system may already exist", e);
-                }
-                
-                // 添加索引
-                try {
-                    jdbcTemplate.execute("CREATE INDEX idx_api_sys_rel_api ON openplat_api_system_relation(api_id)");
-                } catch (Exception e) {
-                    log.warn("[DbInitializer] Index idx_api_sys_rel_api may already exist", e);
-                }
-                
-                try {
-                    jdbcTemplate.execute("CREATE INDEX idx_api_sys_rel_system ON openplat_api_system_relation(system_id)");
-                } catch (Exception e) {
-                    log.warn("[DbInitializer] Index idx_api_sys_rel_system may already exist", e);
-                }
-                
-                log.info("[DbInitializer] Successfully created openplat_api_system_relation table");
-            }
+            jdbcTemplate.execute("SELECT " + columnName + " FROM " + tableName + " LIMIT 1");
         } catch (Exception e) {
-            log.error("[DbInitializer] Failed to create missing tables", e);
+            log.info("[DbInitializer] Column {} not found in {}, adding it", columnName, tableName);
+            try {
+                jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + columnType);
+            } catch (Exception ex) {
+                log.error("[DbInitializer] Failed to add column {} to {}", columnName, tableName, ex);
+            }
+        }
+    }
+
+    private void checkAndRemoveColumn(String tableName, String columnName) {
+        try {
+            jdbcTemplate.execute("SELECT " + columnName + " FROM " + tableName + " LIMIT 1");
+            log.info("[DbInitializer] Column {} found in {}, removing it", columnName, tableName);
+            jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP COLUMN " + columnName);
+        } catch (Exception e) {
+            // 列不存在，忽略
         }
     }
 
@@ -163,7 +98,11 @@ public class DbInitializer {
                 sqlBuilder.append(line);
                 if (line.endsWith(";")) {
                     String sql = sqlBuilder.toString();
-                    jdbcTemplate.execute(sql);
+                    try {
+                        jdbcTemplate.execute(sql);
+                    } catch (Exception e) {
+                        // 忽略重复插入等错误
+                    }
                     sqlBuilder.setLength(0);
                 }
             }

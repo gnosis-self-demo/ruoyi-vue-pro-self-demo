@@ -4,7 +4,6 @@ import cn.hutool.core.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 import com.gnosis.openplat.domain.OpenplatApiConfig;
 import com.gnosis.openplat.domain.OpenplatSystem;
-import com.gnosis.openplat.mapper.OpenplatApiConfigMapper;
 import com.gnosis.openplat.mapper.OpenplatSystemMapper;
 import com.gnosis.openplat.service.OpenplatApiSystemRelationService;
 import com.gnosis.openplat.service.OpenplatSystemService;
@@ -24,8 +23,6 @@ public class OpenplatSystemServiceImpl implements OpenplatSystemService {
     @Autowired
     private OpenplatSystemMapper systemMapper;
     
-
-    
     @Autowired
     private OpenplatApiSystemRelationService apiSystemRelationService;
 
@@ -37,6 +34,11 @@ public class OpenplatSystemServiceImpl implements OpenplatSystemService {
     @Override
     public OpenplatSystem getBySystemCode(String systemCode) {
         return systemMapper.selectBySystemCode(systemCode);
+    }
+
+    @Override
+    public OpenplatSystem getByAppId(String appId) {
+        return systemMapper.selectByAppId(appId);
     }
     
     @Override
@@ -96,8 +98,6 @@ public class OpenplatSystemServiceImpl implements OpenplatSystemService {
     
     @Override
     public List<OpenplatApiConfig> getSystemApis(String systemId) {
-        // 只查询通过关系表关联的API，不查询API表中system_id字段匹配的API
-        // 这样可以避免查询到已取消关联但system_id字段未清空的API
         return apiSystemRelationService.getApisBySystemId(systemId);
     }
 }

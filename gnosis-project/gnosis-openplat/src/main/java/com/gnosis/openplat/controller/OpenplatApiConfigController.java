@@ -3,146 +3,112 @@ package com.gnosis.openplat.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import com.gnosis.openplat.domain.OpenplatApiConfig;
-import com.gnosis.openplat.dto.CommonResponse;
+import com.gnosis.openplat.dto.*;
 import com.gnosis.openplat.service.OpenplatApiConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
-/**
- * API 配置管理 Controller
- */
 @Slf4j
 @Api(tags = "API 配置管理")
 @RestController
 @RequestMapping("/openplat/api-config")
 public class OpenplatApiConfigController {
-    
+
     @Autowired
     private OpenplatApiConfigService apiConfigService;
-    
-    @ApiOperation("分页查询 API 配置列表")
-    @GetMapping("/list")
-    public CommonResponse<List<OpenplatApiConfig>> list() {
-        List<OpenplatApiConfig> list = apiConfigService.list(new OpenplatApiConfig());
-        return CommonResponse.success(list);
-    }
-    
-    @ApiOperation("分页查询 API 配置列表")
+
+    @ApiOperation("查询 API 配置列表")
     @PostMapping("/list")
     public CommonResponse<List<OpenplatApiConfig>> list(@RequestBody(required = false) OpenplatApiConfig apiConfig) {
         List<OpenplatApiConfig> list = apiConfigService.list(apiConfig);
         return CommonResponse.success(list);
     }
-    
+
     @ApiOperation("根据 ID 查询 API 配置详情")
-    @GetMapping("/{id}")
-    public CommonResponse<OpenplatApiConfig> getById(@PathVariable String id) {
-        OpenplatApiConfig apiConfig = apiConfigService.getById(id);
+    @PostMapping("/detail")
+    public CommonResponse<OpenplatApiConfig> detail(@RequestBody IdRequest request) {
+        OpenplatApiConfig apiConfig = apiConfigService.getById(request.getId());
         return CommonResponse.success(apiConfig);
     }
-    
+
     @ApiOperation("新增 API 配置")
-    @PostMapping
+    @PostMapping("/save")
     public CommonResponse<String> save(@RequestBody OpenplatApiConfig apiConfig) {
         apiConfigService.save(apiConfig);
         return CommonResponse.success("新增成功");
     }
-    
+
     @ApiOperation("修改 API 配置")
-    @PutMapping
+    @PostMapping("/update")
     public CommonResponse<String> update(@RequestBody OpenplatApiConfig apiConfig) {
         apiConfigService.update(apiConfig);
         return CommonResponse.success("修改成功");
     }
-    
+
     @ApiOperation("删除 API 配置")
-    @DeleteMapping("/{id}")
-    public CommonResponse<String> delete(@PathVariable String id) {
-        apiConfigService.delete(id);
+    @PostMapping("/delete")
+    public CommonResponse<String> delete(@RequestBody IdRequest request) {
+        apiConfigService.delete(request.getId());
         return CommonResponse.success("删除成功");
     }
-    
+
     @ApiOperation("批量删除 API 配置")
-    @DeleteMapping("/batch")
-    public CommonResponse<String> batchDelete(@RequestBody String[] ids) {
-        apiConfigService.batchDelete(ids);
+    @PostMapping("/batchDelete")
+    public CommonResponse<String> batchDelete(@RequestBody IdsRequest request) {
+        apiConfigService.batchDelete(request.getIds().toArray(new String[0]));
         return CommonResponse.success("批量删除成功");
     }
-    
+
     @ApiOperation("批量启用 API")
-    @PutMapping("/enable")
-    public CommonResponse<String> batchEnable(@RequestBody String[] ids) {
-        apiConfigService.batchEnable(ids);
+    @PostMapping("/batchEnable")
+    public CommonResponse<String> batchEnable(@RequestBody IdsRequest request) {
+        apiConfigService.batchEnable(request.getIds().toArray(new String[0]));
         return CommonResponse.success("批量启用成功");
     }
-    
+
     @ApiOperation("批量禁用 API")
-    @PutMapping("/disable")
-    public CommonResponse<String> batchDisable(@RequestBody String[] ids) {
-        apiConfigService.batchDisable(ids);
+    @PostMapping("/batchDisable")
+    public CommonResponse<String> batchDisable(@RequestBody IdsRequest request) {
+        apiConfigService.batchDisable(request.getIds().toArray(new String[0]));
         return CommonResponse.success("批量禁用成功");
     }
-    
+
     @ApiOperation("检查 API 配置是否存在")
-    @GetMapping("/check")
-    public CommonResponse<Boolean> checkApiConfig(@RequestParam String apiCode, @RequestParam String apiPath) {
-        OpenplatApiConfig byApiCode = apiConfigService.getByApiCode(apiCode);
-        OpenplatApiConfig byApiPath = apiConfigService.getByApiPath(apiPath);
-        boolean exists = byApiCode != null || byApiPath != null;
-        return CommonResponse.success(exists);
-    }
-    
-    @ApiOperation("检查 API 配置是否存在（POST方式）")
     @PostMapping("/check")
-    public CommonResponse<Boolean> checkApiConfigPost(@RequestBody Map<String, Object> requestBody) {
-        String apiCode = (String) requestBody.get("apiCode");
-        String apiPath = (String) requestBody.get("apiPath");
-        OpenplatApiConfig byApiCode = apiConfigService.getByApiCode(apiCode);
-        OpenplatApiConfig byApiPath = apiConfigService.getByApiPath(apiPath);
+    public CommonResponse<Boolean> check(@RequestBody ApiConfigCheckRequest request) {
+        OpenplatApiConfig byApiCode = apiConfigService.getByApiCode(request.getApiCode());
+        OpenplatApiConfig byApiPath = apiConfigService.getByApiPath(request.getApiPath());
         boolean exists = byApiCode != null || byApiPath != null;
         return CommonResponse.success(exists);
     }
-    
+
     @ApiOperation("批量关联系统到API")
-    @PostMapping("/relate-systems")
-    public CommonResponse<String> relateSystems(@RequestBody Map<String, Object> requestBody) {
-        log.info("relate-systems called, request body: {}", requestBody);
-        String apiId = (String) requestBody.get("apiId");
-        Object systemIdsObj = requestBody.get("systemIds");
-        String[] systemIds;
-        if (systemIdsObj instanceof List) {
-            List<?> list = (List<?>) systemIdsObj;
-            systemIds = list.toArray(new String[0]);
-        } else if (systemIdsObj instanceof String[]) {
-            systemIds = (String[]) systemIdsObj;
-        } else {
-            systemIds = new String[0];
-        }
-        log.info("Parsed params: apiId={}, systemIds={}", apiId, (Object) systemIds);
-        boolean result = apiConfigService.relateSystems(apiId, systemIds);
-        log.info("relate-systems result: {}", result);
+    @PostMapping("/relateSystems")
+    public CommonResponse<String> relateSystems(@RequestBody RelateSystemsRequest request) {
+        log.info("relateSystems called, apiId={}, systemIds={}", request.getApiId(), request.getSystemIds());
+        boolean result = apiConfigService.relateSystems(request.getApiId(), request.getSystemIds().toArray(new String[0]));
+        log.info("relateSystems result: {}", result);
         return CommonResponse.success(result ? "关联成功" : "关联失败");
     }
-    
+
     @ApiOperation("批量解除API与系统的关联")
-    @PostMapping("/unrelate-systems")
-    public CommonResponse<String> unrelateSystems(@RequestBody Map<String, Object> requestBody) {
-        String apiId = (String) requestBody.get("apiId");
-        Object systemIdsObj = requestBody.get("systemIds");
-        String[] systemIds;
-        if (systemIdsObj instanceof List) {
-            List<?> list = (List<?>) systemIdsObj;
-            systemIds = list.toArray(new String[0]);
-        } else if (systemIdsObj instanceof String[]) {
-            systemIds = (String[]) systemIdsObj;
-        } else {
-            systemIds = new String[0];
-        }
-        apiConfigService.unrelateSystems(apiId, systemIds);
+    @PostMapping("/unrelateSystems")
+    public CommonResponse<String> unrelateSystems(@RequestBody RelateSystemsRequest request) {
+        apiConfigService.unrelateSystems(request.getApiId(), request.getSystemIds().toArray(new String[0]));
         return CommonResponse.success("解除关联成功");
+    }
+
+    @ApiOperation("根据 API 编码查询详情（包含关联系统）")
+    @GetMapping("/getByApiCode/{apiCode}")
+    public CommonResponse<OpenplatApiConfig> getByApiCode(@PathVariable String apiCode) {
+        OpenplatApiConfig apiConfig = apiConfigService.getByApiCode(apiCode);
+        if (apiConfig != null) {
+            // 确保关联系统信息已加载
+            return CommonResponse.success(apiConfigService.getById(apiConfig.getId()));
+        }
+        return CommonResponse.success(null);
     }
 }

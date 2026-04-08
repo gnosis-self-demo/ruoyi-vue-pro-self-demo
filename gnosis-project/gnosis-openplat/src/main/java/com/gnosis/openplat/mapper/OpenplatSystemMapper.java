@@ -21,6 +21,11 @@ public interface OpenplatSystemMapper {
      * 根据系统编码查询系统信息
      */
     OpenplatSystem selectBySystemCode(@Param("systemCode") String systemCode);
+
+    /**
+     * 根据应用ID查询系统信息
+     */
+    OpenplatSystem selectByAppId(@Param("appId") String appId);
     
     /**
      * 查询系统列表

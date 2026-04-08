@@ -26,6 +26,16 @@ public class OpenplatSystem extends BaseDomain {
      * 系统类型
      */
     private String systemType;
+
+    /**
+     * 应用ID
+     */
+    private String appId;
+
+    /**
+     * 应用密钥
+     */
+    private String appSecret;
     
     /**
      * 负责人

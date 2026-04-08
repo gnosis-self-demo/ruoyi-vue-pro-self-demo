@@ -19,6 +19,11 @@ public interface OpenplatSystemService {
      * 根据系统编码查询系统信息
      */
     OpenplatSystem getBySystemCode(String systemCode);
+
+    /**
+     * 根据应用ID查询系统信息
+     */
+    OpenplatSystem getByAppId(String appId);
     
     /**
      * 查询系统列表

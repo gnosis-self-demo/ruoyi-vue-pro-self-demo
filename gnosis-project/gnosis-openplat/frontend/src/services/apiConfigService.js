@@ -1,23 +1,24 @@
 import request from '../utils/request'
 
-export const getApiConfigList = (params) => {
+export const getApiConfigList = (data) => {
   return request({
     url: '/openplat/api-config/list',
-    method: 'get',
-    params
+    method: 'post',
+    data: data || {}
   })
 }
 
 export const getApiConfigById = (id) => {
   return request({
-    url: `/openplat/api-config/${id}`,
-    method: 'get'
+    url: '/openplat/api-config/detail',
+    method: 'post',
+    data: { id }
   })
 }
 
 export const saveApiConfig = (data) => {
   return request({
-    url: '/openplat/api-config',
+    url: '/openplat/api-config/save',
     method: 'post',
     data
   })
@@ -25,57 +26,63 @@ export const saveApiConfig = (data) => {
 
 export const updateApiConfig = (data) => {
   return request({
-    url: '/openplat/api-config',
-    method: 'put',
+    url: '/openplat/api-config/update',
+    method: 'post',
     data
   })
 }
 
 export const deleteApiConfig = (id) => {
   return request({
-    url: `/openplat/api-config/${id}`,
-    method: 'delete'
+    url: '/openplat/api-config/delete',
+    method: 'post',
+    data: { id }
   })
 }
 
 export const batchDeleteApiConfigs = (ids) => {
   return request({
-    url: '/openplat/api-config/batch',
-    method: 'delete',
-    data: ids
-  })
-}
-// 批量启用API
-export const batchEnableApiConfigs = async (ids) => {
-  return request({
-    url: '/openplat/api-config/enable',
-    method: 'put',
-    data: ids
+    url: '/openplat/api-config/batchDelete',
+    method: 'post',
+    data: { ids }
   })
 }
 
-// 批量禁用API
-export const batchDisableApiConfigs = async (ids) => {
+export const batchEnableApiConfigs = (ids) => {
   return request({
-    url: '/openplat/api-config/disable',
-    method: 'put',
-    data: ids
+    url: '/openplat/api-config/batchEnable',
+    method: 'post',
+    data: { ids }
   })
 }
 
-// 关联系统到API
-export const relateSystemsToApi = async (apiId, systemIds) => {
+export const batchDisableApiConfigs = (ids) => {
   return request({
-    url: '/openplat/api-config/relate-systems',
+    url: '/openplat/api-config/batchDisable',
+    method: 'post',
+    data: { ids }
+  })
+}
+
+export const checkApiConfig = (apiCode, apiPath) => {
+  return request({
+    url: '/openplat/api-config/check',
+    method: 'post',
+    data: { apiCode, apiPath }
+  })
+}
+
+export const relateSystemsToApi = (apiId, systemIds) => {
+  return request({
+    url: '/openplat/api-config/relateSystems',
     method: 'post',
     data: { apiId, systemIds }
   })
 }
 
-// 解除API与系统的关联
-export const unrelateSystemsFromApi = async (apiId, systemIds) => {
+export const unrelateSystemsFromApi = (apiId, systemIds) => {
   return request({
-    url: '/openplat/api-config/unrelate-systems',
+    url: '/openplat/api-config/unrelateSystems',
     method: 'post',
     data: { apiId, systemIds }
   })

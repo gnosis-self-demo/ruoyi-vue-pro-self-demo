@@ -34,8 +34,8 @@ const SystemManagement = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data = await getSystemList(searchForm)
-      setData(data || [])
+      const result = await getSystemList(searchForm)
+      setData(result || [])
     } catch (error) {
       message.error('获取数据失败')
     }
@@ -130,11 +130,11 @@ const SystemManagement = () => {
     setSelectedSystemId(systemId)
     setApiLoading(true)
     try {
-      const data = await getSystemApis(systemId)
-      setSystemApis(data || [])
+      const result = await getSystemApis(systemId)
+      setSystemApis(result || [])
       setApiModalVisible(true)
     } catch (error) {
-      message.error('获取API列表失败')
+      message.error('获取 API 列表失败')
     }
     setApiLoading(false)
   }
@@ -154,6 +154,11 @@ const SystemManagement = () => {
       title: '系统类型',
       dataIndex: 'systemType',
       key: 'systemType'
+    },
+    {
+      title: 'App ID',
+      dataIndex: 'appId',
+      key: 'appId'
     },
     {
       title: '负责人',
@@ -187,7 +192,7 @@ const SystemManagement = () => {
       render: (_, record) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-          <Button type="link" onClick={() => handleViewApis(record.id)}>查看API</Button>
+          <Button type="link" onClick={() => handleViewApis(record.id)}>查看 API</Button>
           <Popconfirm title="确定删除吗？" onConfirm={() => handleDelete(record.id)}>
             <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
           </Popconfirm>
@@ -251,6 +256,12 @@ const SystemManagement = () => {
               <Option value="EXTERNAL">外部系统</Option>
             </Select>
           </Form.Item>
+          <Form.Item name="appId" label="App ID">
+            <Input />
+          </Form.Item>
+          <Form.Item name="appSecret" label="App Secret">
+            <Input.Password />
+          </Form.Item>
           <Form.Item name="principal" label="负责人">
             <Input />
           </Form.Item>
@@ -266,9 +277,8 @@ const SystemManagement = () => {
         </Form>
       </Modal>
 
-      {/* 系统关联API列表模态框 */}
       <Modal
-        title="系统关联API列表"
+        title="系统关联 API 列表"
         open={apiModalVisible}
         onCancel={() => setApiModalVisible(false)}
         footer={[
@@ -303,6 +313,12 @@ const SystemManagement = () => {
               title: '需要认证',
               dataIndex: 'needAuth',
               key: 'needAuth',
+              render: (val) => val ? '是' : '否'
+            },
+            {
+              title: '防重放',
+              dataIndex: 'needAntiReplay',
+              key: 'needAntiReplay',
               render: (val) => val ? '是' : '否'
             },
             {

@@ -35,8 +35,8 @@ const ApiConfigManagement = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data = await getApiConfigList(searchForm)
-      setData(data || [])
+      const result = await getApiConfigList(searchForm)
+      setData(result || [])
     } catch (error) {
       message.error('获取数据失败')
     }
@@ -45,8 +45,8 @@ const ApiConfigManagement = () => {
 
   const fetchSystems = async () => {
     try {
-      const data = await getSystemList({ status: 'ENABLED' })
-      setSystems(data || [])
+      const result = await getSystemList({ status: 'ENABLED' })
+      setSystems(result || [])
     } catch (error) {
       console.error('获取系统列表失败', error)
     }
@@ -60,7 +60,6 @@ const ApiConfigManagement = () => {
 
   const handleEdit = (record) => {
     setEditingRecord(record)
-    // 设置表单值，从systems数组中提取所有关联的systemId
     const formValues = { ...record }
     if (record.systems && record.systems.length > 0) {
       formValues.systemIds = record.systems.map(sys => sys.id)
@@ -90,12 +89,10 @@ const ApiConfigManagement = () => {
       
       if (editingRecord) {
         await updateApiConfig({ ...editingRecord, ...apiConfigValues })
-        // 关联系统
         await relateSystemsToApi(editingRecord.id, systemIds)
         message.success('修改成功')
       } else {
         const savedApiConfig = await saveApiConfig(apiConfigValues)
-        // 关联系统
         await relateSystemsToApi(savedApiConfig.id, systemIds)
         message.success('新增成功')
       }
@@ -176,8 +173,6 @@ const ApiConfigManagement = () => {
       title: '关联系统',
       key: 'systemName',
       render: (_, record) => {
-        // 这里需要根据实际数据结构调整
-        // 假设record.systems是关联系统的数组
         if (record.systems && record.systems.length > 0) {
           return record.systems.map(sys => sys.systemName).join(', ')
         } else if (record.system && record.system.systemName) {
@@ -196,6 +191,12 @@ const ApiConfigManagement = () => {
       title: '需要认证',
       dataIndex: 'needAuth',
       key: 'needAuth',
+      render: (val) => val ? '是' : '否'
+    },
+    {
+      title: '防重放',
+      dataIndex: 'needAntiReplay',
+      key: 'needAntiReplay',
       render: (val) => val ? '是' : '否'
     },
     {
@@ -318,10 +319,7 @@ const ApiConfigManagement = () => {
           <Form.Item name="needAuth" label="是否需要认证" valuePropName="checked">
             <Switch />
           </Form.Item>
-          <Form.Item name="needTimestamp" label="是否需要时间戳" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          <Form.Item name="needNonce" label="是否需要 nonce" valuePropName="checked">
+          <Form.Item name="needAntiReplay" label="是否需要防重放" valuePropName="checked">
             <Switch />
           </Form.Item>
           <Form.Item name="rateLimit" label="限流阈值（次/分钟）">

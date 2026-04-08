@@ -44,14 +44,9 @@ public class OpenplatApiConfig extends BaseDomain {
     private Boolean needAuth;
     
     /**
-     * 是否需要时间戳
+     * 是否需要防重放
      */
-    private Boolean needTimestamp;
-    
-    /**
-     * 是否需要 nonce
-     */
-    private Boolean needNonce;
+    private Boolean needAntiReplay;
     
     /**
      * 限流阈值（次/分钟）
