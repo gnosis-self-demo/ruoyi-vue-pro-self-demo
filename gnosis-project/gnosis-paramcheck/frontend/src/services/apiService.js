@@ -8,40 +8,67 @@ const api = axios.create({
   }
 });
 
-// 业务类型管理
+api.interceptors.response.use(
+  response => {
+    const data = response.data;
+    if (data.code === 200) {
+      return data;
+    }
+    return Promise.reject(new Error(data.message || '请求失败'));
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
+
 export const businessTypeApi = {
-  // 获取业务类型列表
-  getBusinessTypes: () => api.get('/business-types'),
-  // 新增业务类型
-  createBusinessType: (data) => api.post('/business-types', data),
-  // 更新业务类型
-  updateBusinessType: (id, data) => api.put(`/business-types/${id}`, data),
-  // 删除业务类型
-  deleteBusinessType: (id) => api.delete(`/business-types/${id}`),
-  // 批量删除业务类型
-  batchDeleteBusinessTypes: (ids) => api.delete('/business-types/batch', { data: ids })
+  getPage: (params) => api.get('/business-types/page', { params }),
+  getList: () => api.get('/business-types'),
+  getActiveList: () => api.get('/business-types/active'),
+  getByCode: (code) => api.get(`/business-types/${code}`),
+  create: (data) => api.post('/business-types', data),
+  update: (data) => api.put('/business-types', data),
+  delete: (code) => api.delete(`/business-types/${code}`),
+  batchDelete: (codes) => api.post('/business-types/batch/delete', codes),
+  batchActivate: (codes) => api.post('/business-types/batch/activate', codes),
+  batchDeactivate: (codes) => api.post('/business-types/batch/deactivate', codes),
+  exportData: () => api.get('/business-types/export', { responseType: 'blob' }),
+  importData: (data) => api.post('/business-types/import', data)
 };
 
-// 流程配置管理
 export const flowConfigApi = {
-  // 获取流程配置列表
-  getFlowConfigs: () => api.get('/config/flows/all'),
-  // 新增流程配置
-  createFlowConfig: (data) => api.post('/config/flows', data),
-  // 更新流程配置
-  updateFlowConfig: (id, data) => api.post(`/config/flows`, data),
-  // 批量删除流程配置
-  batchDeleteFlowConfigs: (ids) => api.post('/config/flows/batch/delete', ids),
-  // 批量启用流程配置
-  batchEnableFlowConfigs: (ids) => api.post('/config/flows/batch/activate', ids),
-  // 批量禁用流程配置
-  batchDisableFlowConfigs: (ids) => api.post('/config/flows/batch/deactivate', ids)
+  getPage: (params) => api.get('/config/flows/page', { params }),
+  getActiveList: () => api.get('/config/flows'),
+  getAllList: () => api.get('/config/flows/all'),
+  getByFlowId: (flowId) => api.get(`/config/flows/${flowId}`),
+  create: (data) => api.post('/config/flows', data),
+  update: (data) => api.put('/config/flows', data),
+  delete: (flowId) => api.delete(`/config/flows/${flowId}`),
+  batchDelete: (flowIds) => api.post('/config/flows/batch/delete', flowIds),
+  batchActivate: (flowIds) => api.post('/config/flows/batch/activate', flowIds),
+  batchDeactivate: (flowIds) => api.post('/config/flows/batch/deactivate', flowIds),
+  refresh: (flowId) => api.post(`/config/flows/${flowId}/refresh`),
+  refreshAll: () => api.post('/config/flows/refresh-all'),
+  exportData: (params) => api.get('/config/flows/export', { params, responseType: 'blob' }),
+  importData: (data) => api.post('/config/flows/import', data)
 };
 
-// 校验测试
+export const validationLogApi = {
+  getPage: (params) => api.get('/logs/page', { params }),
+  getList: () => api.get('/logs'),
+  getByLogId: (logId) => api.get(`/logs/${logId}`),
+  delete: (logId) => api.delete(`/logs/${logId}`),
+  batchDelete: (logIds) => api.post('/logs/batch/delete', logIds),
+  batchActivate: (logIds) => api.post('/logs/batch/activate', logIds),
+  batchDeactivate: (logIds) => api.post('/logs/batch/deactivate', logIds),
+  exportData: (params) => api.get('/logs/export', { params, responseType: 'blob' })
+};
+
 export const validationApi = {
-  // 执行参数校验
-  validate: (data) => api.post('/validate', data, { params: { flowId: data.validationMode === 'FLOW' ? 'SIMPLE_CHECK_FLOW' : data.validationMode === 'HANDLER' ? 'USER_REGISTER_FLOW' : 'ORDER_CREATE_FLOW' } })
+  validate: (flowId, data) => axios.post(`/api/validate?flowId=${flowId}`, data, {
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 10000
+  })
 };
 
 export default api;

@@ -1,11 +1,8 @@
 package com.gnosis.paramcheck.domain;
 
 import java.io.Serializable;
-import java.time.OffsetDateTime;
+import java.util.Date;
 
-/**
- * 校验日志实体 (映射 sys_validation_logs)
- */
 public class ValidationLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -14,12 +11,15 @@ public class ValidationLog implements Serializable {
     private String flowId;
     private String requestId;
     private String modeType;
-    private Object inputSnapshot;
+    private String inputSnapshot;
     private String failedNode;
     private String errorMsg;
-    private OffsetDateTime createdTime;
+    private Boolean isActive;
+    private String createUserId;
+    private String updateUserId;
+    private Date createTime;
+    private Date updateTime;
 
-    // Getter and Setter methods
     public Long getLogId() {
         return logId;
     }
@@ -52,11 +52,11 @@ public class ValidationLog implements Serializable {
         this.modeType = modeType;
     }
 
-    public Object getInputSnapshot() {
+    public String getInputSnapshot() {
         return inputSnapshot;
     }
 
-    public void setInputSnapshot(Object inputSnapshot) {
+    public void setInputSnapshot(String inputSnapshot) {
         this.inputSnapshot = inputSnapshot;
     }
 
@@ -76,11 +76,43 @@ public class ValidationLog implements Serializable {
         this.errorMsg = errorMsg;
     }
 
-    public OffsetDateTime getCreatedTime() {
-        return createdTime;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setCreatedTime(OffsetDateTime createdTime) {
-        this.createdTime = createdTime;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public String getCreateUserId() {
+        return createUserId;
+    }
+
+    public void setCreateUserId(String createUserId) {
+        this.createUserId = createUserId;
+    }
+
+    public String getUpdateUserId() {
+        return updateUserId;
+    }
+
+    public void setUpdateUserId(String updateUserId) {
+        this.updateUserId = updateUserId;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
     }
 }

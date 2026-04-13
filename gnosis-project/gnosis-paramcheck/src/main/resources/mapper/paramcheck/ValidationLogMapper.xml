@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.paramcheck.mapper.ValidationLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.paramcheck.domain.ValidationLog">
+        <id column="log_id" property="logId"/>
+        <result column="flow_id" property="flowId"/>
+        <result column="request_id" property="requestId"/>
+        <result column="mode_type" property="modeType"/>
+        <result column="input_snapshot" property="inputSnapshot"/>
+        <result column="failed_node" property="failedNode"/>
+        <result column="error_msg" property="errorMsg"/>
+        <result column="is_active" property="isActive"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        log_id, flow_id, request_id, mode_type, input_snapshot, failed_node, error_msg,
+        is_active, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectByLogId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_logs
+        WHERE log_id = #{logId}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_logs
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_logs
+        <where>
+            <if test="flowId != null and flowId != ''">
+                AND flow_id LIKE '%' || #{flowId} || '%'
+            </if>
+            <if test="requestId != null and requestId != ''">
+                AND request_id LIKE '%' || #{requestId} || '%'
+            </if>
+            <if test="modeType != null and modeType != ''">
+                AND mode_type = #{modeType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" resultType="int">
+        SELECT COUNT(1)
+        FROM gnosis_sample.sys_validation_logs
+        <where>
+            <if test="flowId != null and flowId != ''">
+                AND flow_id LIKE '%' || #{flowId} || '%'
+            </if>
+            <if test="requestId != null and requestId != ''">
+                AND request_id LIKE '%' || #{requestId} || '%'
+            </if>
+            <if test="modeType != null and modeType != ''">
+                AND mode_type = #{modeType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByConditionWithPaging" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_logs
+        <where>
+            <if test="flowId != null and flowId != ''">
+                AND flow_id LIKE '%' || #{flowId} || '%'
+            </if>
+            <if test="requestId != null and requestId != ''">
+                AND request_id LIKE '%' || #{requestId} || '%'
+            </if>
+            <if test="modeType != null and modeType != ''">
+                AND mode_type = #{modeType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <insert id="insert" parameterType="com.gnosis.paramcheck.domain.ValidationLog" useGeneratedKeys="true" keyProperty="logId">
+        INSERT INTO gnosis_sample.sys_validation_logs
+        (flow_id, request_id, mode_type, input_snapshot, failed_node, error_msg,
+         is_active, create_user_id, update_user_id, create_time, update_time)
+        VALUES (#{flowId}, #{requestId}, #{modeType}, #{inputSnapshot}, #{failedNode}, #{errorMsg},
+                #{isActive}, #{createUserId}, #{updateUserId}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    </insert>
+
+    <delete id="deleteByLogId">
+        DELETE FROM gnosis_sample.sys_validation_logs WHERE log_id = #{logId}
+    </delete>
+
+    <delete id="batchDelete">
+        DELETE FROM gnosis_sample.sys_validation_logs WHERE log_id IN
+        <foreach collection="logIds" item="logId" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </delete>
+
+    <update id="activate">
+        UPDATE gnosis_sample.sys_validation_logs SET is_active = TRUE, update_time = CURRENT_TIMESTAMP WHERE log_id = #{logId}
+    </update>
+
+    <update id="deactivate">
+        UPDATE gnosis_sample.sys_validation_logs SET is_active = FALSE, update_time = CURRENT_TIMESTAMP WHERE log_id = #{logId}
+    </update>
+
+    <update id="batchActivate">
+        UPDATE gnosis_sample.sys_validation_logs SET is_active = TRUE, update_time = CURRENT_TIMESTAMP WHERE log_id IN
+        <foreach collection="logIds" item="logId" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </update>
+
+    <update id="batchDeactivate">
+        UPDATE gnosis_sample.sys_validation_logs SET is_active = FALSE, update_time = CURRENT_TIMESTAMP WHERE log_id IN
+        <foreach collection="logIds" item="logId" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </update>
+
+</mapper>

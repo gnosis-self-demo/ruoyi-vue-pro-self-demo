@@ -1,22 +1,18 @@
 package com.gnosis.paramcheck.controller;
 
+import com.gnosis.common.dto.CommonResponse;
 import com.gnosis.paramcheck.domain.ValidationFlow;
-import com.gnosis.paramcheck.repository.FlowConfigRepository;
+import com.gnosis.paramcheck.dto.PageResult;
+import com.gnosis.paramcheck.service.FlowConfigService;
 import com.gnosis.paramcheck.service.FlowRefreshService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
-/**
- * 配置管理API
- * 提供流程配置的CRUD操作和版本控制
- */
 @RestController
 @RequestMapping("/api/paramcheck/config")
 public class ConfigManagementController {
@@ -24,25 +20,13 @@ public class ConfigManagementController {
     private static final Logger log = LoggerFactory.getLogger(ConfigManagementController.class);
 
     @Autowired
-    private FlowConfigRepository flowConfigRepository;
+    private FlowConfigService flowConfigService;
 
     @Autowired
     private FlowRefreshService flowRefreshService;
 
-    /**
-     * 获取所有激活的流程配置
-     */
-    @GetMapping("/flows")
-    public ResponseEntity<List<ValidationFlow>> getActiveFlows() {
-        List<ValidationFlow> flows = flowConfigRepository.findAllActive();
-        return ResponseEntity.ok(flows);
-    }
-
-    /**
-     * 获取所有流程配置，包括禁用的
-     */
-    @GetMapping("/flows/all")
-    public ResponseEntity<Map<String, Object>> getAllFlows(
+    @GetMapping("/flows/page")
+    public CommonResponse<PageResult<ValidationFlow>> pageQuery(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String flowId,
@@ -50,140 +34,151 @@ public class ConfigManagementController {
             @RequestParam(required = false) String businessType,
             @RequestParam(required = false) String modeType,
             @RequestParam(required = false) Boolean isActive) {
-        Map<String, Object> result = flowConfigRepository.findAll(page, pageSize, flowId, flowName, businessType, modeType, isActive);
-        return ResponseEntity.ok(result);
+        com.gnosis.paramcheck.dto.PageRequest pageRequest = new com.gnosis.paramcheck.dto.PageRequest();
+        pageRequest.setPage(page);
+        pageRequest.setPageSize(pageSize);
+        PageResult<ValidationFlow> result = flowConfigService.findPage(flowId, flowName, businessType, modeType, isActive, pageRequest);
+        return CommonResponse.success(result);
     }
 
-    /**
-     * 获取单个流程配置详情
-     */
+    @GetMapping("/flows")
+    public CommonResponse<List<ValidationFlow>> getActiveFlows() {
+        return CommonResponse.success(flowConfigService.findAllActive());
+    }
+
+    @GetMapping("/flows/all")
+    public CommonResponse<List<ValidationFlow>> getAllFlows() {
+        return CommonResponse.success(flowConfigService.findAll());
+    }
+
     @GetMapping("/flows/{flowId}")
-    public ResponseEntity<ValidationFlow> getFlow(@PathVariable String flowId) {
-        Optional<ValidationFlow> flow = flowConfigRepository.findById(flowId);
-        return flow.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /**
-     * 手动刷新指定流程
-     * 用于在配置变更后立即生效
-     */
-    @PostMapping("/flows/{flowId}/refresh")
-    public ResponseEntity<Void> refreshFlow(@PathVariable String flowId) {
-        try {
-            flowRefreshService.refreshFlow(flowId);
-            log.info("[ConfigManagement] refreshed flow: {}", flowId);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            log.error("[ConfigManagement] failed to refresh flow: {}", flowId, e);
-            return ResponseEntity.badRequest().build();
+    public CommonResponse<ValidationFlow> getFlow(@PathVariable String flowId) {
+        ValidationFlow flow = flowConfigService.findById(flowId);
+        if (flow == null) {
+            return CommonResponse.error(404, "Flow not found: " + flowId);
         }
+        return CommonResponse.success(flow);
     }
 
-    /**
-     * 全量刷新所有流程
-     */
-    @PostMapping("/flows/refresh-all")
-    public ResponseEntity<Void> refreshAllFlows() {
-        try {
-            flowRefreshService.refreshAllFlows();
-            log.info("[ConfigManagement] refreshed all flows");
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            log.error("[ConfigManagement] failed to refresh all flows", e);
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    /**
-     * 禁用流程
-     */
-    @PostMapping("/flows/{flowId}/deactivate")
-    public ResponseEntity<Void> deactivateFlow(@PathVariable String flowId) {
-        try {
-            flowConfigRepository.deactivate(flowId);
-            log.info("[ConfigManagement] deactivated flow: {}", flowId);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            log.error("[ConfigManagement] failed to deactivate flow: {}", flowId, e);
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    /**
-     * 启用流程
-     */
-    @PostMapping("/flows/{flowId}/activate")
-    public ResponseEntity<Void> activateFlow(@PathVariable String flowId) {
-        try {
-            flowConfigRepository.activate(flowId);
-            log.info("[ConfigManagement] activated flow: {}", flowId);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            log.error("[ConfigManagement] failed to activate flow: {}", flowId, e);
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    /**
-     * 保存流程配置（创建或更新）
-     */
     @PostMapping("/flows")
-    public ResponseEntity<Void> saveFlow(@RequestBody ValidationFlow flow) {
+    public CommonResponse<Void> saveFlow(@RequestBody ValidationFlow flow) {
         try {
-            // 保存配置
-            flowConfigRepository.save(flow);
-            // 保存后刷新流程
+            flowConfigService.save(flow);
             flowRefreshService.refreshFlow(flow.getFlowId());
-            log.info("[ConfigManagement] saved flow: {}", flow.getFlowId());
-            return ResponseEntity.ok().build();
+            return CommonResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to save flow: {}", flow.getFlowId(), e);
-            return ResponseEntity.badRequest().build();
+            return CommonResponse.error("保存失败: " + e.getMessage());
         }
     }
 
-    /**
-     * 批量禁用流程
-     */
-    @PostMapping("/flows/batch/deactivate")
-    public ResponseEntity<Void> batchDeactivateFlows(@RequestBody List<String> flowIds) {
+    @PutMapping("/flows")
+    public CommonResponse<Void> updateFlow(@RequestBody ValidationFlow flow) {
         try {
-            flowConfigRepository.batchDeactivate(flowIds);
-            log.info("[ConfigManagement] batch deactivated flows: {}", flowIds);
-            return ResponseEntity.ok().build();
+            flowConfigService.save(flow);
+            flowRefreshService.refreshFlow(flow.getFlowId());
+            return CommonResponse.success();
         } catch (Exception e) {
-            log.error("[ConfigManagement] failed to batch deactivate flows", e);
-            return ResponseEntity.badRequest().build();
+            log.error("[ConfigManagement] failed to update flow: {}", flow.getFlowId(), e);
+            return CommonResponse.error("更新失败: " + e.getMessage());
         }
     }
 
-    /**
-     * 批量启用流程
-     */
-    @PostMapping("/flows/batch/activate")
-    public ResponseEntity<Void> batchActivateFlows(@RequestBody List<String> flowIds) {
+    @DeleteMapping("/flows/{flowId}")
+    public CommonResponse<Void> deleteFlow(@PathVariable String flowId) {
         try {
-            flowConfigRepository.batchActivate(flowIds);
-            log.info("[ConfigManagement] batch activated flows: {}", flowIds);
-            return ResponseEntity.ok().build();
+            flowConfigService.delete(flowId);
+            return CommonResponse.success();
         } catch (Exception e) {
-            log.error("[ConfigManagement] failed to batch activate flows", e);
-            return ResponseEntity.badRequest().build();
+            log.error("[ConfigManagement] failed to delete flow: {}", flowId, e);
+            return CommonResponse.error("删除失败: " + e.getMessage());
         }
     }
 
-    /**
-     * 批量删除流程
-     */
     @PostMapping("/flows/batch/delete")
-    public ResponseEntity<Void> batchDeleteFlows(@RequestBody List<String> flowIds) {
+    public CommonResponse<Void> batchDeleteFlows(@RequestBody List<String> flowIds) {
         try {
-            flowConfigRepository.batchDelete(flowIds);
-            log.info("[ConfigManagement] batch deleted flows: {}", flowIds);
-            return ResponseEntity.ok().build();
+            flowConfigService.batchDelete(flowIds);
+            return CommonResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to batch delete flows", e);
-            return ResponseEntity.badRequest().build();
+            return CommonResponse.error("批量删除失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/flows/batch/activate")
+    public CommonResponse<Void> batchActivateFlows(@RequestBody List<String> flowIds) {
+        try {
+            flowConfigService.batchActivate(flowIds);
+            return CommonResponse.success();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to batch activate flows", e);
+            return CommonResponse.error("批量启用失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/flows/batch/deactivate")
+    public CommonResponse<Void> batchDeactivateFlows(@RequestBody List<String> flowIds) {
+        try {
+            flowConfigService.batchDeactivate(flowIds);
+            return CommonResponse.success();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to batch deactivate flows", e);
+            return CommonResponse.error("批量禁用失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/flows/{flowId}/refresh")
+    public CommonResponse<Void> refreshFlow(@PathVariable String flowId) {
+        try {
+            flowRefreshService.refreshFlow(flowId);
+            return CommonResponse.success();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to refresh flow: {}", flowId, e);
+            return CommonResponse.error("刷新失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/flows/refresh-all")
+    public CommonResponse<Void> refreshAllFlows() {
+        try {
+            flowRefreshService.refreshAllFlows();
+            return CommonResponse.success();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] failed to refresh all flows", e);
+            return CommonResponse.error("刷新失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/flows/export")
+    public void exportFlows(HttpServletResponse response,
+                            @RequestParam(required = false) String flowId,
+                            @RequestParam(required = false) String flowName,
+                            @RequestParam(required = false) String businessType,
+                            @RequestParam(required = false) String modeType,
+                            @RequestParam(required = false) Boolean isActive) {
+        try {
+            List<ValidationFlow> flows = flowConfigService.findAll();
+            String json = com.alibaba.fastjson.JSON.toJSONString(flows);
+            response.setContentType("application/json;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename=validation_flows.json");
+            response.getWriter().write(json);
+            response.getWriter().flush();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] export failed", e);
+        }
+    }
+
+    @PostMapping("/flows/import")
+    public CommonResponse<Void> importFlows(@RequestBody List<ValidationFlow> flows) {
+        try {
+            for (ValidationFlow flow : flows) {
+                flowConfigService.save(flow);
+            }
+            return CommonResponse.success();
+        } catch (Exception e) {
+            log.error("[ConfigManagement] import failed", e);
+            return CommonResponse.error("导入失败: " + e.getMessage());
         }
     }
 }

@@ -1,62 +1,49 @@
 import React from 'react';
-import { Layout, Menu, Button } from 'antd';
-import { Link, Routes, Route, useNavigate } from 'react-router-dom';
-import BusinessTypeManagement from './pages/BusinessTypeManagement';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import FlowConfigManagement from './pages/FlowConfigManagement';
+import BusinessTypeManagement from './pages/BusinessTypeManagement';
+import ValidationLogManagement from './pages/ValidationLogManagement';
 import ValidationTest from './pages/ValidationTest';
+import { Layout, Menu } from 'antd';
 
-const { Header, Sider, Content } = Layout;
+const { Header, Content } = Layout;
 
-function App() {
-  const navigate = useNavigate();
+const App = () => {
+  const menuItems = [
+    { key: '/flow-config', label: <Link to="/flow-config">流程配置管理</Link> },
+    { key: '/business-type', label: <Link to="/business-type">业务类型管理</Link> },
+    { key: '/validation-log', label: <Link to="/validation-log">校验日志管理</Link> },
+    { key: '/validation-test', label: <Link to="/validation-test">校验测试</Link> },
+  ];
 
   return (
-    <Layout>
-      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#001529' }}>
-        <div style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>参数校验系统</div>
-        <Button type="text" style={{ color: '#fff' }} onClick={() => navigate('/')}>
-          首页
-        </Button>
-      </Header>
-      <Layout>
-        <Sider width={200} style={{ background: '#001529' }}>
+    <Router>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Header style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginRight: 40 }}>
+            参数校验平台
+          </div>
           <Menu
-            mode="inline"
             theme="dark"
-            defaultSelectedKeys={['1']}
-            style={{ height: '100%', borderRight: 0 }}
-          >
-            <Menu.Item key="1">
-              <Link to="/business-types">业务类型管理</Link>
-            </Menu.Item>
-            <Menu.Item key="2">
-              <Link to="/flow-configs">流程配置管理</Link>
-            </Menu.Item>
-            <Menu.Item key="3">
-              <Link to="/validation-test">校验测试</Link>
-            </Menu.Item>
-          </Menu>
-        </Sider>
-        <Layout style={{ padding: '0 24px 24px' }}>
-          <Content
-            style={{
-              background: '#fff',
-              padding: 24,
-              margin: 0,
-              minHeight: 280,
-            }}
-          >
+            mode="horizontal"
+            items={menuItems}
+            style={{ flex: 1 }}
+          />
+        </Header>
+        <Content style={{ padding: '24px', background: '#f0f2f5' }}>
+          <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', minHeight: 'calc(100vh - 112px)' }}>
             <Routes>
-              <Route path="/business-types" element={<BusinessTypeManagement />} />
-              <Route path="/flow-configs" element={<FlowConfigManagement />} />
+              <Route path="/flow-config" element={<FlowConfigManagement />} />
+              <Route path="/business-type" element={<BusinessTypeManagement />} />
+              <Route path="/validation-log" element={<ValidationLogManagement />} />
               <Route path="/validation-test" element={<ValidationTest />} />
-              <Route path="/" element={<BusinessTypeManagement />} />
+              <Route path="/" element={<Navigate to="/flow-config" replace />} />
             </Routes>
-          </Content>
-        </Layout>
+          </div>
+        </Content>
       </Layout>
-    </Layout>
+    </Router>
   );
-}
+};
 
 export default App;

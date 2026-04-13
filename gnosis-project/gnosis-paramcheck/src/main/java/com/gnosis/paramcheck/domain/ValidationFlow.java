@@ -1,56 +1,29 @@
 package com.gnosis.paramcheck.domain;
 
 import java.io.Serializable;
-import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.Map;
 
-/**
- * 校验流程配置实体 (映射 sys_validation_flows)
- */
 public class ValidationFlow implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** 流程标识 */
     private String flowId;
-
-    /** 流程名称 */
     private String flowName;
-
-    /** 模式类型: FLOW / HANDLER / HYBRID */
     private String modeType;
-
-    /** LiteFlow EL 表达式 (FLOW/HYBRID 必填) */
     private String elExpression;
-
-    /** 自定义处理器编码 (HANDLER/HYBRID 必填) */
     private String handlerCode;
-
-    /** 组件配置 (JSONPath/正则/SQL 等) */
-    private Map<String, Object> componentConfig;
-
-    /** 业务类型（多个，逗号分隔） */
-    private String businessTypes;
-
-    /** 是否激活 */
+    private String componentConfig;
+    private String businessType;
     private Boolean isActive;
-
-    /** 版本号 */
     private Integer version;
-
-    /** 创建人ID */
     private String createUserId;
-
-    /** 更新人ID */
     private String updateUserId;
+    private Date createTime;
+    private Date updateTime;
 
-    /** 创建时间 */
-    private OffsetDateTime createTime;
+    private transient Map<String, Object> componentConfigMap;
 
-    /** 更新时间 */
-    private OffsetDateTime updatedTime;
-
-    // Getter and Setter methods
     public String getFlowId() {
         return flowId;
     }
@@ -91,20 +64,20 @@ public class ValidationFlow implements Serializable {
         this.handlerCode = handlerCode;
     }
 
-    public Map<String, Object> getComponentConfig() {
+    public String getComponentConfig() {
         return componentConfig;
     }
 
-    public void setComponentConfig(Map<String, Object> componentConfig) {
+    public void setComponentConfig(String componentConfig) {
         this.componentConfig = componentConfig;
     }
 
-    public String getBusinessTypes() {
-        return businessTypes;
+    public String getBusinessType() {
+        return businessType;
     }
 
-    public void setBusinessTypes(String businessTypes) {
-        this.businessTypes = businessTypes;
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
     }
 
     public Boolean getIsActive() {
@@ -139,19 +112,27 @@ public class ValidationFlow implements Serializable {
         this.updateUserId = updateUserId;
     }
 
-    public OffsetDateTime getCreateTime() {
+    public Date getCreateTime() {
         return createTime;
     }
 
-    public void setCreateTime(OffsetDateTime createTime) {
+    public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
 
-    public OffsetDateTime getUpdatedTime() {
-        return updatedTime;
+    public Date getUpdateTime() {
+        return updateTime;
     }
 
-    public void setUpdatedTime(OffsetDateTime updatedTime) {
-        this.updatedTime = updatedTime;
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Map<String, Object> getComponentConfigMap() {
+        return componentConfigMap;
+    }
+
+    public void setComponentConfigMap(Map<String, Object> componentConfigMap) {
+        this.componentConfigMap = componentConfigMap;
     }
 }

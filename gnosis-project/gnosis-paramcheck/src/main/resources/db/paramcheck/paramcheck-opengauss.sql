@@ -5,7 +5,7 @@
 -- ============================================================
 
 -- 1. 校验流程配置表
-CREATE TABLE IF NOT EXISTS sys_validation_flows (
+CREATE TABLE IF NOT EXISTS gnosis_sample.sys_validation_flows (
     flow_id         VARCHAR(64) PRIMARY KEY,
     flow_name       VARCHAR(128) NOT NULL,
     mode_type       VARCHAR(20) DEFAULT 'FLOW',
@@ -13,31 +13,31 @@ CREATE TABLE IF NOT EXISTS sys_validation_flows (
     handler_code    VARCHAR(64),
     component_config TEXT,
     business_type   VARCHAR(255),
-    is_active       boolean DEFAULT true,
+    is_active       BOOLEAN DEFAULT TRUE,
     version         INT DEFAULT 1,
     create_user_id  VARCHAR(128),
     update_user_id  VARCHAR(128),
     create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_flow_handler UNIQUE (flow_id, handler_code)
+    update_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE sys_validation_flows IS '参数校验流程配置表';
-COMMENT ON COLUMN sys_validation_flows.flow_id IS '流程唯一标识';
-COMMENT ON COLUMN sys_validation_flows.mode_type IS '校验模式: FLOW/HANDLER/HYBRID';
-COMMENT ON COLUMN sys_validation_flows.el_expression IS 'LiteFlow EL 表达式';
-COMMENT ON COLUMN sys_validation_flows.handler_code IS '自定义处理器编码';
-COMMENT ON COLUMN sys_validation_flows.component_config IS '组件配置';
-COMMENT ON COLUMN sys_validation_flows.business_type IS '业务类型';
-COMMENT ON COLUMN sys_validation_flows.is_active IS '是否启用';
-COMMENT ON COLUMN sys_validation_flows.version IS '版本号';
-COMMENT ON COLUMN sys_validation_flows.create_user_id IS '创建人ID';
-COMMENT ON COLUMN sys_validation_flows.update_user_id IS '更新人ID';
-COMMENT ON COLUMN sys_validation_flows.create_time IS '创建时间';
-COMMENT ON COLUMN sys_validation_flows.updated_time IS '更新时间';
+COMMENT ON TABLE gnosis_sample.sys_validation_flows IS '参数校验流程配置表';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.flow_id IS '流程唯一标识';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.flow_name IS '流程名称';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.mode_type IS '校验模式: FLOW/HANDLER/HYBRID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.el_expression IS 'LiteFlow EL 表达式';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.handler_code IS '自定义处理器编码';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.component_config IS '组件配置';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.business_type IS '业务类型';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.is_active IS '是否启用';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.version IS '版本号';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.create_user_id IS '创建人ID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.update_user_id IS '更新人ID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.create_time IS '创建时间';
+COMMENT ON COLUMN gnosis_sample.sys_validation_flows.update_time IS '更新时间';
 
 -- 2. 校验日志表
-CREATE TABLE IF NOT EXISTS sys_validation_logs (
+CREATE TABLE IF NOT EXISTS gnosis_sample.sys_validation_logs (
     log_id          BIGSERIAL PRIMARY KEY,
     flow_id         VARCHAR(64),
     request_id      VARCHAR(64),
@@ -45,39 +45,70 @@ CREATE TABLE IF NOT EXISTS sys_validation_logs (
     input_snapshot  TEXT,
     failed_node     VARCHAR(64),
     error_msg       TEXT,
-    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active       BOOLEAN DEFAULT TRUE,
+    create_user_id  VARCHAR(128),
+    update_user_id  VARCHAR(128),
+    create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE sys_validation_logs IS '参数校验执行日志表';
-COMMENT ON COLUMN sys_validation_logs.input_snapshot IS '请求入参快照';
-COMMENT ON COLUMN sys_validation_logs.failed_node IS '失败节点ID';
+COMMENT ON TABLE gnosis_sample.sys_validation_logs IS '参数校验执行日志表';
+COMMENT ON COLUMN gnosis_sample.sys_validation_logs.input_snapshot IS '请求入参快照';
+COMMENT ON COLUMN gnosis_sample.sys_validation_logs.failed_node IS '失败节点ID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_logs.is_active IS '是否启用';
+COMMENT ON COLUMN gnosis_sample.sys_validation_logs.create_user_id IS '创建人ID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_logs.update_user_id IS '更新人ID';
+COMMENT ON COLUMN gnosis_sample.sys_validation_logs.create_time IS '创建时间';
+COMMENT ON COLUMN gnosis_sample.sys_validation_logs.update_time IS '更新时间';
 
--- 3. 辅助表: 示例产品库存
-CREATE TABLE IF NOT EXISTS product_stock (
+-- 3. 业务类型表
+CREATE TABLE IF NOT EXISTS gnosis_sample.sys_business_types (
+    code            VARCHAR(64) PRIMARY KEY,
+    name            VARCHAR(128) NOT NULL,
+    description     TEXT,
+    is_active       BOOLEAN DEFAULT TRUE,
+    create_user_id  VARCHAR(128),
+    update_user_id  VARCHAR(128),
+    create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE gnosis_sample.sys_business_types IS '业务类型配置表';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.code IS '业务类型编码';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.name IS '业务类型名称';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.description IS '描述';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.is_active IS '是否启用';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.create_user_id IS '创建人ID';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.update_user_id IS '更新人ID';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.create_time IS '创建时间';
+COMMENT ON COLUMN gnosis_sample.sys_business_types.update_time IS '更新时间';
+
+-- 4. 辅助表: 示例产品库存
+CREATE TABLE IF NOT EXISTS gnosis_sample.product_stock (
     sku_id          VARCHAR(64) PRIMARY KEY,
     sku_name        VARCHAR(128),
     stock_qty       INT DEFAULT 0,
-    updated_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    update_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. 辅助表: 示例订单记录
-CREATE TABLE IF NOT EXISTS order_record (
+-- 5. 辅助表: 示例订单记录
+CREATE TABLE IF NOT EXISTS gnosis_sample.order_record (
     order_id        BIGSERIAL PRIMARY KEY,
     order_no        VARCHAR(64) NOT NULL,
     user_id         VARCHAR(64),
     amount          DECIMAL(15,2),
     status          VARCHAR(20),
-    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. 辅助表: 示例用户表
-CREATE TABLE IF NOT EXISTS sys_users (
+-- 6. 辅助表: 示例用户表
+CREATE TABLE IF NOT EXISTS gnosis_sample.sys_users (
     user_id         VARCHAR(64) PRIMARY KEY,
     username        VARCHAR(64) NOT NULL UNIQUE,
     password        VARCHAR(128),
     email           VARCHAR(128),
     status          INT DEFAULT 1,
-    created_time    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    create_time     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================================
@@ -85,56 +116,67 @@ CREATE TABLE IF NOT EXISTS sys_users (
 -- ============================================================
 
 -- 场景1: HYBRID 混合模式 - 订单创建校验
-INSERT INTO sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
+INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, is_active, create_user_id, update_user_id)
 VALUES (
     'ORDER_CREATE_FLOW',
-    'Order creation validation (Hybrid mode)',
+    '订单创建校验(混合模式)',
     'ORDER_CREATE',
     'HYBRID',
     'THEN(parse_param, check_format, check_db_user)',
     'OrderBusinessHandler',
-    '{"parse_param": {"json_path": "$"}, "check_format": {"rules": [{"path": "$.orderNo", "type": "REGEX", "pattern": "^ORD[0-9]{10}$", "msg": "Order number format error"}, {"path": "$.amount", "type": "RANGE", "min": 0.01, "max": 1000000, "msg": "Order amount out of range"}, {"path": "$.userId", "type": "NOT_NULL", "msg": "User ID cannot be empty"}]}, "check_db_user": {"type": "DB_QUERY", "sql": "SELECT COUNT(1) FROM sys_users WHERE user_id = ? AND status = 1", "param_path": "$.userId", "msg": "User does not exist or is disabled"}}',
+    '{"parse_param": {"json_path": "$"}, "check_format": {"rules": [{"path": "$.orderNo", "type": "REGEX", "pattern": "^ORD[0-9]{10}$", "msg": "订单号格式错误，格式应为ORD+10位数字"}, {"path": "$.amount", "type": "RANGE", "min": 0.01, "max": 1000000, "msg": "订单金额超出范围(0.01~1000000)"}, {"path": "$.userId", "type": "NOT_NULL", "msg": "用户ID不能为空"}]}, "check_db_user": {"type": "DB_QUERY", "sql": "SELECT COUNT(1) FROM gnosis_sample.sys_users WHERE user_id = ? AND status = 1", "param_path": "$.userId", "msg": "用户不存在或已被禁用"}}',
+    TRUE,
     'admin',
     'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
 -- 场景2: HANDLER 纯接口模式 - 用户注册
-INSERT INTO sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
+INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, is_active, create_user_id, update_user_id)
 VALUES (
     'USER_REGISTER_FLOW',
-    'User registration (Handler mode)',
+    '用户注册(纯接口模式)',
     'USER_REGISTER',
     'HANDLER',
     NULL,
     'UserRegisterHandler',
     NULL,
+    TRUE,
     'admin',
     'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
 -- 场景3: FLOW 纯编排模式 - 简单格式校验
-INSERT INTO sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, create_user_id, update_user_id)
+INSERT INTO gnosis_sample.sys_validation_flows (flow_id, flow_name, business_type, mode_type, el_expression, handler_code, component_config, is_active, create_user_id, update_user_id)
 VALUES (
     'SIMPLE_CHECK_FLOW',
-    'Simple format validation (Flow mode)',
+    '简单格式校验(纯编排模式)',
     'BASIC_DATA',
     'FLOW',
     'THEN(parse_param, check_format)',
     NULL,
-    '{"parse_param": {"json_path": "$"}, "check_format": {"rules": [{"path": "$.email", "type": "EMAIL", "msg": "Email format error"}, {"path": "$.phone", "type": "PHONE", "msg": "Phone format error"}]}}',
+    '{"parse_param": {"json_path": "$"}, "check_format": {"rules": [{"path": "$.email", "type": "EMAIL", "msg": "邮箱格式错误"}, {"path": "$.phone", "type": "PHONE", "msg": "手机号格式错误"}]}}',
+    TRUE,
     'admin',
     'admin'
 ) ON CONFLICT (flow_id) DO NOTHING;
 
+-- 初始化业务类型数据
+INSERT INTO gnosis_sample.sys_business_types (code, name, description, is_active, create_user_id, update_user_id) VALUES
+    ('ORDER_CREATE', '订单创建', '订单创建相关的参数校验', TRUE, 'admin', 'admin'),
+    ('USER_REGISTER', '用户注册', '用户注册相关的参数校验', TRUE, 'admin', 'admin'),
+    ('BASIC_DATA', '基础数据录入', '基础数据录入相关的参数校验', TRUE, 'admin', 'admin'),
+    ('OTHER', '其他', '其他业务类型的参数校验', TRUE, 'admin', 'admin')
+ON CONFLICT (code) DO NOTHING;
+
 -- 初始化示例产品库存数据
-INSERT INTO product_stock (sku_id, sku_name, stock_qty) VALUES
+INSERT INTO gnosis_sample.product_stock (sku_id, sku_name, stock_qty) VALUES
     ('SKU001', 'iPhone 15 Pro', 100),
     ('SKU002', 'MacBook Pro 14', 50),
     ('SKU003', 'AirPods Pro', 200)
 ON CONFLICT (sku_id) DO NOTHING;
 
 -- 初始化示例用户数据
-INSERT INTO sys_users (user_id, username, email, status) VALUES
+INSERT INTO gnosis_sample.sys_users (user_id, username, email, status) VALUES
     ('U001', 'zhangsan', 'zhangsan@example.com', 1),
     ('U002', 'lisi', 'lisi@example.com', 1),
     ('U003', 'wangwu', 'wangwu@example.com', 0)

@@ -458,7 +458,7 @@ public class TraceService {
 
 1. **技术栈版本**: 严格遵循 Java 1.8、Spring Boot 2.1.10.RELEASE
 2. **数据库**: 使用 openGauss 3.0.0，不使用新版本特性
-3. **包路径**: 所有代码位于 `paramcheck.lifecycle`
+3. **包路径**: 所有代码参考项目规范建包
 4. **禁止存储过程**: 所有逻辑用 Java 实现
 5. **审计字段**: 所有表必须包含 create_user_id, update_user_id, create_time, update_time
 6. **功能完整性**: 每个页面至少包含分页查询、条件查询、导入、导出、详情、新建、编辑、修改、批量删除、批量启用、批量禁用

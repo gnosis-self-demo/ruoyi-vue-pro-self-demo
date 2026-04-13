@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.paramcheck.mapper.BusinessTypeMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.paramcheck.domain.BusinessType">
+        <id column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="is_active" property="isActive"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        code, name, description, is_active, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_business_types
+        WHERE code = #{code}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_business_types
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectActive" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_business_types
+        WHERE is_active = TRUE
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_business_types
+        <where>
+            <if test="code != null and code != ''">
+                AND code LIKE '%' || #{code} || '%'
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE '%' || #{name} || '%'
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" resultType="int">
+        SELECT COUNT(1)
+        FROM gnosis_sample.sys_business_types
+        <where>
+            <if test="code != null and code != ''">
+                AND code LIKE '%' || #{code} || '%'
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE '%' || #{name} || '%'
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByConditionWithPaging" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_business_types
+        <where>
+            <if test="code != null and code != ''">
+                AND code LIKE '%' || #{code} || '%'
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE '%' || #{name} || '%'
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <insert id="insert" parameterType="com.gnosis.paramcheck.domain.BusinessType">
+        INSERT INTO gnosis_sample.sys_business_types
+        (code, name, description, is_active, create_user_id, update_user_id, create_time, update_time)
+        VALUES (#{code}, #{name}, #{description}, #{isActive}, #{createUserId}, #{updateUserId}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    </insert>
+
+    <update id="updateByCode" parameterType="com.gnosis.paramcheck.domain.BusinessType">
+        UPDATE gnosis_sample.sys_business_types
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE code = #{code}
+    </update>
+
+    <delete id="deleteByCode">
+        DELETE FROM gnosis_sample.sys_business_types WHERE code = #{code}
+    </delete>
+
+    <delete id="batchDelete">
+        DELETE FROM gnosis_sample.sys_business_types WHERE code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </delete>
+
+    <update id="activate">
+        UPDATE gnosis_sample.sys_business_types SET is_active = TRUE, update_time = CURRENT_TIMESTAMP WHERE code = #{code}
+    </update>
+
+    <update id="deactivate">
+        UPDATE gnosis_sample.sys_business_types SET is_active = FALSE, update_time = CURRENT_TIMESTAMP WHERE code = #{code}
+    </update>
+
+    <update id="batchActivate">
+        UPDATE gnosis_sample.sys_business_types SET is_active = TRUE, update_time = CURRENT_TIMESTAMP WHERE code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </update>
+
+    <update id="batchDeactivate">
+        UPDATE gnosis_sample.sys_business_types SET is_active = FALSE, update_time = CURRENT_TIMESTAMP WHERE code IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </update>
+
+</mapper>

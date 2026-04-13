@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.paramcheck.mapper.ValidationFlowMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.paramcheck.domain.ValidationFlow">
+        <id column="flow_id" property="flowId"/>
+        <result column="flow_name" property="flowName"/>
+        <result column="mode_type" property="modeType"/>
+        <result column="el_expression" property="elExpression"/>
+        <result column="handler_code" property="handlerCode"/>
+        <result column="component_config" property="componentConfig"/>
+        <result column="business_type" property="businessType"/>
+        <result column="is_active" property="isActive"/>
+        <result column="version" property="version"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        flow_id, flow_name, mode_type, el_expression, handler_code, component_config,
+        business_type, is_active, version, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectByFlowId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_flows
+        WHERE flow_id = #{flowId}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_flows
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectActive" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_flows
+        WHERE is_active = TRUE
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_flows
+        <where>
+            <if test="flowId != null and flowId != ''">
+                AND flow_id LIKE '%' || #{flowId} || '%'
+            </if>
+            <if test="flowName != null and flowName != ''">
+                AND flow_name LIKE '%' || #{flowName} || '%'
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type LIKE '%' || #{businessType} || '%'
+            </if>
+            <if test="modeType != null and modeType != ''">
+                AND mode_type = #{modeType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" resultType="int">
+        SELECT COUNT(1)
+        FROM gnosis_sample.sys_validation_flows
+        <where>
+            <if test="flowId != null and flowId != ''">
+                AND flow_id LIKE '%' || #{flowId} || '%'
+            </if>
+            <if test="flowName != null and flowName != ''">
+                AND flow_name LIKE '%' || #{flowName} || '%'
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type LIKE '%' || #{businessType} || '%'
+            </if>
+            <if test="modeType != null and modeType != ''">
+                AND mode_type = #{modeType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByConditionWithPaging" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM gnosis_sample.sys_validation_flows
+        <where>
+            <if test="flowId != null and flowId != ''">
+                AND flow_id LIKE '%' || #{flowId} || '%'
+            </if>
+            <if test="flowName != null and flowName != ''">
+                AND flow_name LIKE '%' || #{flowName} || '%'
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type LIKE '%' || #{businessType} || '%'
+            </if>
+            <if test="modeType != null and modeType != ''">
+                AND mode_type = #{modeType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <insert id="insert" parameterType="com.gnosis.paramcheck.domain.ValidationFlow">
+        INSERT INTO gnosis_sample.sys_validation_flows
+        (flow_id, flow_name, mode_type, el_expression, handler_code, component_config,
+         business_type, is_active, version, create_user_id, update_user_id, create_time, update_time)
+        VALUES (#{flowId}, #{flowName}, #{modeType}, #{elExpression}, #{handlerCode}, #{componentConfig},
+                #{businessType}, #{isActive}, #{version}, #{createUserId}, #{updateUserId}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    </insert>
+
+    <update id="updateByFlowId" parameterType="com.gnosis.paramcheck.domain.ValidationFlow">
+        UPDATE gnosis_sample.sys_validation_flows
+        <set>
+            <if test="flowName != null">flow_name = #{flowName},</if>
+            <if test="modeType != null">mode_type = #{modeType},</if>
+            <if test="elExpression != null">el_expression = #{elExpression},</if>
+            <if test="handlerCode != null">handler_code = #{handlerCode},</if>
+            <if test="componentConfig != null">component_config = #{componentConfig},</if>
+            <if test="businessType != null">business_type = #{businessType},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            version = version + 1,
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE flow_id = #{flowId}
+    </update>
+
+    <delete id="deleteByFlowId">
+        DELETE FROM gnosis_sample.sys_validation_flows WHERE flow_id = #{flowId}
+    </delete>
+
+    <delete id="batchDelete">
+        DELETE FROM gnosis_sample.sys_validation_flows WHERE flow_id IN
+        <foreach collection="flowIds" item="flowId" open="(" separator="," close=")">
+            #{flowId}
+        </foreach>
+    </delete>
+
+    <update id="activate">
+        UPDATE gnosis_sample.sys_validation_flows SET is_active = TRUE, update_time = CURRENT_TIMESTAMP WHERE flow_id = #{flowId}
+    </update>
+
+    <update id="deactivate">
+        UPDATE gnosis_sample.sys_validation_flows SET is_active = FALSE, update_time = CURRENT_TIMESTAMP WHERE flow_id = #{flowId}
+    </update>
+
+    <update id="batchActivate">
+        UPDATE gnosis_sample.sys_validation_flows SET is_active = TRUE, update_time = CURRENT_TIMESTAMP WHERE flow_id IN
+        <foreach collection="flowIds" item="flowId" open="(" separator="," close=")">
+            #{flowId}
+        </foreach>
+    </update>
+
+    <update id="batchDeactivate">
+        UPDATE gnosis_sample.sys_validation_flows SET is_active = FALSE, update_time = CURRENT_TIMESTAMP WHERE flow_id IN
+        <foreach collection="flowIds" item="flowId" open="(" separator="," close=")">
+            #{flowId}
+        </foreach>
+    </update>
+
+    <update id="incrementVersion">
+        UPDATE gnosis_sample.sys_validation_flows SET version = version + 1, update_time = CURRENT_TIMESTAMP WHERE flow_id = #{flowId}
+    </update>
+
+</mapper>

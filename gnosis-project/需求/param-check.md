@@ -493,7 +493,6 @@ public class DynamicValidationService {
 ## 6. 验收标准
 
 1.  **代码合规**：
-    *   所有代码位于 `paramcheck`。
     *   **零存储过程**：确认无 `CallableStatement` 或 `CREATE FUNCTION` 调用。
     *   **Schema 隔离**：SQL 显式带 `gnosis_sample.` 前缀。
     *   **版本匹配**：LiteFlow 使用 2.11.3，API 调用符合该版本规范。
@@ -512,7 +511,6 @@ public class DynamicValidationService {
 > "请基于以下严格约束，在 `C:\works\project\ruoyi-vue-pro-self-demo\gnosis-project` 项目中开发参数动态校验模块。
 >
 > **核心约束**：
-> 1.  **包路径**：所有代码严格位于 `paramcheck`。
 > 2.  **版本要求**：
 >     *   **LiteFlow**: **2.11.3** (注意 API 差异，如 `FlowExecutor.execute2Resp`)。
 >     *   **openGauss**: **3.0.0** (JDBC 驱动需兼容)。
