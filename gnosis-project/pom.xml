@@ -20,6 +20,7 @@
         <module>gnosis-lifecycle</module>
         <module>gnosis-openplat</module>
         <module>gnosis-paramcheck</module>
+        <module>gnosis-process-orchestration</module>
     </modules>
 
     <properties>

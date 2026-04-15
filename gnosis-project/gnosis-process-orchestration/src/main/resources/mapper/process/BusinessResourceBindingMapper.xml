@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.process.mapper.BusinessResourceBindingMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.process.domain.BusinessResourceBinding">
+        <id column="id" property="id"/>
+        <result column="business_config_id" property="businessConfigId"/>
+        <result column="resource_type" property="resourceType"/>
+        <result column="resource_id" property="resourceId"/>
+        <result column="resource_name" property="resourceName"/>
+        <result column="binding_type" property="bindingType"/>
+        <result column="binding_priority" property="bindingPriority"/>
+        <result column="is_active" property="isActive"/>
+        <result column="metadata" property="metadata"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, business_config_id, resource_type, resource_id, resource_name, binding_type,
+        binding_priority, is_active, metadata,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_business_resource_binding
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.gnosis.process.dto.BusinessResourceBindingQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_business_resource_binding
+        <where>
+            <if test="businessConfigId != null and businessConfigId != ''">
+                AND business_config_id = #{businessConfigId}
+            </if>
+            <if test="resourceType != null and resourceType != ''">
+                AND resource_type = #{resourceType}
+            </if>
+            <if test="resourceId != null and resourceId != ''">
+                AND resource_id LIKE CONCAT('%', #{resourceId}, '%')
+            </if>
+            <if test="resourceName != null and resourceName != ''">
+                AND resource_name LIKE CONCAT('%', #{resourceName}, '%')
+            </if>
+            <if test="bindingType != null and bindingType != ''">
+                AND binding_type = #{bindingType}
+            </if>
+            <if test="bindingPriority != null">
+                AND binding_priority = #{bindingPriority}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" parameterType="com.gnosis.process.dto.BusinessResourceBindingQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_business_resource_binding
+        <where>
+            <if test="businessConfigId != null and businessConfigId != ''">
+                AND business_config_id = #{businessConfigId}
+            </if>
+            <if test="resourceType != null and resourceType != ''">
+                AND resource_type = #{resourceType}
+            </if>
+            <if test="resourceId != null and resourceId != ''">
+                AND resource_id LIKE CONCAT('%', #{resourceId}, '%')
+            </if>
+            <if test="resourceName != null and resourceName != ''">
+                AND resource_name LIKE CONCAT('%', #{resourceName}, '%')
+            </if>
+            <if test="bindingType != null and bindingType != ''">
+                AND binding_type = #{bindingType}
+            </if>
+            <if test="bindingPriority != null">
+                AND binding_priority = #{bindingPriority}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByBusinessConfigId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_business_resource_binding
+        WHERE business_config_id = #{businessConfigId}
+        ORDER BY binding_priority ASC
+    </select>
+
+    <select id="selectByBusinessCodeAndType" resultMap="BaseResultMap">
+        SELECT b.id, b.business_config_id, b.resource_type, b.resource_id, b.resource_name, b.binding_type,
+        b.binding_priority, b.is_active, b.metadata,
+        b.create_user_id, b.update_user_id, b.create_time, b.update_time
+        FROM sys_business_resource_binding b
+        INNER JOIN sys_business_config c ON b.business_config_id = c.id
+        WHERE c.code = #{businessCode}
+        <if test="resourceType != null and resourceType != ''">
+            AND b.resource_type = #{resourceType}
+        </if>
+        AND b.is_active = TRUE
+        ORDER BY b.binding_priority ASC
+    </select>
+
+    <insert id="insert" parameterType="com.gnosis.process.domain.BusinessResourceBinding">
+        INSERT INTO sys_business_resource_binding (
+            id, business_config_id, resource_type, resource_id, resource_name, binding_type,
+            binding_priority, is_active, metadata,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{businessConfigId}, #{resourceType}, #{resourceId}, #{resourceName}, #{bindingType},
+            #{bindingPriority}, #{isActive}, #{metadata},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.process.domain.BusinessResourceBinding">
+        UPDATE sys_business_resource_binding
+        <set>
+            <if test="businessConfigId != null and businessConfigId != ''">business_config_id = #{businessConfigId},</if>
+            <if test="resourceType != null and resourceType != ''">resource_type = #{resourceType},</if>
+            <if test="resourceId != null and resourceId != ''">resource_id = #{resourceId},</if>
+            <if test="resourceName != null">resource_name = #{resourceName},</if>
+            <if test="bindingType != null and bindingType != ''">binding_type = #{bindingType},</if>
+            <if test="bindingPriority != null">binding_priority = #{bindingPriority},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="metadata != null">metadata = #{metadata},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sys_business_resource_binding WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_business_resource_binding WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="batchUpdateActive">
+        UPDATE sys_business_resource_binding
+        SET is_active = #{isActive}, update_user_id = #{updateUserId}, update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

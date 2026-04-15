@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.process.mapper.ProcessOrchestrationConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.process.domain.ProcessOrchestrationConfig">
+        <id column="id" property="id"/>
+        <result column="business_config_id" property="businessConfigId"/>
+        <result column="current_process_def_key" property="currentProcessDefKey"/>
+        <result column="current_process_def_unique_key" property="currentProcessDefUniqueKey"/>
+        <result column="current_process_system" property="currentProcessSystem"/>
+        <result column="next_process_def_key" property="nextProcessDefKey"/>
+        <result column="next_process_def_unique_key" property="nextProcessDefUniqueKey"/>
+        <result column="next_process_system" property="nextProcessSystem"/>
+        <result column="trigger_event" property="triggerEvent"/>
+        <result column="condition_expression" property="conditionExpression"/>
+        <result column="priority" property="priority"/>
+        <result column="is_active" property="isActive"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, business_config_id, current_process_def_key, current_process_def_unique_key,
+        current_process_system, next_process_def_key, next_process_def_unique_key,
+        next_process_system, trigger_event, condition_expression, priority, is_active,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_orchestration_config
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.gnosis.process.dto.ProcessOrchestrationConfigQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_orchestration_config
+        <where>
+            <if test="businessConfigId != null and businessConfigId != ''">
+                AND business_config_id = #{businessConfigId}
+            </if>
+            <if test="currentProcessDefKey != null and currentProcessDefKey != ''">
+                AND current_process_def_key LIKE CONCAT('%', #{currentProcessDefKey}, '%')
+            </if>
+            <if test="currentProcessDefUniqueKey != null and currentProcessDefUniqueKey != ''">
+                AND current_process_def_unique_key = #{currentProcessDefUniqueKey}
+            </if>
+            <if test="currentProcessSystem != null and currentProcessSystem != ''">
+                AND current_process_system = #{currentProcessSystem}
+            </if>
+            <if test="nextProcessDefKey != null and nextProcessDefKey != ''">
+                AND next_process_def_key LIKE CONCAT('%', #{nextProcessDefKey}, '%')
+            </if>
+            <if test="nextProcessDefUniqueKey != null and nextProcessDefUniqueKey != ''">
+                AND next_process_def_unique_key = #{nextProcessDefUniqueKey}
+            </if>
+            <if test="nextProcessSystem != null and nextProcessSystem != ''">
+                AND next_process_system = #{nextProcessSystem}
+            </if>
+            <if test="triggerEvent != null and triggerEvent != ''">
+                AND trigger_event = #{triggerEvent}
+            </if>
+            <if test="conditionExpression != null and conditionExpression != ''">
+                AND condition_expression LIKE CONCAT('%', #{conditionExpression}, '%')
+            </if>
+            <if test="priority != null">
+                AND priority = #{priority}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY priority ASC, create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" parameterType="com.gnosis.process.dto.ProcessOrchestrationConfigQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_process_orchestration_config
+        <where>
+            <if test="businessConfigId != null and businessConfigId != ''">
+                AND business_config_id = #{businessConfigId}
+            </if>
+            <if test="currentProcessDefKey != null and currentProcessDefKey != ''">
+                AND current_process_def_key LIKE CONCAT('%', #{currentProcessDefKey}, '%')
+            </if>
+            <if test="nextProcessDefKey != null and nextProcessDefKey != ''">
+                AND next_process_def_key LIKE CONCAT('%', #{nextProcessDefKey}, '%')
+            </if>
+            <if test="triggerEvent != null and triggerEvent != ''">
+                AND trigger_event = #{triggerEvent}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByBusinessConfigId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_orchestration_config
+        WHERE business_config_id = #{businessConfigId}
+        AND is_active = TRUE
+        ORDER BY priority ASC
+    </select>
+
+    <select id="selectByCurrentProcessAndEvent" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_orchestration_config
+        WHERE business_config_id = #{businessConfigId}
+        AND current_process_def_key = #{currentProcessDefKey}
+        AND trigger_event = #{triggerEvent}
+        AND is_active = TRUE
+        ORDER BY priority ASC
+    </select>
+
+    <insert id="insert" parameterType="com.gnosis.process.domain.ProcessOrchestrationConfig">
+        INSERT INTO sys_process_orchestration_config (
+            id, business_config_id, current_process_def_key, current_process_def_unique_key,
+            current_process_system, next_process_def_key, next_process_def_unique_key,
+            next_process_system, trigger_event, condition_expression, priority, is_active,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{businessConfigId}, #{currentProcessDefKey}, #{currentProcessDefUniqueKey},
+            #{currentProcessSystem}, #{nextProcessDefKey}, #{nextProcessDefUniqueKey},
+            #{nextProcessSystem}, #{triggerEvent}, #{conditionExpression}, #{priority}, #{isActive},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.process.domain.ProcessOrchestrationConfig">
+        UPDATE sys_process_orchestration_config
+        <set>
+            <if test="businessConfigId != null and businessConfigId != ''">business_config_id = #{businessConfigId},</if>
+            <if test="currentProcessDefKey != null">current_process_def_key = #{currentProcessDefKey},</if>
+            <if test="currentProcessDefUniqueKey != null">current_process_def_unique_key = #{currentProcessDefUniqueKey},</if>
+            <if test="currentProcessSystem != null">current_process_system = #{currentProcessSystem},</if>
+            <if test="nextProcessDefKey != null">next_process_def_key = #{nextProcessDefKey},</if>
+            <if test="nextProcessDefUniqueKey != null">next_process_def_unique_key = #{nextProcessDefUniqueKey},</if>
+            <if test="nextProcessSystem != null">next_process_system = #{nextProcessSystem},</if>
+            <if test="triggerEvent != null">trigger_event = #{triggerEvent},</if>
+            <if test="conditionExpression != null">condition_expression = #{conditionExpression},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sys_process_orchestration_config WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_process_orchestration_config WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="batchUpdateActive">
+        UPDATE sys_process_orchestration_config
+        SET is_active = #{isActive}, update_user_id = #{updateUserId}, update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

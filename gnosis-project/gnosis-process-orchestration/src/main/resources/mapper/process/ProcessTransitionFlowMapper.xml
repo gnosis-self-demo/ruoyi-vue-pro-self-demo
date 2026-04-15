@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.process.mapper.ProcessTransitionFlowMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.process.domain.ProcessTransitionFlow">
+        <id column="id" property="id"/>
+        <result column="orchestration_config_id" property="orchestrationConfigId"/>
+        <result column="event_config_id" property="eventConfigId"/>
+        <result column="process_def_key" property="processDefKey"/>
+        <result column="process_def_unique_key" property="processDefUniqueKey"/>
+        <result column="node_def_key" property="nodeDefKey"/>
+        <result column="process_instance_id" property="processInstanceId"/>
+        <result column="process_instance_sequence" property="processInstanceSequence"/>
+        <result column="business_description" property="businessDescription"/>
+        <result column="business_id" property="businessId"/>
+        <result column="from_node" property="fromNode"/>
+        <result column="to_node" property="toNode"/>
+        <result column="transition_type" property="transitionType"/>
+        <result column="transition_result" property="transitionResult"/>
+        <result column="remarks" property="remarks"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, orchestration_config_id, event_config_id, process_def_key, process_def_unique_key,
+        node_def_key, process_instance_id, process_instance_sequence, business_description,
+        business_id, from_node, to_node, transition_type, transition_result, remarks,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_transition_flow
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.gnosis.process.dto.ProcessTransitionFlowQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_transition_flow
+        <where>
+            <if test="orchestrationConfigId != null and orchestrationConfigId != ''">
+                AND orchestration_config_id = #{orchestrationConfigId}
+            </if>
+            <if test="eventConfigId != null and eventConfigId != ''">
+                AND event_config_id = #{eventConfigId}
+            </if>
+            <if test="processDefKey != null and processDefKey != ''">
+                AND process_def_key LIKE CONCAT('%', #{processDefKey}, '%')
+            </if>
+            <if test="processDefUniqueKey != null and processDefUniqueKey != ''">
+                AND process_def_unique_key = #{processDefUniqueKey}
+            </if>
+            <if test="nodeDefKey != null and nodeDefKey != ''">
+                AND node_def_key LIKE CONCAT('%', #{nodeDefKey}, '%')
+            </if>
+            <if test="processInstanceId != null and processInstanceId != ''">
+                AND process_instance_id = #{processInstanceId}
+            </if>
+            <if test="processInstanceSequence != null">
+                AND process_instance_sequence = #{processInstanceSequence}
+            </if>
+            <if test="businessDescription != null and businessDescription != ''">
+                AND business_description LIKE CONCAT('%', #{businessDescription}, '%')
+            </if>
+            <if test="businessId != null and businessId != ''">
+                AND business_id = #{businessId}
+            </if>
+            <if test="fromNode != null and fromNode != ''">
+                AND from_node = #{fromNode}
+            </if>
+            <if test="toNode != null and toNode != ''">
+                AND to_node = #{toNode}
+            </if>
+            <if test="transitionType != null and transitionType != ''">
+                AND transition_type = #{transitionType}
+            </if>
+            <if test="transitionResult != null and transitionResult != ''">
+                AND transition_result = #{transitionResult}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" parameterType="com.gnosis.process.dto.ProcessTransitionFlowQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_process_transition_flow
+        <where>
+            <if test="processInstanceId != null and processInstanceId != ''">
+                AND process_instance_id = #{processInstanceId}
+            </if>
+            <if test="businessId != null and businessId != ''">
+                AND business_id = #{businessId}
+            </if>
+            <if test="processDefKey != null and processDefKey != ''">
+                AND process_def_key LIKE CONCAT('%', #{processDefKey}, '%')
+            </if>
+            <if test="transitionResult != null and transitionResult != ''">
+                AND transition_result = #{transitionResult}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByProcessInstanceId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_transition_flow
+        WHERE process_instance_id = #{processInstanceId}
+        ORDER BY process_instance_sequence ASC, create_time ASC
+    </select>
+
+    <select id="selectByBusinessId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_transition_flow
+        WHERE business_id = #{businessId}
+        ORDER BY create_time ASC
+    </select>
+
+    <insert id="insert" parameterType="com.gnosis.process.domain.ProcessTransitionFlow">
+        INSERT INTO sys_process_transition_flow (
+            id, orchestration_config_id, event_config_id, process_def_key, process_def_unique_key,
+            node_def_key, process_instance_id, process_instance_sequence, business_description,
+            business_id, from_node, to_node, transition_type, transition_result, remarks,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{orchestrationConfigId}, #{eventConfigId}, #{processDefKey}, #{processDefUniqueKey},
+            #{nodeDefKey}, #{processInstanceId}, #{processInstanceSequence}, #{businessDescription},
+            #{businessId}, #{fromNode}, #{toNode}, #{transitionType}, #{transitionResult}, #{remarks},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+</mapper>

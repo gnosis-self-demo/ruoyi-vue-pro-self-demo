@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.process.mapper.ProcessEventConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.process.domain.ProcessEventConfig">
+        <id column="id" property="id"/>
+        <result column="process_def_key" property="processDefKey"/>
+        <result column="process_def_unique_key" property="processDefUniqueKey"/>
+        <result column="node_def_key" property="nodeDefKey"/>
+        <result column="submit_action" property="submitAction"/>
+        <result column="match_business" property="matchBusiness"/>
+        <result column="change_business_status" property="changeBusinessStatus"/>
+        <result column="event_type" property="eventType"/>
+        <result column="event_handler" property="eventHandler"/>
+        <result column="handler_config" property="handlerConfig"/>
+        <result column="is_active" property="isActive"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, process_def_key, process_def_unique_key, node_def_key, submit_action,
+        match_business, change_business_status, event_type, event_handler, handler_config, is_active,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_event_config
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.gnosis.process.dto.ProcessEventConfigQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_event_config
+        <where>
+            <if test="processDefKey != null and processDefKey != ''">
+                AND process_def_key LIKE CONCAT('%', #{processDefKey}, '%')
+            </if>
+            <if test="processDefUniqueKey != null and processDefUniqueKey != ''">
+                AND process_def_unique_key = #{processDefUniqueKey}
+            </if>
+            <if test="nodeDefKey != null and nodeDefKey != ''">
+                AND node_def_key LIKE CONCAT('%', #{nodeDefKey}, '%')
+            </if>
+            <if test="submitAction != null and submitAction != ''">
+                AND submit_action = #{submitAction}
+            </if>
+            <if test="matchBusiness != null and matchBusiness != ''">
+                AND match_business = #{matchBusiness}
+            </if>
+            <if test="changeBusinessStatus != null and changeBusinessStatus != ''">
+                AND change_business_status = #{changeBusinessStatus}
+            </if>
+            <if test="eventType != null and eventType != ''">
+                AND event_type = #{eventType}
+            </if>
+            <if test="eventHandler != null and eventHandler != ''">
+                AND event_handler LIKE CONCAT('%', #{eventHandler}, '%')
+            </if>
+            <if test="handlerConfig != null and handlerConfig != ''">
+                AND handler_config LIKE CONCAT('%', #{handlerConfig}, '%')
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" parameterType="com.gnosis.process.dto.ProcessEventConfigQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM sys_process_event_config
+        <where>
+            <if test="processDefKey != null and processDefKey != ''">
+                AND process_def_key LIKE CONCAT('%', #{processDefKey}, '%')
+            </if>
+            <if test="nodeDefKey != null and nodeDefKey != ''">
+                AND node_def_key LIKE CONCAT('%', #{nodeDefKey}, '%')
+            </if>
+            <if test="submitAction != null and submitAction != ''">
+                AND submit_action = #{submitAction}
+            </if>
+            <if test="matchBusiness != null and matchBusiness != ''">
+                AND match_business = #{matchBusiness}
+            </if>
+            <if test="eventType != null and eventType != ''">
+                AND event_type = #{eventType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByProcessDefKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_event_config
+        WHERE process_def_key = #{processDefKey}
+        AND is_active = TRUE
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByProcessAndNodeAndAction" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_event_config
+        WHERE process_def_key = #{processDefKey}
+        AND node_def_key = #{nodeDefKey}
+        AND submit_action = #{submitAction}
+        <if test="matchBusiness != null and matchBusiness != ''">
+            AND match_business = #{matchBusiness}
+        </if>
+        AND is_active = TRUE
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.gnosis.process.domain.ProcessEventConfig">
+        INSERT INTO sys_process_event_config (
+            id, process_def_key, process_def_unique_key, node_def_key, submit_action,
+            match_business, change_business_status, event_type, event_handler, handler_config, is_active,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{processDefKey}, #{processDefUniqueKey}, #{nodeDefKey}, #{submitAction},
+            #{matchBusiness}, #{changeBusinessStatus}, #{eventType}, #{eventHandler}, #{handlerConfig}, #{isActive},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.process.domain.ProcessEventConfig">
+        UPDATE sys_process_event_config
+        <set>
+            <if test="processDefKey != null and processDefKey != ''">process_def_key = #{processDefKey},</if>
+            <if test="processDefUniqueKey != null">process_def_unique_key = #{processDefUniqueKey},</if>
+            <if test="nodeDefKey != null">node_def_key = #{nodeDefKey},</if>
+            <if test="submitAction != null">submit_action = #{submitAction},</if>
+            <if test="matchBusiness != null">match_business = #{matchBusiness},</if>
+            <if test="changeBusinessStatus != null">change_business_status = #{changeBusinessStatus},</if>
+            <if test="eventType != null">event_type = #{eventType},</if>
+            <if test="eventHandler != null">event_handler = #{eventHandler},</if>
+            <if test="handlerConfig != null">handler_config = #{handlerConfig},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sys_process_event_config WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_process_event_config WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="batchUpdateActive">
+        UPDATE sys_process_event_config
+        SET is_active = #{isActive}, update_user_id = #{updateUserId}, update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>
