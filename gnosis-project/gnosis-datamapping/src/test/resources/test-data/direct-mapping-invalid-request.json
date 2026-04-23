@@ -1,0 +1,7 @@
+{
+  "name": "",
+  "age": "not-a-number",
+  "balance": "invalid-decimal",
+  "status": "unknown_status",
+  "email": "invalid-email-format"
+}

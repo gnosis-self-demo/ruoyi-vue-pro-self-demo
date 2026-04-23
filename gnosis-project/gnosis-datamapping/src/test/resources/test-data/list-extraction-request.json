@@ -1,0 +1,30 @@
+{
+  "requestId": "REQ-2026-001",
+  "addresses": [
+    {
+      "city": "shanghai",
+      "zipCode": "200000",
+      "street": "Nanjing Road"
+    },
+    {
+      "city": "beijing",
+      "zipCode": "100000",
+      "street": "Chang'an Avenue"
+    },
+    {
+      "city": "shenzhen",
+      "zipCode": "518000",
+      "street": "Shennan Road"
+    }
+  ],
+  "tags": ["java", "testing", "data-mapping"],
+  "items": [
+    {"name": "Product A", "price": "100.00"},
+    {"name": "Product B", "price": "200.50"}
+  ],
+  "users": [
+    {"name": "  Alice  ", "age": 30, "status": "inactive"},
+    {"name": "Bob", "age": 25, "status": "active"},
+    {"name": "Charlie", "age": 35, "status": "active"}
+  ]
+}

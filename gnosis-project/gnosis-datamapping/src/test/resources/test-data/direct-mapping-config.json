@@ -1,0 +1,123 @@
+{
+  "apiConfig": {
+    "jsonRootPath": "$",
+    "apiId": "test-direct-mapping-001",
+    "apiName": "Direct Mapping Test"
+  },
+  "directMappings": [
+    {
+      "sourceField": "name",
+      "targetField": "userName",
+      "dataType": "string",
+      "required": true,
+      "validationRules": [
+        {
+          "type": "maxLength",
+          "value": 50,
+          "message": "用户名长度不能超过50"
+        },
+        {
+          "type": "minLength",
+          "value": 2,
+          "message": "用户名长度不能小于2"
+        }
+      ],
+      "transforms": ["trim"]
+    },
+    {
+      "sourceField": "age",
+      "targetField": "userAge",
+      "dataType": "integer",
+      "required": false,
+      "validationRules": [
+        {
+          "type": "min",
+          "value": 0
+        },
+        {
+          "type": "max",
+          "value": 150
+        }
+      ],
+      "transforms": []
+    },
+    {
+      "sourceField": "balance",
+      "targetField": "accountBalance",
+      "dataType": "decimal",
+      "required": false,
+      "validationRules": [
+        {
+          "type": "decimalPrecision",
+          "value": 2
+        }
+      ],
+      "transforms": ["round(2)"]
+    },
+    {
+      "sourceField": "active",
+      "targetField": "isActive",
+      "dataType": "boolean",
+      "required": false,
+      "validationRules": [],
+      "transforms": []
+    },
+    {
+      "sourceField": "birthDate",
+      "targetField": "birthday",
+      "dataType": "date",
+      "required": false,
+      "validationRules": [],
+      "transforms": []
+    },
+    {
+      "sourceField": "status",
+      "targetField": "userStatus",
+      "dataType": "string",
+      "required": true,
+      "validationRules": [
+        {
+          "type": "enum",
+          "values": ["active", "inactive", "pending"],
+          "message": "状态值不在允许范围内"
+        }
+      ],
+      "transforms": ["lowercase"]
+    },
+    {
+      "sourceField": "email",
+      "targetField": "emailAddress",
+      "dataType": "string",
+      "required": false,
+      "validationRules": [
+        {
+          "type": "pattern",
+          "value": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          "message": "邮箱格式不正确"
+        }
+      ],
+      "transforms": ["trim", "lowercase"]
+    },
+    {
+      "sourceField": "description",
+      "targetField": "desc",
+      "dataType": "string",
+      "required": false,
+      "defaultValue": "N/A",
+      "validationRules": [],
+      "transforms": []
+    }
+  ],
+  "crossNodeMappings": [],
+  "listExtractionMappings": [],
+  "stringToListMappings": [],
+  "transformRules": {
+    "round": {
+      "type": "function",
+      "function": "Math.round",
+      "parameters": {
+        "precision": 2
+      }
+    }
+  }
+}

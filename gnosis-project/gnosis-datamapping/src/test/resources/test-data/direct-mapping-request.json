@@ -1,0 +1,10 @@
+{
+  "name": "  Test User  ",
+  "age": "25",
+  "balance": "1234.56",
+  "active": "true",
+  "birthDate": "1999-05-15",
+  "status": "ACTIVE",
+  "email": "  test@example.com  ",
+  "phone": "13800138000"
+}

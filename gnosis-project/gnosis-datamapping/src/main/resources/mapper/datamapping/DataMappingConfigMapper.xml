@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.datamapping.mapper.DataMappingConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.datamapping.domain.DataMappingConfig">
+        <id column="id" property="id"/>
+        <result column="config_name" property="configName"/>
+        <result column="config_code" property="configCode"/>
+        <result column="system_id" property="systemId"/>
+        <result column="system_name" property="systemName"/>
+        <result column="config_version" property="configVersion"/>
+        <result column="api_version" property="apiVersion"/>
+        <result column="target_endpoint" property="targetEndpoint"/>
+        <result column="json_root_path" property="jsonRootPath"/>
+        <result column="config_json" property="configJson"/>
+        <result column="description" property="description"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, config_name, config_code, system_id, system_name, config_version, api_version,
+        target_endpoint, json_root_path, config_json, description, status,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.datamapping.domain.DataMappingConfig">
+        INSERT INTO sys_data_mapping_config (
+            id, config_name, config_code, system_id, system_name, config_version, api_version,
+            target_endpoint, json_root_path, config_json, description, status,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{configName}, #{configCode}, #{systemId}, #{systemName}, #{configVersion}, #{apiVersion},
+            #{targetEndpoint}, #{jsonRootPath}, #{configJson}, #{description}, #{status},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.datamapping.domain.DataMappingConfig">
+        UPDATE sys_data_mapping_config
+        <set>
+            <if test="configName != null and configName != ''">
+                config_name = #{configName},
+            </if>
+            <if test="configCode != null and configCode != ''">
+                config_code = #{configCode},
+            </if>
+            <if test="systemId != null">
+                system_id = #{systemId},
+            </if>
+            <if test="systemName != null">
+                system_name = #{systemName},
+            </if>
+            <if test="configVersion != null">
+                config_version = #{configVersion},
+            </if>
+            <if test="apiVersion != null">
+                api_version = #{apiVersion},
+            </if>
+            <if test="targetEndpoint != null">
+                target_endpoint = #{targetEndpoint},
+            </if>
+            <if test="jsonRootPath != null">
+                json_root_path = #{jsonRootPath},
+            </if>
+            <if test="configJson != null">
+                config_json = #{configJson},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                update_user_id = #{updateUserId},
+            </if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_data_mapping_config
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByConfigCode" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_data_mapping_config
+        WHERE config_code = #{configCode}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.datamapping.dto.DataMappingConfigQueryRequest" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_data_mapping_config
+        <where>
+            <if test="configName != null and configName != ''">
+                AND config_name LIKE CONCAT('%', #{configName}, '%')
+            </if>
+            <if test="configCode != null and configCode != ''">
+                AND config_code = #{configCode}
+            </if>
+            <if test="systemId != null and systemId != ''">
+                AND system_id = #{systemId}
+            </if>
+            <if test="systemName != null and systemName != ''">
+                AND system_name LIKE CONCAT('%', #{systemName}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.datamapping.dto.DataMappingConfigQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM sys_data_mapping_config
+        <where>
+            <if test="configName != null and configName != ''">
+                AND config_name LIKE CONCAT('%', #{configName}, '%')
+            </if>
+            <if test="configCode != null and configCode != ''">
+                AND config_code = #{configCode}
+            </if>
+            <if test="systemId != null and systemId != ''">
+                AND system_id = #{systemId}
+            </if>
+            <if test="systemName != null and systemName != ''">
+                AND system_name LIKE CONCAT('%', #{systemName}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sys_data_mapping_config WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_data_mapping_config WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="batchUpdateStatus">
+        UPDATE sys_data_mapping_config SET status = #{status}, update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

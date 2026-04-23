@@ -1,0 +1,96 @@
+{
+  "apiConfig": {
+    "jsonRootPath": "$",
+    "apiId": "test-list-extraction-001",
+    "apiName": "List Extraction Mapping Test"
+  },
+  "directMappings": [
+    {
+      "sourceField": "requestId",
+      "targetField": "reqId",
+      "dataType": "string",
+      "required": true,
+      "validationRules": [],
+      "transforms": []
+    }
+  ],
+  "crossNodeMappings": [],
+  "listExtractionMappings": [
+    {
+      "type": "extractByIndex",
+      "sourcePath": "$.addresses",
+      "targetPath": "$.primaryAddress",
+      "index": 0,
+      "itemMappings": [
+        {
+          "source": "$.city",
+          "target": "cityName",
+          "dataType": "string",
+          "transforms": ["uppercase"]
+        },
+        {
+          "source": "$.zipCode",
+          "target": "postalCode",
+          "dataType": "string",
+          "transforms": []
+        }
+      ]
+    },
+    {
+      "type": "extractByIndex",
+      "sourcePath": "$.addresses",
+      "targetPath": "$.secondaryAddress",
+      "index": -1,
+      "itemMappings": [
+        {
+          "source": "$.city",
+          "target": "cityName",
+          "dataType": "string",
+          "transforms": ["uppercase"]
+        },
+        {
+          "source": "$.zipCode",
+          "target": "postalCode",
+          "dataType": "string",
+          "transforms": []
+        }
+      ]
+    },
+    {
+      "type": "concatenateValues",
+      "sourcePath": "$.tags",
+      "targetPath": "$.tagString",
+      "separator": ","
+    },
+    {
+      "type": "concatenateWithFormat",
+      "sourcePath": "$.items",
+      "targetPath": "$.itemSummary",
+      "separator": "; ",
+      "formatTemplate": "Item:{name}-Price:{price}"
+    },
+    {
+      "type": "extractByCondition",
+      "sourcePath": "$.users",
+      "targetPath": "$.activeUser",
+      "condition": "$.status == 'active'",
+      "takeFirst": true,
+      "itemMappings": [
+        {
+          "source": "$.name",
+          "target": "userName",
+          "dataType": "string",
+          "transforms": ["trim"]
+        },
+        {
+          "source": "$.age",
+          "target": "userAge",
+          "dataType": "integer",
+          "transforms": []
+        }
+      ]
+    }
+  ],
+  "stringToListMappings": [],
+  "transformRules": {}
+}

@@ -1,0 +1,74 @@
+{
+  "apiConfig": {
+    "jsonRootPath": "$",
+    "apiId": "test-string-to-list-001",
+    "apiName": "String to List Mapping Test"
+  },
+  "directMappings": [
+    {
+      "sourceField": "requestId",
+      "targetField": "reqId",
+      "dataType": "string",
+      "required": true,
+      "validationRules": [],
+      "transforms": []
+    }
+  ],
+  "crossNodeMappings": [],
+  "listExtractionMappings": [],
+  "stringToListMappings": [
+    {
+      "type": "stringSplitToList",
+      "sourcePath": "$.partyNames",
+      "targetPath": "$.partyList",
+      "separator": ",",
+      "trimItems": true,
+      "removeEmpty": true
+    },
+    {
+      "type": "stringSplitToList",
+      "sourcePath": "$.categories",
+      "targetPath": "$.categoryObjects",
+      "separator": ";",
+      "trimItems": true,
+      "removeEmpty": false,
+      "chainedMappings": [
+        {
+          "type": "enrichListItems",
+          "enrichmentSource": "partyEnrich",
+          "keyField": "partyName",
+          "targetFields": ["partyCode", "partyType"]
+        }
+      ]
+    }
+  ],
+  "enrichmentMappings": {
+    "partyEnrich": {
+      "dataSource": "partyDictionary",
+      "defaultValues": {
+        "partyCode": "UNKNOWN",
+        "partyType": "OTHER"
+      }
+    }
+  },
+  "dataSources": {
+    "partyDictionary": {
+      "type": "static",
+      "staticData": {
+        "张三": {
+          "partyCode": "P001",
+          "partyType": "INDIVIDUAL"
+        },
+        "李四": {
+          "partyCode": "P002",
+          "partyType": "INDIVIDUAL"
+        },
+        "某某公司": {
+          "partyCode": "C001",
+          "partyType": "ENTERPRISE"
+        }
+      }
+    }
+  },
+  "transformRules": {}
+}

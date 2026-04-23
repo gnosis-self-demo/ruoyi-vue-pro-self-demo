@@ -1,0 +1,16 @@
+{
+  "orderId": "ORD-2026-001",
+  "customerInfo": {
+    "name": "  John Doe  ",
+    "email": "  JOHN@EXAMPLE.COM  ",
+    "phone": "13800138000"
+  },
+  "productInfo": {
+    "price": "99.999",
+    "quantity": 5
+  },
+  "systemInfo": {
+    "timestamp": "2026-04-23T10:30:00Z",
+    "version": "2.1.0"
+  }
+}

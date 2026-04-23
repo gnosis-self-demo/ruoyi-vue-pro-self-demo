@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.datamapping.mapper.DataMappingExecutionLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.datamapping.domain.DataMappingExecutionLog">
+        <id column="id" property="id"/>
+        <result column="config_id" property="configId"/>
+        <result column="config_code" property="configCode"/>
+        <result column="request_json" property="requestJson"/>
+        <result column="result_json" property="resultJson"/>
+        <result column="config_json" property="configJson"/>
+        <result column="success" property="success"/>
+        <result column="error_info" property="errorInfo"/>
+        <result column="execution_time" property="executionTime"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, config_id, config_code, request_json, result_json, config_json, success, error_info,
+        execution_time, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.datamapping.domain.DataMappingExecutionLog">
+        INSERT INTO sys_data_mapping_execution_log (
+            id, config_id, config_code, request_json, result_json, config_json, success, error_info,
+            execution_time, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{configId}, #{configCode}, #{requestJson}, #{resultJson}, #{configJson}, #{success}, #{errorInfo},
+            #{executionTime}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_data_mapping_execution_log
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByConfigId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_data_mapping_execution_log
+        WHERE config_id = #{configId}
+        ORDER BY create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByConfigId" parameterType="java.lang.String" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM sys_data_mapping_execution_log
+        WHERE config_id = #{configId}
+    </select>
+
+</mapper>

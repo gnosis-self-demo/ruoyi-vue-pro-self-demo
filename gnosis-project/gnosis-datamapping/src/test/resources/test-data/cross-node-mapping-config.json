@@ -1,0 +1,65 @@
+{
+  "apiConfig": {
+    "jsonRootPath": "$",
+    "apiId": "test-cross-node-001",
+    "apiName": "Cross Node Mapping Test"
+  },
+  "directMappings": [
+    {
+      "sourceField": "orderId",
+      "targetField": "id",
+      "dataType": "string",
+      "required": true,
+      "validationRules": [],
+      "transforms": []
+    }
+  ],
+  "crossNodeMappings": [
+    {
+      "direction": "rootToNode",
+      "sourcePath": "$.customerInfo.name",
+      "targetPath": "$.order.customerName",
+      "dataType": "string",
+      "transforms": ["trim", "uppercase"]
+    },
+    {
+      "direction": "rootToNode",
+      "sourcePath": "$.customerInfo.email",
+      "targetPath": "$.order.customerEmail",
+      "dataType": "string",
+      "transforms": ["trim", "lowercase"]
+    },
+    {
+      "direction": "rootToNode",
+      "sourcePath": "$.productInfo.price",
+      "targetPath": "$.order.productPrice",
+      "dataType": "decimal",
+      "transforms": ["round(2)"]
+    },
+    {
+      "direction": "nodeToRoot",
+      "sourcePath": "$.systemInfo.timestamp",
+      "targetPath": "$.['processTime']",
+      "dataType": "string",
+      "transforms": []
+    },
+    {
+      "direction": "nodeToRoot",
+      "sourcePath": "$.systemInfo.version",
+      "targetPath": "$.['apiVersion']",
+      "dataType": "string",
+      "transforms": []
+    }
+  ],
+  "listExtractionMappings": [],
+  "stringToListMappings": [],
+  "transformRules": {
+    "round": {
+      "type": "function",
+      "function": "Math.round",
+      "parameters": {
+        "precision": 2
+      }
+    }
+  }
+}

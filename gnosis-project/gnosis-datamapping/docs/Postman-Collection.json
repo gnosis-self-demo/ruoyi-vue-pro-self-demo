@@ -1,0 +1,308 @@
+{
+  "info": {
+    "name": "数据规则映射模块API",
+    "description": "gnosis-datamapping模块完整API接口测试集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8086",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "配置管理",
+      "item": [
+        {
+          "name": "1. 分页查询配置列表",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pageNum\": 1,\n  \"pageSize\": 10,\n  \"query\": {\n    \"configName\": \"\",\n    \"configCode\": \"\",\n    \"status\": 1\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/page",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "page"]
+            }
+          }
+        },
+        {
+          "name": "2. 新建配置",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configName\": \"ERP合同映射配置\",\n  \"configCode\": \"ERP_CONTRACT_001\",\n  \"systemId\": \"ERP_SYSTEM\",\n  \"systemName\": \"ERP系统\",\n  \"configVersion\": \"1.0\",\n  \"apiVersion\": \"v1.0\",\n  \"targetEndpoint\": \"/api/v1/contracts/create\",\n  \"jsonRootPath\": \"$.contractData\",\n  \"configJson\": \"{\\\"apiConfig\\\":{\\\"jsonRootPath\\\":\\\"$.contractData\\\"},\\\"directMappings\\\":[{\\\"sourceField\\\":\\\"contractNo\\\",\\\"targetField\\\":\\\"contractNo\\\",\\\"dataType\\\":\\\"string\\\",\\\"required\\\":true,\\\"validationRules\\\":[{\\\"type\\\":\\\"required\\\",\\\"message\\\":\\\"合同编号不能为空\\\"},{\\\"type\\\":\\\"maxLength\\\",\\\"value\\\":50}],\\\"transforms\\\":[\\\"trim\\\",\\\"uppercase\\\"]}]}\",\n  \"description\": \"ERP合同数据映射配置\",\n  \"createUserId\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "create"]
+            }
+          }
+        },
+        {
+          "name": "3. 查询配置详情",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"your-config-id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/detail",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "detail"]
+            }
+          }
+        },
+        {
+          "name": "4. 编辑配置",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"your-config-id\",\n  \"configName\": \"更新后的配置名称\",\n  \"description\": \"更新后的描述\",\n  \"updateUserId\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "update"]
+            }
+          }
+        },
+        {
+          "name": "5. 删除配置",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"your-config-id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "delete"]
+            }
+          }
+        },
+        {
+          "name": "6. 批量删除",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"id1\", \"id2\", \"id3\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/batchDelete",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "batchDelete"]
+            }
+          }
+        },
+        {
+          "name": "7. 批量启用",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"id1\", \"id2\", \"id3\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/batchEnable",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "batchEnable"]
+            }
+          }
+        },
+        {
+          "name": "8. 批量禁用",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"id1\", \"id2\", \"id3\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/batchDisable",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "batchDisable"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "映射测试",
+      "item": [
+        {
+          "name": "9. 模拟器测试",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"your-config-id\",\n  \"requestJson\": \"{\\\"contractData\\\": {\\\"contractNo\\\": \\\" ht2024001 \\\", \\\"contractAmount\\\": 1500000.567, \\\"contractStatus\\\": \\\"生效\\\"}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "test"]
+            }
+          }
+        },
+        {
+          "name": "10. 执行映射",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"your-config-id\",\n  \"requestJson\": \"{\\\"contractData\\\": {\\\"contractNo\\\": \\\"HT2024001\\\", \\\"contractAmount\\\": 1500000.57}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "execute"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "日志管理",
+      "item": [
+        {
+          "name": "11. 查询执行日志",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"your-config-id\",\n  \"pageNum\": 1,\n  \"pageSize\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/log/page",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "log", "page"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "场景测试",
+      "item": [
+        {
+          "name": "场景1-正常转换",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"config_001\",\n  \"requestJson\": \"{\\\"contractData\\\": {\\\"contractNo\\\": \\\" ht2024001 \\\", \\\"contractAmount\\\": 1500000.567, \\\"contractStatus\\\": \\\"生效\\\", \\\"priorityLevel\\\": \\\"高\\\"}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "test"]
+            }
+          }
+        },
+        {
+          "name": "场景1-校验失败",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"config_001\",\n  \"requestJson\": \"{\\\"contractData\\\": {\\\"contractNo\\\": \\\"ht-2024-001\\\", \\\"contractAmount\\\": -100, \\\"contractStatus\\\": \\\"审批中\\\"}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "test"]
+            }
+          }
+        },
+        {
+          "name": "场景2-根节点到指定节点",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"config_002\",\n  \"requestJson\": \"{\\\"contractNo\\\": \\\"HT2024001\\\", \\\"contractAmount\\\": 1500000.567}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "test"]
+            }
+          }
+        },
+        {
+          "name": "场景3-指定节点到根节点",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"config_003\",\n  \"requestJson\": \"{\\\"basicInfo\\\": {\\\"contractName\\\": \\\"2024年度采购框架合同\\\"}, \\\"paymentInfo\\\": {\\\"totalAmount\\\": 1650000.00}, \\\"parties\\\": [{\\\"partyName\\\": \\\"XX科技有限公司\\\"}]}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "test"]
+            }
+          }
+        },
+        {
+          "name": "场景4-List提取转换",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"config_004\",\n  \"requestJson\": \"{\\\"contractData\\\": {\\\"signatories\\\": [{\\\"partyName\\\": \\\"XX科技\\\", \\\"partyType\\\": \\\"甲方\\\"}, {\\\"partyName\\\": \\\"YY供应商\\\", \\\"partyType\\\": \\\"乙方\\\"}]}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "test"]
+            }
+          }
+        },
+        {
+          "name": "场景5-String转List",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"configId\": \"config_005\",\n  \"requestJson\": \"{\\\"contractData\\\": {\\\"partyNames\\\": \\\"XX科技, YY供应商, 未知公司\\\", \\\"contactPhones\\\": \\\"13800138000; 13900139000\\\"}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datamapping/config/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datamapping", "config", "test"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
