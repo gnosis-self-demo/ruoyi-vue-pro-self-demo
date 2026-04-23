@@ -59,6 +59,11 @@ public class ProcessOrchestrationEngineImpl implements ProcessOrchestrationEngin
                 return result;
             }
 
+            if (!"active".equals(businessConfig.getStatus())) {
+                result.setMessage("业务配置未启用: " + request.getBusinessCode());
+                return result;
+            }
+
             List<ProcessOrchestrationConfig> configs = orchestrationConfigMapper
                     .selectByCurrentProcessAndEvent(businessConfig.getId(), request.getProcessDefKey(), request.getTriggerEvent());
             if (configs == null || configs.isEmpty()) {
@@ -93,8 +98,9 @@ public class ProcessOrchestrationEngineImpl implements ProcessOrchestrationEngin
             flow.setOrchestrationConfigId(matchedConfig.getId());
             flow.setProcessDefKey(matchedConfig.getNextProcessDefKey());
             flow.setProcessDefUniqueKey(matchedConfig.getNextProcessDefUniqueKey());
-            flow.setProcessInstanceId(UUID.randomUUID().toString().replace("-", ""));
+            flow.setProcessInstanceId(request.getBusinessId() != null ? request.getBusinessId() : UUID.randomUUID().toString().replace("-", ""));
             flow.setProcessInstanceSequence(1);
+            flow.setBusinessId(request.getBusinessId());
             flow.setBusinessDescription("流程触发: " + request.getProcessDefKey() + " -> " + matchedConfig.getNextProcessDefKey());
             flow.setFromNode(request.getProcessDefKey());
             flow.setToNode(matchedConfig.getNextProcessDefKey());
@@ -145,8 +151,9 @@ public class ProcessOrchestrationEngineImpl implements ProcessOrchestrationEngin
             flow.setId(IdGenerator.nextId());
             flow.setEventConfigId(eventConfig.getId());
             flow.setProcessDefKey(request.getProcessDefKey());
+            flow.setProcessDefUniqueKey(eventConfig.getProcessDefUniqueKey());
             flow.setNodeDefKey(request.getNodeDefKey());
-            flow.setProcessInstanceId(UUID.randomUUID().toString().replace("-", ""));
+            flow.setProcessInstanceId(request.getProcessInstanceId() != null ? request.getProcessInstanceId() : UUID.randomUUID().toString().replace("-", ""));
             flow.setProcessInstanceSequence(1);
             flow.setBusinessDescription("事件提交: " + request.getProcessDefKey() + " - " + request.getNodeDefKey());
             flow.setBusinessId(request.getBusinessId());
@@ -190,8 +197,14 @@ public class ProcessOrchestrationEngineImpl implements ProcessOrchestrationEngin
             BusinessConfig config = businessConfigMapper.selectByCode(request.getBusinessCode());
             if (config != null) {
                 ProcessTransitionFlowQueryRequest queryRequest = new ProcessTransitionFlowQueryRequest();
-                queryRequest.setBusinessId(config.getId());
-                flows = transitionFlowMapper.selectList(queryRequest);
+                queryRequest.setProcessInstanceId(config.getCode());
+                flows = transitionFlowMapper.selectByBusinessId(request.getBusinessCode());
+                if (flows.isEmpty()) {
+                    queryRequest.setBusinessId(null);
+                    queryRequest.setPageNum(1);
+                    queryRequest.setPageSize(Integer.MAX_VALUE);
+                    flows = transitionFlowMapper.selectAllForExport(queryRequest);
+                }
             }
         }
 

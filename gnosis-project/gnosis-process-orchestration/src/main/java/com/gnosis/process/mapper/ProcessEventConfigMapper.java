@@ -16,6 +16,8 @@ public interface ProcessEventConfigMapper {
 
     Long selectCount(ProcessEventConfigQueryRequest request);
 
+    List<ProcessEventConfig> selectAllForExport(ProcessEventConfigQueryRequest request);
+
     List<ProcessEventConfig> selectByProcessDefKey(@Param("processDefKey") String processDefKey);
 
     ProcessEventConfig selectByProcessAndNodeAndAction(@Param("processDefKey") String processDefKey, @Param("nodeDefKey") String nodeDefKey, @Param("submitAction") String submitAction, @Param("matchBusiness") String matchBusiness);

@@ -98,16 +98,99 @@
             <if test="currentProcessDefKey != null and currentProcessDefKey != ''">
                 AND current_process_def_key LIKE CONCAT('%', #{currentProcessDefKey}, '%')
             </if>
+            <if test="currentProcessDefUniqueKey != null and currentProcessDefUniqueKey != ''">
+                AND current_process_def_unique_key = #{currentProcessDefUniqueKey}
+            </if>
+            <if test="currentProcessSystem != null and currentProcessSystem != ''">
+                AND current_process_system = #{currentProcessSystem}
+            </if>
             <if test="nextProcessDefKey != null and nextProcessDefKey != ''">
                 AND next_process_def_key LIKE CONCAT('%', #{nextProcessDefKey}, '%')
+            </if>
+            <if test="nextProcessDefUniqueKey != null and nextProcessDefUniqueKey != ''">
+                AND next_process_def_unique_key = #{nextProcessDefUniqueKey}
+            </if>
+            <if test="nextProcessSystem != null and nextProcessSystem != ''">
+                AND next_process_system = #{nextProcessSystem}
             </if>
             <if test="triggerEvent != null and triggerEvent != ''">
                 AND trigger_event = #{triggerEvent}
             </if>
+            <if test="conditionExpression != null and conditionExpression != ''">
+                AND condition_expression LIKE CONCAT('%', #{conditionExpression}, '%')
+            </if>
+            <if test="priority != null">
+                AND priority = #{priority}
+            </if>
             <if test="isActive != null">
                 AND is_active = #{isActive}
             </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
         </where>
+    </select>
+
+    <select id="selectAllForExport" parameterType="com.gnosis.process.dto.ProcessOrchestrationConfigQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_orchestration_config
+        <where>
+            <if test="businessConfigId != null and businessConfigId != ''">
+                AND business_config_id = #{businessConfigId}
+            </if>
+            <if test="currentProcessDefKey != null and currentProcessDefKey != ''">
+                AND current_process_def_key LIKE CONCAT('%', #{currentProcessDefKey}, '%')
+            </if>
+            <if test="currentProcessDefUniqueKey != null and currentProcessDefUniqueKey != ''">
+                AND current_process_def_unique_key = #{currentProcessDefUniqueKey}
+            </if>
+            <if test="currentProcessSystem != null and currentProcessSystem != ''">
+                AND current_process_system = #{currentProcessSystem}
+            </if>
+            <if test="nextProcessDefKey != null and nextProcessDefKey != ''">
+                AND next_process_def_key LIKE CONCAT('%', #{nextProcessDefKey}, '%')
+            </if>
+            <if test="nextProcessDefUniqueKey != null and nextProcessDefUniqueKey != ''">
+                AND next_process_def_unique_key = #{nextProcessDefUniqueKey}
+            </if>
+            <if test="nextProcessSystem != null and nextProcessSystem != ''">
+                AND next_process_system = #{nextProcessSystem}
+            </if>
+            <if test="triggerEvent != null and triggerEvent != ''">
+                AND trigger_event = #{triggerEvent}
+            </if>
+            <if test="conditionExpression != null and conditionExpression != ''">
+                AND condition_expression LIKE CONCAT('%', #{conditionExpression}, '%')
+            </if>
+            <if test="priority != null">
+                AND priority = #{priority}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY priority ASC, create_time DESC
     </select>
 
     <select id="selectByBusinessConfigId" parameterType="java.lang.String" resultMap="BaseResultMap">

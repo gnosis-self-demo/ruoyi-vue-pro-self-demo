@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -94,11 +95,12 @@ public class BusinessResourceBindingServiceImpl implements BusinessResourceBindi
         binding.setResourceId(request.getResourceId());
         binding.setResourceName(request.getResourceName());
         binding.setBindingType(request.getBindingType());
-        binding.setBindingPriority(request.getBindingPriority());
-        binding.setIsActive(request.getIsActive());
+        binding.setBindingPriority(request.getBindingPriority() != null ? request.getBindingPriority() : 0);
+        binding.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
         binding.setMetadata(request.getMetadata());
-        binding.setCreateUserId(request.getCreateUserId());
-        binding.setUpdateUserId(request.getCreateUserId());
+        String operatorId = request.getCreateUserId() != null ? request.getCreateUserId() : "system";
+        binding.setCreateUserId(operatorId);
+        binding.setUpdateUserId(operatorId);
         Date now = new Date();
         binding.setCreateTime(now);
         binding.setUpdateTime(now);
@@ -148,6 +150,7 @@ public class BusinessResourceBindingServiceImpl implements BusinessResourceBindi
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void importData(MultipartFile file, String operatorId) {
         log.info("导入业务资源绑定数据, operatorId={}", operatorId);
         InputStream inputStream = null;
@@ -210,7 +213,7 @@ public class BusinessResourceBindingServiceImpl implements BusinessResourceBindi
     @Override
     public void exportData(BusinessResourceBindingQueryRequest request, HttpServletResponse response) {
         log.info("导出业务资源绑定数据, request={}", JSON.toJSONString(request));
-        List<BusinessResourceBinding> dataList = businessResourceBindingMapper.selectList(request);
+        List<BusinessResourceBinding> dataList = businessResourceBindingMapper.selectAllForExport(request);
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("业务资源绑定");
 

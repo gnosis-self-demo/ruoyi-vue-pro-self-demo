@@ -16,6 +16,8 @@ public interface ProcessTransitionFlowMapper {
 
     Long selectCount(ProcessTransitionFlowQueryRequest request);
 
+    List<ProcessTransitionFlow> selectAllForExport(ProcessTransitionFlowQueryRequest request);
+
     List<ProcessTransitionFlow> selectByProcessInstanceId(@Param("processInstanceId") String processInstanceId);
 
     List<ProcessTransitionFlow> selectByBusinessId(@Param("businessId") String businessId);

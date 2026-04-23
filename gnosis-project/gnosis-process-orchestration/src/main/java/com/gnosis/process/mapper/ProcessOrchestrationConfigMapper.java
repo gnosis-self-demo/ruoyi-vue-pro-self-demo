@@ -16,6 +16,8 @@ public interface ProcessOrchestrationConfigMapper {
 
     Long selectCount(ProcessOrchestrationConfigQueryRequest request);
 
+    List<ProcessOrchestrationConfig> selectAllForExport(ProcessOrchestrationConfigQueryRequest request);
+
     List<ProcessOrchestrationConfig> selectByBusinessConfigId(@Param("businessConfigId") String businessConfigId);
 
     List<ProcessOrchestrationConfig> selectByCurrentProcessAndEvent(@Param("businessConfigId") String businessConfigId, @Param("currentProcessDefKey") String currentProcessDefKey, @Param("triggerEvent") String triggerEvent);

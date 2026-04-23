@@ -16,6 +16,8 @@ public interface BusinessResourceBindingMapper {
 
     Long selectCount(BusinessResourceBindingQueryRequest request);
 
+    List<BusinessResourceBinding> selectAllForExport(BusinessResourceBindingQueryRequest request);
+
     List<BusinessResourceBinding> selectByBusinessConfigId(@Param("businessConfigId") String businessConfigId);
 
     List<BusinessResourceBinding> selectByBusinessCodeAndType(@Param("businessCode") String businessCode, @Param("resourceType") String resourceType);

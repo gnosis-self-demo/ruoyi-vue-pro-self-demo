@@ -81,7 +81,7 @@ public class ProcessTransitionFlowServiceImpl implements ProcessTransitionFlowSe
     @Override
     public void exportData(ProcessTransitionFlowQueryRequest request, HttpServletResponse response) {
         log.info("导出流程流转记录数据, request={}", JSON.toJSONString(request));
-        List<ProcessTransitionFlow> dataList = processTransitionFlowMapper.selectList(request);
+        List<ProcessTransitionFlow> dataList = processTransitionFlowMapper.selectAllForExport(request);
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("流程流转记录");
 

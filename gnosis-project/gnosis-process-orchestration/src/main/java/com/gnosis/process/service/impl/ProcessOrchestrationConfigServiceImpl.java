@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -87,10 +88,11 @@ public class ProcessOrchestrationConfigServiceImpl implements ProcessOrchestrati
         config.setNextProcessSystem(request.getNextProcessSystem());
         config.setTriggerEvent(request.getTriggerEvent());
         config.setConditionExpression(request.getConditionExpression());
-        config.setPriority(request.getPriority());
-        config.setIsActive(request.getIsActive());
-        config.setCreateUserId(request.getCreateUserId());
-        config.setUpdateUserId(request.getCreateUserId());
+        config.setPriority(request.getPriority() != null ? request.getPriority() : 0);
+        config.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
+        String operatorId = request.getCreateUserId() != null ? request.getCreateUserId() : "system";
+        config.setCreateUserId(operatorId);
+        config.setUpdateUserId(operatorId);
         Date now = new Date();
         config.setCreateTime(now);
         config.setUpdateTime(now);
@@ -143,6 +145,7 @@ public class ProcessOrchestrationConfigServiceImpl implements ProcessOrchestrati
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void importData(MultipartFile file, String operatorId) {
         log.info("导入流程编排配置数据, operatorId={}", operatorId);
         InputStream inputStream = null;
@@ -208,7 +211,7 @@ public class ProcessOrchestrationConfigServiceImpl implements ProcessOrchestrati
     @Override
     public void exportData(ProcessOrchestrationConfigQueryRequest request, HttpServletResponse response) {
         log.info("导出流程编排配置数据, request={}", JSON.toJSONString(request));
-        List<ProcessOrchestrationConfig> dataList = processOrchestrationConfigMapper.selectList(request);
+        List<ProcessOrchestrationConfig> dataList = processOrchestrationConfigMapper.selectAllForExport(request);
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("流程编排配置");
 

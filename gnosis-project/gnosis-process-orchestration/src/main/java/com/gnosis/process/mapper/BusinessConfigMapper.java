@@ -18,6 +18,8 @@ public interface BusinessConfigMapper {
 
     Long selectCount(BusinessConfigQueryRequest request);
 
+    List<BusinessConfig> selectAllForExport(BusinessConfigQueryRequest request);
+
     int insert(BusinessConfig businessConfig);
 
     int updateById(BusinessConfig businessConfig);

@@ -12,6 +12,7 @@ public class ProcessEventSubmitRequest implements Serializable {
     private String submitAction;
     private String businessCode;
     private String businessId;
+    private String processInstanceId;
     private Map<String, Object> contextData;
     private String operatorId;
 
@@ -69,5 +70,13 @@ public class ProcessEventSubmitRequest implements Serializable {
 
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
+    }
+
+    public String getProcessInstanceId() {
+        return processInstanceId;
+    }
+
+    public void setProcessInstanceId(String processInstanceId) {
+        this.processInstanceId = processInstanceId;
     }
 }

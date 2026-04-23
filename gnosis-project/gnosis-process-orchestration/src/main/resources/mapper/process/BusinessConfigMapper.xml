@@ -138,6 +138,56 @@
         </where>
     </select>
 
+    <select id="selectAllForExport" parameterType="com.gnosis.process.dto.BusinessConfigQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_business_config
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="code != null and code != ''">
+                AND code LIKE CONCAT('%', #{code}, '%')
+            </if>
+            <if test="description != null and description != ''">
+                AND description LIKE CONCAT('%', #{description}, '%')
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type = #{businessType}
+            </if>
+            <if test="businessCategory != null and businessCategory != ''">
+                AND business_category = #{businessCategory}
+            </if>
+            <if test="ruleEngineConfigId != null and ruleEngineConfigId != ''">
+                AND rule_engine_config_id = #{ruleEngineConfigId}
+            </if>
+            <if test="ruleEngineType != null and ruleEngineType != ''">
+                AND rule_engine_type = #{ruleEngineType}
+            </if>
+            <if test="workflowEnabled != null">
+                AND workflow_enabled = #{workflowEnabled}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
     <insert id="insert" parameterType="com.gnosis.process.domain.BusinessConfig">
         INSERT INTO sys_business_config (
             id, name, code, description, business_type, business_category,

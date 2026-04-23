@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -76,15 +77,16 @@ public class BusinessConfigServiceImpl implements BusinessConfigService {
         config.setName(request.getName());
         config.setCode(request.getCode());
         config.setDescription(request.getDescription());
-        config.setBusinessType(request.getBusinessType());
+        config.setBusinessType(request.getBusinessType() != null ? request.getBusinessType() : "default");
         config.setBusinessCategory(request.getBusinessCategory());
         config.setRuleEngineConfigId(request.getRuleEngineConfigId());
         config.setRuleEngineType(request.getRuleEngineType());
-        config.setWorkflowEnabled(request.getWorkflowEnabled());
-        config.setStatus(request.getStatus());
+        config.setWorkflowEnabled(request.getWorkflowEnabled() != null ? request.getWorkflowEnabled() : true);
+        config.setStatus(request.getStatus() != null ? request.getStatus() : "active");
         config.setTenantId(request.getTenantId());
-        config.setCreateUserId(request.getCreateUserId());
-        config.setUpdateUserId(request.getCreateUserId());
+        String operatorId = request.getCreateUserId() != null ? request.getCreateUserId() : "system";
+        config.setCreateUserId(operatorId);
+        config.setUpdateUserId(operatorId);
         Date now = new Date();
         config.setCreateTime(now);
         config.setUpdateTime(now);
@@ -136,6 +138,7 @@ public class BusinessConfigServiceImpl implements BusinessConfigService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void importData(MultipartFile file, String operatorId) {
         log.info("导入业务配置数据, operatorId={}", operatorId);
         InputStream inputStream = null;
@@ -197,7 +200,7 @@ public class BusinessConfigServiceImpl implements BusinessConfigService {
     @Override
     public void exportData(BusinessConfigQueryRequest request, HttpServletResponse response) {
         log.info("导出业务配置数据, request={}", JSON.toJSONString(request));
-        List<BusinessConfig> dataList = businessConfigMapper.selectList(request);
+        List<BusinessConfig> dataList = businessConfigMapper.selectAllForExport(request);
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("业务配置");
 

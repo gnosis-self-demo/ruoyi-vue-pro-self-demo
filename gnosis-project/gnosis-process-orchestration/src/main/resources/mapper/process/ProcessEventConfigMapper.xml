@@ -90,6 +90,9 @@
             <if test="processDefKey != null and processDefKey != ''">
                 AND process_def_key LIKE CONCAT('%', #{processDefKey}, '%')
             </if>
+            <if test="processDefUniqueKey != null and processDefUniqueKey != ''">
+                AND process_def_unique_key = #{processDefUniqueKey}
+            </if>
             <if test="nodeDefKey != null and nodeDefKey != ''">
                 AND node_def_key LIKE CONCAT('%', #{nodeDefKey}, '%')
             </if>
@@ -99,13 +102,84 @@
             <if test="matchBusiness != null and matchBusiness != ''">
                 AND match_business = #{matchBusiness}
             </if>
+            <if test="changeBusinessStatus != null and changeBusinessStatus != ''">
+                AND change_business_status = #{changeBusinessStatus}
+            </if>
             <if test="eventType != null and eventType != ''">
                 AND event_type = #{eventType}
+            </if>
+            <if test="eventHandler != null and eventHandler != ''">
+                AND event_handler LIKE CONCAT('%', #{eventHandler}, '%')
+            </if>
+            <if test="handlerConfig != null and handlerConfig != ''">
+                AND handler_config LIKE CONCAT('%', #{handlerConfig}, '%')
             </if>
             <if test="isActive != null">
                 AND is_active = #{isActive}
             </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
         </where>
+    </select>
+
+    <select id="selectAllForExport" parameterType="com.gnosis.process.dto.ProcessEventConfigQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_process_event_config
+        <where>
+            <if test="processDefKey != null and processDefKey != ''">
+                AND process_def_key LIKE CONCAT('%', #{processDefKey}, '%')
+            </if>
+            <if test="processDefUniqueKey != null and processDefUniqueKey != ''">
+                AND process_def_unique_key = #{processDefUniqueKey}
+            </if>
+            <if test="nodeDefKey != null and nodeDefKey != ''">
+                AND node_def_key LIKE CONCAT('%', #{nodeDefKey}, '%')
+            </if>
+            <if test="submitAction != null and submitAction != ''">
+                AND submit_action = #{submitAction}
+            </if>
+            <if test="matchBusiness != null and matchBusiness != ''">
+                AND match_business = #{matchBusiness}
+            </if>
+            <if test="changeBusinessStatus != null and changeBusinessStatus != ''">
+                AND change_business_status = #{changeBusinessStatus}
+            </if>
+            <if test="eventType != null and eventType != ''">
+                AND event_type = #{eventType}
+            </if>
+            <if test="eventHandler != null and eventHandler != ''">
+                AND event_handler LIKE CONCAT('%', #{eventHandler}, '%')
+            </if>
+            <if test="handlerConfig != null and handlerConfig != ''">
+                AND handler_config LIKE CONCAT('%', #{handlerConfig}, '%')
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
     </select>
 
     <select id="selectByProcessDefKey" parameterType="java.lang.String" resultMap="BaseResultMap">

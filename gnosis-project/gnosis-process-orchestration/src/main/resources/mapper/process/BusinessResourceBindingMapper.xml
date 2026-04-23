@@ -103,7 +103,54 @@
             <if test="updateUserId != null and updateUserId != ''">
                 AND update_user_id = #{updateUserId}
             </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
         </where>
+    </select>
+
+    <select id="selectAllForExport" parameterType="com.gnosis.process.dto.BusinessResourceBindingQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_business_resource_binding
+        <where>
+            <if test="businessConfigId != null and businessConfigId != ''">
+                AND business_config_id = #{businessConfigId}
+            </if>
+            <if test="resourceType != null and resourceType != ''">
+                AND resource_type = #{resourceType}
+            </if>
+            <if test="resourceId != null and resourceId != ''">
+                AND resource_id LIKE CONCAT('%', #{resourceId}, '%')
+            </if>
+            <if test="resourceName != null and resourceName != ''">
+                AND resource_name LIKE CONCAT('%', #{resourceName}, '%')
+            </if>
+            <if test="bindingType != null and bindingType != ''">
+                AND binding_type = #{bindingType}
+            </if>
+            <if test="bindingPriority != null">
+                AND binding_priority = #{bindingPriority}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                AND create_user_id = #{createUserId}
+            </if>
+            <if test="updateUserId != null and updateUserId != ''">
+                AND update_user_id = #{updateUserId}
+            </if>
+            <if test="createTime != null and createTime != ''">
+                AND create_time >= #{createTime}
+            </if>
+            <if test="updateTime != null and updateTime != ''">
+                AND update_time >= #{updateTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
     </select>
 
     <select id="selectByBusinessConfigId" parameterType="java.lang.String" resultMap="BaseResultMap">

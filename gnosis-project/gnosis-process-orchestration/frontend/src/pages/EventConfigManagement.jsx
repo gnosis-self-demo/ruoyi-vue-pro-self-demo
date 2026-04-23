@@ -57,8 +57,8 @@ const EventConfigManagement = () => {
       setData(response.data?.records || response.data || [])
       setTotal(response.data?.total || 0)
       setPagination({
-        current: response.data?.current || 1,
-        pageSize: response.data?.size || 10
+        current: response.data?.pageNum || 1,
+        size: response.data?.pageSize || 10
       })
     } catch (error) {
       console.error('加载数据失败:', error)

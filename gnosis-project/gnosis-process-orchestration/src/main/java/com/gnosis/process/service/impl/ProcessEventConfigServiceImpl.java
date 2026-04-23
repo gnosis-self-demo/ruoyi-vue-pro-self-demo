@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -76,9 +77,10 @@ public class ProcessEventConfigServiceImpl implements ProcessEventConfigService 
         config.setEventType(request.getEventType());
         config.setEventHandler(request.getEventHandler());
         config.setHandlerConfig(request.getHandlerConfig());
-        config.setIsActive(request.getIsActive());
-        config.setCreateUserId(request.getCreateUserId());
-        config.setUpdateUserId(request.getCreateUserId());
+        config.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
+        String operatorId = request.getCreateUserId() != null ? request.getCreateUserId() : "system";
+        config.setCreateUserId(operatorId);
+        config.setUpdateUserId(operatorId);
         Date now = new Date();
         config.setCreateTime(now);
         config.setUpdateTime(now);
@@ -130,6 +132,7 @@ public class ProcessEventConfigServiceImpl implements ProcessEventConfigService 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void importData(MultipartFile file, String operatorId) {
         log.info("导入流程事件配置数据, operatorId={}", operatorId);
         InputStream inputStream = null;
@@ -191,7 +194,7 @@ public class ProcessEventConfigServiceImpl implements ProcessEventConfigService 
     @Override
     public void exportData(ProcessEventConfigQueryRequest request, HttpServletResponse response) {
         log.info("导出流程事件配置数据, request={}", JSON.toJSONString(request));
-        List<ProcessEventConfig> dataList = processEventConfigMapper.selectList(request);
+        List<ProcessEventConfig> dataList = processEventConfigMapper.selectAllForExport(request);
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("流程事件配置");
 

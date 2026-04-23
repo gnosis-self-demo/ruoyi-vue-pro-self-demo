@@ -12,6 +12,7 @@ public class ProcessTriggerRequest implements Serializable {
     private String triggerEvent;
     private Map<String, Object> contextData;
     private String operatorId;
+    private String businessId;
 
     public String getBusinessCode() {
         return businessCode;
@@ -51,5 +52,13 @@ public class ProcessTriggerRequest implements Serializable {
 
     public void setOperatorId(String operatorId) {
         this.operatorId = operatorId;
+    }
+
+    public String getBusinessId() {
+        return businessId;
+    }
+
+    public void setBusinessId(String businessId) {
+        this.businessId = businessId;
     }
 }

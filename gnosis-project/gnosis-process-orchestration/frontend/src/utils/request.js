@@ -22,6 +22,10 @@ request.interceptors.request.use(
 
 request.interceptors.response.use(
   (response) => {
+    // 处理 blob 类型的响应（如导出文件），直接返回原始响应
+    if (response.config.responseType === 'blob' || response.data instanceof Blob) {
+      return response.data
+    }
     const res = response.data
     if (res.code !== 0 && res.code !== 200) {
       message.error(res.msg || res.message || '请求失败')
