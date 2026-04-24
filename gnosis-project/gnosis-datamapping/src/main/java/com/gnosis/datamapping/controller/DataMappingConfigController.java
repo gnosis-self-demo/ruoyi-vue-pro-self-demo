@@ -4,11 +4,15 @@ import com.gnosis.common.dto.CommonResponse;
 import com.gnosis.datamapping.dto.*;
 import com.gnosis.datamapping.service.DataMappingConfigService;
 import com.gnosis.datamapping.service.DataMappingEngineService;
+import com.gnosis.datamapping.service.DataMappingImportExportService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +26,9 @@ public class DataMappingConfigController {
 
     @Autowired
     private DataMappingEngineService engineService;
+
+    @Autowired
+    private DataMappingImportExportService importExportService;
 
     @ApiOperation("分页查询配置列表")
     @PostMapping("/page")
@@ -93,13 +100,18 @@ public class DataMappingConfigController {
 
     @ApiOperation("导出配置")
     @PostMapping("/export")
-    public CommonResponse<List<DataMappingConfigVO>> export(@RequestBody DataMappingConfigIdsRequest request) {
-        return CommonResponse.error("导出功能待实现");
+    public void export(@RequestBody DataMappingConfigIdsRequest request, HttpServletResponse response) throws IOException {
+        importExportService.exportConfigs(request, response);
     }
 
     @ApiOperation("导入配置")
     @PostMapping("/import")
-    public CommonResponse<Void> importConfigs(@RequestBody Map<String, Object> request) {
-        return CommonResponse.error("导入功能待实现");
+    public CommonResponse<Void> importConfigs(@RequestParam("file") MultipartFile file) {
+        try {
+            importExportService.importConfigs(file);
+            return CommonResponse.success();
+        } catch (Exception e) {
+            return CommonResponse.error("导入失败: " + e.getMessage());
+        }
     }
 }

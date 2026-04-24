@@ -69,8 +69,14 @@ COMMENT ON COLUMN sys_data_mapping_execution_log.create_time IS '创建时间';
 COMMENT ON COLUMN sys_data_mapping_execution_log.update_time IS '更新时间';
 
 -- 索引
-CREATE INDEX IF NOT EXISTS idx_config_code ON sys_data_mapping_config(config_code);
-CREATE INDEX IF NOT EXISTS idx_config_status ON sys_data_mapping_config(status);
-CREATE INDEX IF NOT EXISTS idx_log_config_id ON sys_data_mapping_execution_log(config_id);
-CREATE INDEX IF NOT EXISTS idx_log_success ON sys_data_mapping_execution_log(success);
-CREATE INDEX IF NOT EXISTS idx_log_create_time ON sys_data_mapping_execution_log(create_time);
+DROP INDEX IF EXISTS idx_config_code;
+DROP INDEX IF EXISTS idx_config_status;
+DROP INDEX IF EXISTS idx_log_config_id;
+DROP INDEX IF EXISTS idx_log_success;
+DROP INDEX IF EXISTS idx_log_create_time;
+
+CREATE INDEX idx_config_code ON sys_data_mapping_config(config_code);
+CREATE INDEX idx_config_status ON sys_data_mapping_config(status);
+CREATE INDEX idx_log_config_id ON sys_data_mapping_execution_log(config_id);
+CREATE INDEX idx_log_success ON sys_data_mapping_execution_log(success);
+CREATE INDEX idx_log_create_time ON sys_data_mapping_execution_log(create_time);
