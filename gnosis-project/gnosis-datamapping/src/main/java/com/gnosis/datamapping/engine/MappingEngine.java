@@ -38,8 +38,8 @@ public class MappingEngine {
 
         executeDirectMappings(config, rootData, output, errors, validationErrors);
         executeCrossNodeMappings(config, requestData, output, errors);
-        executeListExtractionMappings(config, rootData, output, errors);
-        executeStringToListMappings(config, rootData, output, errors);
+        executeListExtractionMappings(config, requestData, output, errors, jsonRootPath);
+        executeStringToListMappings(config, requestData, output, errors, jsonRootPath);
 
         result.put("success", errors.isEmpty() && validationErrors.isEmpty());
         result.put("resultData", output);
@@ -66,6 +66,17 @@ public class MappingEngine {
         } catch (Exception e) {
             return new JSONObject();
         }
+    }
+
+    private String resolveSourcePath(String sourcePath, String jsonRootPath) {
+        if (sourcePath == null) return sourcePath;
+        if (jsonRootPath == null || "$".equals(jsonRootPath)) return sourcePath;
+        if (!sourcePath.startsWith("$")) return sourcePath;
+
+        String rootPath = jsonRootPath.replaceFirst("^\\$\\.?", "");
+        String relativePath = sourcePath.replaceFirst("^\\$\\.?", "");
+
+        return "$." + rootPath + "." + relativePath;
     }
 
     private void executeDirectMappings(JSONObject config, JSONObject sourceData, JSONObject target,
@@ -179,8 +190,8 @@ public class MappingEngine {
         }
     }
 
-    private void executeListExtractionMappings(JSONObject config, JSONObject sourceData, JSONObject target,
-                                               List<ErrorDetail> errors) {
+    private void executeListExtractionMappings(JSONObject config, Object sourceData, JSONObject target,
+                                               List<ErrorDetail> errors, String jsonRootPath) {
         JSONArray listExtractionMappings = config.getJSONArray("listExtractionMappings");
         if (listExtractionMappings == null) return;
 
@@ -192,8 +203,10 @@ public class MappingEngine {
             String sourcePath = mapping.getString("sourcePath");
             String targetPath = mapping.getString("targetPath");
 
+            String resolvedPath = resolveSourcePath(sourcePath, jsonRootPath);
+
             try {
-                Object sourceArray = com.jayway.jsonpath.JsonPath.read(sourceData, sourcePath);
+                Object sourceArray = com.jayway.jsonpath.JsonPath.read(sourceData, resolvedPath);
 
                 if ("extractByIndex".equals(type)) {
                     int index = mapping.getIntValue("index");
@@ -234,7 +247,14 @@ public class MappingEngine {
     }
 
     private Object extractByIndex(Object sourceArray, int index) {
-        if (sourceArray instanceof JSONArray) {
+        if (sourceArray instanceof List) {
+            List<?> arr = (List<?>) sourceArray;
+            if (index >= 0 && index < arr.size()) {
+                return arr.get(index);
+            } else if (index < 0 && index >= -arr.size()) {
+                return arr.get(arr.size() + index);
+            }
+        } else if (sourceArray instanceof JSONArray) {
             JSONArray arr = (JSONArray) sourceArray;
             if (index >= 0 && index < arr.size()) {
                 return arr.get(index);
@@ -247,7 +267,13 @@ public class MappingEngine {
 
     private String concatenateValues(Object sourceArray, String separator) {
         StringBuilder sb = new StringBuilder();
-        if (sourceArray instanceof JSONArray) {
+        if (sourceArray instanceof List) {
+            List<?> arr = (List<?>) sourceArray;
+            for (int i = 0; i < arr.size(); i++) {
+                if (i > 0) sb.append(separator);
+                sb.append(arr.get(i).toString());
+            }
+        } else if (sourceArray instanceof JSONArray) {
             JSONArray arr = (JSONArray) sourceArray;
             for (int i = 0; i < arr.size(); i++) {
                 if (i > 0) sb.append(separator);
@@ -259,7 +285,21 @@ public class MappingEngine {
 
     private String concatenateWithFormat(Object sourceArray, String separator, String formatTemplate) {
         StringBuilder sb = new StringBuilder();
-        if (sourceArray instanceof JSONArray) {
+        if (sourceArray instanceof List) {
+            List<?> arr = (List<?>) sourceArray;
+            for (int i = 0; i < arr.size(); i++) {
+                if (i > 0) sb.append(separator);
+                Object item = arr.get(i);
+                if (item instanceof Map) {
+                    Map<?, ?> map = (Map<?, ?>) item;
+                    String formatted = formatTemplate;
+                    for (Map.Entry<?, ?> entry : map.entrySet()) {
+                        formatted = formatted.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
+                    }
+                    sb.append(formatted);
+                }
+            }
+        } else if (sourceArray instanceof JSONArray) {
             JSONArray arr = (JSONArray) sourceArray;
             for (int i = 0; i < arr.size(); i++) {
                 if (i > 0) sb.append(separator);
@@ -275,7 +315,27 @@ public class MappingEngine {
     }
 
     private Object extractByCondition(Object sourceArray, String condition, boolean takeFirst) {
-        if (sourceArray instanceof JSONArray) {
+        if (sourceArray instanceof List) {
+            List<?> arr = (List<?>) sourceArray;
+            JSONArray result = new JSONArray();
+            String[] parts = condition.split("==");
+            if (parts.length == 2) {
+                String fieldPath = parts[0].trim().replace("$.", "");
+                String expectedValue = parts[1].trim().replace("'", "");
+                for (int i = 0; i < arr.size(); i++) {
+                    Object item = arr.get(i);
+                    if (item instanceof Map) {
+                        Map<?, ?> map = (Map<?, ?>) item;
+                        Object fieldValue = map.get(fieldPath);
+                        if (fieldValue != null && expectedValue.equals(String.valueOf(fieldValue))) {
+                            result.add(item);
+                            if (takeFirst) break;
+                        }
+                    }
+                }
+            }
+            return takeFirst && !result.isEmpty() ? result.get(0) : result;
+        } else if (sourceArray instanceof JSONArray) {
             JSONArray arr = (JSONArray) sourceArray;
             JSONArray result = new JSONArray();
             String[] parts = condition.split("==");
@@ -299,8 +359,13 @@ public class MappingEngine {
     private JSONObject mapListItem(Object item, JSONArray itemMappings, JSONObject transformRules,
                                     List<ErrorDetail> errors) {
         JSONObject result = new JSONObject();
-        if (!(item instanceof JSONObject)) return result;
-        JSONObject itemObj = (JSONObject) item;
+        JSONObject itemObj = null;
+        if (item instanceof JSONObject) {
+            itemObj = (JSONObject) item;
+        } else if (item instanceof Map) {
+            itemObj = new JSONObject((Map<String, Object>) item);
+        }
+        if (itemObj == null) return result;
 
         for (int i = 0; i < itemMappings.size(); i++) {
             JSONObject mapping = itemMappings.getJSONObject(i);
@@ -325,8 +390,8 @@ public class MappingEngine {
         return result;
     }
 
-    private void executeStringToListMappings(JSONObject config, JSONObject sourceData, JSONObject target,
-                                              List<ErrorDetail> errors) {
+    private void executeStringToListMappings(JSONObject config, Object sourceData, JSONObject target,
+                                              List<ErrorDetail> errors, String jsonRootPath) {
         JSONArray stringToListMappings = config.getJSONArray("stringToListMappings");
         if (stringToListMappings == null) return;
 
@@ -340,8 +405,10 @@ public class MappingEngine {
             String sourcePath = mapping.getString("sourcePath");
             String targetPath = mapping.getString("targetPath");
 
+            String resolvedPath = resolveSourcePath(sourcePath, jsonRootPath);
+
             try {
-                Object sourceValue = com.jayway.jsonpath.JsonPath.read(sourceData, sourcePath);
+                Object sourceValue = com.jayway.jsonpath.JsonPath.read(sourceData, resolvedPath);
                 if (sourceValue == null) continue;
                 String sourceStr = String.valueOf(sourceValue);
 
