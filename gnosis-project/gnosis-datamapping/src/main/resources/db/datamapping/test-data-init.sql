@@ -68,7 +68,7 @@ INSERT INTO sys_data_mapping_config (
   "transformRules": {
     "statusMapping": {
       "type": "lookup",
-      "mapping": {"草稿": "DRAFT", "生效": "ACTIVE", "完成": "COMPLETED"},
+      "mapping": {"草稿": "DRAFT", "生效": "ACTIVE", "完成": "COMPLETED", "ACTIVE": "ACTIVE"},
       "defaultValue": "DRAFT"
     },
     "trim": {"type": "function", "function": "String.trim()"},

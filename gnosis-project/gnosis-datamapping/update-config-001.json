@@ -1,0 +1,11 @@
+{
+  "id": "test_config_001",
+  "configName": "ERP合同直连映射",
+  "configCode": "ERP_DIRECT_001",
+  "configDesc": "ERP系统合同数据直接字段映射，支持类型转换和状态映射",
+  "configJson": "{\"version\": \"1.0\", \"jsonRootPath\": \"$.contractData\", \"directMappings\": [{\"sourceField\": \"contractNo\", \"targetField\": \"contractNo\", \"transforms\": [\"trim\", \"uppercase\"], \"required\": true}, {\"sourceField\": \"contractAmount\", \"targetField\": \"amount\", \"transforms\": [\"round(2)\"], \"required\": true}, {\"sourceField\": \"contractStatus\", \"targetField\": \"status\", \"transforms\": [\"statusMapping\"], \"required\": true}], \"transformRules\": {\"statusMapping\": {\"type\": \"lookup\", \"mapping\": {\"草稿\": \"DRAFT\", \"生效\": \"ACTIVE\", \"完成\": \"COMPLETED\", \"ACTIVE\": \"ACTIVE\"}, \"defaultValue\": \"DRAFT\", \"ignoreCase\": true}}, \"ordered\": true}",
+  "jsonRootPath": "$.contractData",
+  "mappingType": "direct",
+  "status": 1,
+  "updateUserId": "admin"
+}

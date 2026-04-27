@@ -13,3 +13,16 @@ export const dataMappingApi = {
   test: (configId, requestJson) => request.post('/config/test', { configId, requestJson }),
   logPageList: (configId, pageNum, pageSize) => request.post('/log/page', { configId, pageNum, pageSize }),
 };
+
+export const testCaseApi = {
+  pageList: (data) => request.post('/testcase/page', data),
+  detail: (id) => request.post('/testcase/detail', { id }),
+  create: (data) => request.post('/testcase/create', data),
+  update: (data) => request.post('/testcase/update', data),
+  delete: (id) => request.post('/testcase/delete', { id }),
+  batchDelete: (ids) => request.post('/testcase/batchDelete', { ids }),
+  batchEnable: (ids) => request.post('/testcase/batchEnable', { ids }),
+  batchDisable: (ids) => request.post('/testcase/batchDisable', { ids }),
+  execute: (testCaseId) => request.post('/testcase/execute', { testCaseId }),
+  executeByConfig: (configId) => request.post('/testcase/executeByConfig', { configId }),
+};

@@ -2,9 +2,11 @@ package com.gnosis.datamapping.service;
 
 import com.alibaba.fastjson.JSON;
 import com.gnosis.datamapping.domain.DataMappingConfig;
+import com.gnosis.datamapping.dto.DataMappingConfigVO;
 import com.gnosis.datamapping.dto.DataMappingExecuteResponse;
 import com.gnosis.datamapping.engine.ErrorDetail;
 import com.gnosis.datamapping.engine.MappingEngine;
+import com.gnosis.datamapping.mapper.DataMappingConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,9 @@ public class DataMappingEngineService {
     private DataMappingConfigService configService;
 
     @Autowired
+    private DataMappingConfigMapper configMapper;
+
+    @Autowired
     private DataMappingExecutionLogService logService;
 
     private MappingEngine mappingEngine = new MappingEngine();
@@ -26,8 +31,10 @@ public class DataMappingEngineService {
     public DataMappingExecuteResponse execute(String configId, String requestJson) {
         long startTime = System.currentTimeMillis();
 
-        DataMappingConfig config = configService.detail(configId) != null ?
-                convertVOToConfig(configService.detail(configId)) : null;
+        DataMappingConfig config = configMapper.selectById(configId);
+        if (config == null) {
+            config = configService.getByConfigCode(configId);
+        }
 
         if (config == null || config.getConfigJson() == null) {
             DataMappingExecuteResponse response = new DataMappingExecuteResponse();
@@ -56,7 +63,7 @@ public class DataMappingEngineService {
                 errorInfo = JSON.toJSONString(result.get("errors"));
             }
 
-            logService.saveLog(configId, config.getConfigCode(), requestJson,
+            logService.saveLog(config.getId(), config.getConfigCode(), requestJson,
                     resultJson, config.getConfigJson(), (Boolean) result.get("success"),
                     errorInfo, executionTime);
 
@@ -69,7 +76,7 @@ public class DataMappingEngineService {
             response.setErrors(errors);
             response.setExecutionTime((int) (System.currentTimeMillis() - startTime));
 
-            logService.saveLog(configId, config.getConfigCode(), requestJson,
+            logService.saveLog(config.getId(), config.getConfigCode(), requestJson,
                     null, config.getConfigJson(), false, e.getMessage(),
                     (int) (System.currentTimeMillis() - startTime));
 

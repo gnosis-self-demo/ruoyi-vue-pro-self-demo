@@ -161,7 +161,7 @@ public class MappingEngine {
 
     private void setJsonPathValue(JSONObject target, Object requestData, String targetPath,
                                   Object value, String direction) {
-        String normalizedPath = targetPath.replaceFirst("^\\$", "");
+        String normalizedPath = targetPath.replaceFirst("^\\$\\.?", "");
         if (normalizedPath.isEmpty()) return;
 
         String[] parts = normalizedPath.split("\\.");

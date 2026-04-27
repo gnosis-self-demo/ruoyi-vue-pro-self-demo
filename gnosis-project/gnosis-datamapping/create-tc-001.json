@@ -1,0 +1,10 @@
+{
+  "configId": "test_config_001",
+  "configCode": "ERP_DIRECT_001",
+  "caseName": "正常合同数据映射-英文状态",
+  "caseCode": "TC_DIRECT_001",
+  "requestJson": "{\"contractData\": {\"contractNo\": \"HT2024001\", \"contractAmount\": 1500000.567, \"contractStatus\": \"ACTIVE\"}}",
+  "expectedResultJson": "{\"contractNo\": \"HT2024001\", \"amount\": 1500000.57, \"status\": \"ACTIVE\"}",
+  "description": "验证正常合同数据的字段映射和类型转换，英文状态直接保留",
+  "createUserId": "admin"
+}

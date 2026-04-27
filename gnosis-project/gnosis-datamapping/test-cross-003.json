@@ -1,0 +1,4 @@
+{
+  "configId": "ERP_CROSS_003",
+  "requestJson": "{\"basicInfo\": {\"contractName\": \"合同名称\"}, \"paymentInfo\": {\"totalAmount\": 2.71828}}"
+}

@@ -118,7 +118,11 @@ public class TransformEngine {
             }
         }
 
-        return rule.get("defaultValue");
+        Object defaultValue = rule.get("defaultValue");
+        if (defaultValue != null) {
+            return defaultValue;
+        }
+        return value;
     }
 
     private Object applyRegex(JSONObject rule, Object value) {
