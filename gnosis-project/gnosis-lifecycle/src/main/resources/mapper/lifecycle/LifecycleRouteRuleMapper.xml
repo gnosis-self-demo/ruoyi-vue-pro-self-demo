@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleRouteRuleMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleRouteRule">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleRouteRule">
         <id column="id" property="id"/>
         <result column="business_type_id" property="businessTypeId"/>
         <result column="event_type" property="eventType"/>
@@ -29,7 +29,7 @@
         WHERE id = #{id}
     </select>
 
-    <select id="selectList" parameterType="lifecycle.domain.LifecycleRouteRule" resultMap="BaseResultMap">
+    <select id="selectList" parameterType="com.gnosis.lifecycle.domain.LifecycleRouteRule" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM lifecycle_route_rule
@@ -50,7 +50,7 @@
         ORDER BY priority DESC, version DESC, create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleRouteRule">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleRouteRule">
         INSERT INTO lifecycle_route_rule (
             id, business_type_id, event_type, rule_name, condition_expression,
             priority, is_active, version,
@@ -62,7 +62,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleRouteRule">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleRouteRule">
         UPDATE lifecycle_route_rule
         <set>
             <if test="ruleName != null and ruleName != ''">

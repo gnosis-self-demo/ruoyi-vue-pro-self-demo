@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleBusinessTypeMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleBusinessType">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleBusinessType">
         <id column="id" property="id"/>
         <result column="name" property="name"/>
         <result column="code" property="code"/>
@@ -32,7 +32,7 @@
         WHERE code = #{code}
     </select>
 
-    <select id="selectList" parameterType="lifecycle.domain.LifecycleBusinessType" resultMap="BaseResultMap">
+    <select id="selectList" parameterType="com.gnosis.lifecycle.domain.LifecycleBusinessType" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM lifecycle_business_type
@@ -47,7 +47,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleBusinessType">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleBusinessType">
         INSERT INTO lifecycle_business_type (
             id, name, code, description, entry_permission_config,
             create_user_id, update_user_id, create_time, update_time
@@ -57,7 +57,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleBusinessType">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleBusinessType">
         UPDATE lifecycle_business_type
         <set>
             <if test="name != null and name != ''">

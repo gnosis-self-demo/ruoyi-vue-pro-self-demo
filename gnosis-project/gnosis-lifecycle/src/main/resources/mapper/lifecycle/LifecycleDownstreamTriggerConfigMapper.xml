@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleDownstreamTriggerConfigMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleDownstreamTriggerConfig">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleDownstreamTriggerConfig">
         <id column="id" property="id"/>
         <result column="final_state_id" property="finalStateId"/>
         <result column="trigger_type" property="triggerType"/>
@@ -73,7 +73,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleDownstreamTriggerConfig">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleDownstreamTriggerConfig">
         INSERT INTO lifecycle_downstream_trigger_config (
             id, final_state_id, trigger_type, trigger_url, trigger_method, trigger_headers,
             trigger_payload, mq_topic, mq_tag, mq_message_template, email_recipients, email_template,
@@ -87,7 +87,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleDownstreamTriggerConfig">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleDownstreamTriggerConfig">
         UPDATE lifecycle_downstream_trigger_config
         <set>
             <if test="finalStateId != null">final_state_id = #{finalStateId},</if>

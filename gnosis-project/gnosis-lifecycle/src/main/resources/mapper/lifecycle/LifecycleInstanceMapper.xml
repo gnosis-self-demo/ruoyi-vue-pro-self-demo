@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleInstanceMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleInstance">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleInstance">
         <id column="id" property="id"/>
         <result column="business_type_id" property="businessTypeId"/>
         <result column="business_id" property="businessId"/>
@@ -36,7 +36,7 @@
         WHERE business_type_id = #{param1} AND business_id = #{param2}
     </select>
 
-    <select id="selectList" parameterType="lifecycle.domain.LifecycleInstance" resultMap="BaseResultMap">
+    <select id="selectList" parameterType="com.gnosis.lifecycle.domain.LifecycleInstance" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM lifecycle_instance
@@ -60,7 +60,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleInstance">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleInstance">
         INSERT INTO lifecycle_instance (
             id, business_type_id, business_id, current_state_id, status,
             started_at, finished_at, final_state_id,
@@ -72,7 +72,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleInstance">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleInstance">
         UPDATE lifecycle_instance
         <set>
             <if test="currentStateId != null and currentStateId != ''">

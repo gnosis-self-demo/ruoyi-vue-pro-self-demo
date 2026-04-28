@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleInstanceTraceMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleInstanceTrace">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleInstanceTrace">
         <id column="id" property="id"/>
         <result column="business_type_id" property="businessTypeId"/>
         <result column="business_instance_id" property="businessInstanceId"/>
@@ -78,7 +78,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleInstanceTrace">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleInstanceTrace">
         INSERT INTO lifecycle_instance_trace (
             id, business_type_id, business_instance_id, trace_type, trace_data, source_state_id,
             source_state_code, target_state_id, target_state_code, event_id, event_type, action_type,
@@ -92,7 +92,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleInstanceTrace">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleInstanceTrace">
         UPDATE lifecycle_instance_trace
         <set>
             <if test="businessTypeId != null">business_type_id = #{businessTypeId},</if>

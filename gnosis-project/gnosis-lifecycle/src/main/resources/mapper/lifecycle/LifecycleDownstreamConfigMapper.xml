@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleDownstreamConfigMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleDownstreamConfig">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleDownstreamConfig">
         <id column="id" property="id"/>
         <result column="final_state_id" property="finalStateId"/>
         <result column="downstream_business_type" property="downstreamBusinessType"/>
@@ -36,7 +36,7 @@
         ORDER BY is_active DESC, create_time DESC
     </select>
 
-    <select id="selectList" parameterType="lifecycle.domain.LifecycleDownstreamConfig" resultMap="BaseResultMap">
+    <select id="selectList" parameterType="com.gnosis.lifecycle.domain.LifecycleDownstreamConfig" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM lifecycle_downstream_config
@@ -57,7 +57,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleDownstreamConfig">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleDownstreamConfig">
         INSERT INTO lifecycle_downstream_config (
             id, final_state_id, downstream_business_type, trigger_condition, trigger_mode,
             config_data, is_active,
@@ -69,7 +69,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleDownstreamConfig">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleDownstreamConfig">
         UPDATE lifecycle_downstream_config
         <set>
             <if test="downstreamBusinessType != null and downstreamBusinessType != ''">

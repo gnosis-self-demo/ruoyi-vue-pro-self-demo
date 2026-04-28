@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleEventMetadataMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleEventMetadata">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleEventMetadata">
         <id column="id" property="id"/>
         <result column="event_type" property="eventType"/>
         <result column="metadata_key" property="metadataKey"/>
@@ -37,7 +37,7 @@
         ORDER BY sort_order ASC
     </select>
 
-    <select id="selectList" parameterType="lifecycle.domain.LifecycleEventMetadata" resultMap="BaseResultMap">
+    <select id="selectList" parameterType="com.gnosis.lifecycle.domain.LifecycleEventMetadata" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM lifecycle_event_metadata
@@ -55,7 +55,7 @@
         ORDER BY sort_order ASC, create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleEventMetadata">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleEventMetadata">
         INSERT INTO lifecycle_event_metadata (
             id, event_type, metadata_key, metadata_type, description, allowed_values,
             is_required, sort_order,
@@ -67,7 +67,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleEventMetadata">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleEventMetadata">
         UPDATE lifecycle_event_metadata
         <set>
             <if test="eventType != null and eventType != ''">

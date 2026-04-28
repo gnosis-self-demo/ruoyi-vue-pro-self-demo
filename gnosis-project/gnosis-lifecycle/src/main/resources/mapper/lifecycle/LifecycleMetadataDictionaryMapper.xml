@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleMetadataDictionaryMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleMetadataDictionary">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleMetadataDictionary">
         <id column="id" property="id"/>
         <result column="business_type_id" property="businessTypeId"/>
         <result column="field_name" property="fieldName"/>
@@ -68,7 +68,7 @@
         ORDER BY display_order ASC, create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleMetadataDictionary">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleMetadataDictionary">
         INSERT INTO lifecycle_metadata_dictionary (
             id, business_type_id, field_name, field_label, field_type, field_length, is_required,
             is_searchable, is_display, display_order, enum_values, validation_rule, default_value,
@@ -81,7 +81,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleMetadataDictionary">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleMetadataDictionary">
         UPDATE lifecycle_metadata_dictionary
         <set>
             <if test="businessTypeId != null">business_type_id = #{businessTypeId},</if>

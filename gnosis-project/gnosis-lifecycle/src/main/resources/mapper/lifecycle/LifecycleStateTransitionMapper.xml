@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleStateTransitionMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleStateTransition">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleStateTransition">
         <id column="id" property="id"/>
         <result column="business_type_id" property="businessTypeId"/>
         <result column="from_state_id" property="fromStateId"/>
@@ -37,7 +37,7 @@
         ORDER BY priority DESC
     </select>
 
-    <select id="selectList" parameterType="lifecycle.domain.LifecycleStateTransition" resultMap="BaseResultMap">
+    <select id="selectList" parameterType="com.gnosis.lifecycle.domain.LifecycleStateTransition" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM lifecycle_state_transition
@@ -58,7 +58,7 @@
         ORDER BY priority DESC, create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleStateTransition">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleStateTransition">
         INSERT INTO lifecycle_state_transition (
             id, business_type_id, from_state_id, to_state_id, transition_name, transition_code,
             condition_expression, priority,
@@ -70,7 +70,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleStateTransition">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleStateTransition">
         UPDATE lifecycle_state_transition
         <set>
             <if test="fromStateId != null and fromStateId != ''">

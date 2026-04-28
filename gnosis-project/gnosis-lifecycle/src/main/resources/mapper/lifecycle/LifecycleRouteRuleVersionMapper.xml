@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleRouteRuleVersionMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleRouteRuleVersion">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleRouteRuleVersion">
         <id column="id" property="id"/>
         <result column="rule_id" property="ruleId"/>
         <result column="version_number" property="versionNumber"/>
@@ -59,7 +59,7 @@
         ORDER BY version_number DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleRouteRuleVersion">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleRouteRuleVersion">
         INSERT INTO lifecycle_route_rule_version (
             id, rule_id, version_number, rule_content, change_type, change_reason,
             is_current_version, rollback_from_version, remark, create_user_id, update_user_id,
@@ -71,7 +71,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleRouteRuleVersion">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleRouteRuleVersion">
         UPDATE lifecycle_route_rule_version
         <set>
             <if test="ruleId != null">rule_id = #{ruleId},</if>

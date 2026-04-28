@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="lifecycle.repository.LifecycleStateMapper">
 
-    <resultMap id="BaseResultMap" type="lifecycle.domain.LifecycleState">
+    <resultMap id="BaseResultMap" type="com.gnosis.lifecycle.domain.LifecycleState">
         <id column="id" property="id"/>
         <result column="business_type_id" property="businessTypeId"/>
         <result column="state_name" property="stateName"/>
@@ -38,7 +38,7 @@
         ORDER BY state_type, state_code
     </select>
 
-    <select id="selectList" parameterType="lifecycle.domain.LifecycleState" resultMap="BaseResultMap">
+    <select id="selectList" parameterType="com.gnosis.lifecycle.domain.LifecycleState" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM lifecycle_state
@@ -62,7 +62,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <insert id="insert" parameterType="lifecycle.domain.LifecycleState">
+    <insert id="insert" parameterType="com.gnosis.lifecycle.domain.LifecycleState">
         INSERT INTO lifecycle_state (
             id, business_type_id, state_name, state_code, state_type, is_final_state,
             position_x, position_y, metadata,
@@ -74,7 +74,7 @@
         )
     </insert>
 
-    <update id="updateById" parameterType="lifecycle.domain.LifecycleState">
+    <update id="updateById" parameterType="com.gnosis.lifecycle.domain.LifecycleState">
         UPDATE lifecycle_state
         <set>
             <if test="stateName != null and stateName != ''">
