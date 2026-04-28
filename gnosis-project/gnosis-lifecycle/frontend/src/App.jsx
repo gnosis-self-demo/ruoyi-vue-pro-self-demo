@@ -2,12 +2,12 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { Layout, Menu } from 'antd'
 import {
-  BusinessOutlined,
+  ShopOutlined,
   DeploymentUnitOutlined,
-  RuleOutlined,
-  MonitorOutlined,
-  LineChartOutlined,
-  ExportOutlined,
+  FileTextOutlined,
+  DashboardOutlined,
+  FundOutlined,
+  UploadOutlined,
   BookOutlined
 } from '@ant-design/icons'
 import BusinessTypeManagement from './pages/BusinessTypeManagement'
@@ -23,7 +23,7 @@ const { Header, Content, Sider } = Layout
 const menuItems = [
   {
     key: '/business-type',
-    icon: <BusinessOutlined />,
+    icon: <ShopOutlined />,
     label: <Link to="/business-type">业务类型管理</Link>
   },
   {
@@ -33,22 +33,22 @@ const menuItems = [
   },
   {
     key: '/route-rule',
-    icon: <RuleOutlined />,
+    icon: <FileTextOutlined />,
     label: <Link to="/route-rule">路由规则配置</Link>
   },
   {
     key: '/event-monitor',
-    icon: <MonitorOutlined />,
+    icon: <DashboardOutlined />,
     label: <Link to="/event-monitor">事件监控</Link>
   },
   {
     key: '/instance-trace',
-    icon: <LineChartOutlined />,
+    icon: <FundOutlined />,
     label: <Link to="/instance-trace">实例追踪</Link>
   },
   {
     key: '/exit-config',
-    icon: <ExportOutlined />,
+    icon: <UploadOutlined />,
     label: <Link to="/exit-config">出口配置</Link>
   },
   {
