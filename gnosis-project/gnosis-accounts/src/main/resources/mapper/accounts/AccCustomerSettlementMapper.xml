@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.accounts.mapper.AccCustomerSettlementMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.accounts.domain.AccCustomerSettlement">
+        <id column="id" property="id"/>
+        <result column="settlement_no" property="settlementNo"/>
+        <result column="settlement_date" property="settlementDate"/>
+        <result column="customer_id" property="customerId"/>
+        <result column="customer_name" property="customerName"/>
+        <result column="settlement_type" property="settlementType"/>
+        <result column="settlement_amount" property="settlementAmount"/>
+        <result column="fee_amount" property="feeAmount"/>
+        <result column="actual_amount" property="actualAmount"/>
+        <result column="from_account_id" property="fromAccountId"/>
+        <result column="from_account_name" property="fromAccountName"/>
+        <result column="to_account_id" property="toAccountId"/>
+        <result column="to_account_name" property="toAccountName"/>
+        <result column="settlement_status" property="settlementStatus"/>
+        <result column="journal_id" property="journalId"/>
+        <result column="description" property="description"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, settlement_no, settlement_date, customer_id, customer_name, settlement_type, settlement_amount,
+        fee_amount, actual_amount, from_account_id, from_account_name, to_account_id, to_account_name,
+        settlement_status, journal_id, description, status, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.accounts.domain.AccCustomerSettlement">
+        INSERT INTO sys_acc_customer_settlement (
+            id, settlement_no, settlement_date, customer_id, customer_name, settlement_type, settlement_amount,
+            fee_amount, actual_amount, from_account_id, from_account_name, to_account_id, to_account_name,
+            settlement_status, journal_id, description, status, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{settlementNo}, #{settlementDate}, #{customerId}, #{customerName}, #{settlementType}, #{settlementAmount},
+            #{feeAmount}, #{actualAmount}, #{fromAccountId}, #{fromAccountName}, #{toAccountId}, #{toAccountName},
+            #{settlementStatus}, #{journalId}, #{description}, #{status}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.accounts.domain.AccCustomerSettlement">
+        UPDATE sys_acc_customer_settlement
+        <set>
+            <if test="settlementDate != null">settlement_date = #{settlementDate},</if>
+            <if test="customerId != null">customer_id = #{customerId},</if>
+            <if test="customerName != null">customer_name = #{customerName},</if>
+            <if test="settlementType != null">settlement_type = #{settlementType},</if>
+            <if test="settlementAmount != null">settlement_amount = #{settlementAmount},</if>
+            <if test="feeAmount != null">fee_amount = #{feeAmount},</if>
+            <if test="actualAmount != null">actual_amount = #{actualAmount},</if>
+            <if test="fromAccountId != null">from_account_id = #{fromAccountId},</if>
+            <if test="fromAccountName != null">from_account_name = #{fromAccountName},</if>
+            <if test="toAccountId != null">to_account_id = #{toAccountId},</if>
+            <if test="toAccountName != null">to_account_name = #{toAccountName},</if>
+            <if test="settlementStatus != null and settlementStatus != ''">settlement_status = #{settlementStatus},</if>
+            <if test="journalId != null">journal_id = #{journalId},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_customer_settlement WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.accounts.dto.settlement.AccCustomerSettlementQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_customer_settlement
+        <where>
+            <if test="settlementNo != null and settlementNo != ''">AND settlement_no = #{settlementNo}</if>
+            <if test="customerId != null and customerId != ''">AND customer_id = #{customerId}</if>
+            <if test="customerName != null and customerName != ''">AND customer_name LIKE CONCAT('%', #{customerName}, '%')</if>
+            <if test="settlementType != null and settlementType != ''">AND settlement_type = #{settlementType}</if>
+            <if test="settlementStatus != null and settlementStatus != ''">AND settlement_status = #{settlementStatus}</if>
+            <if test="settlementDateStart != null and settlementDateStart != ''">AND settlement_date &gt;= #{settlementDateStart}</if>
+            <if test="settlementDateEnd != null and settlementDateEnd != ''">AND settlement_date &lt;= #{settlementDateEnd}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.accounts.dto.settlement.AccCustomerSettlementQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_acc_customer_settlement
+        <where>
+            <if test="settlementNo != null and settlementNo != ''">AND settlement_no = #{settlementNo}</if>
+            <if test="customerId != null and customerId != ''">AND customer_id = #{customerId}</if>
+            <if test="customerName != null and customerName != ''">AND customer_name LIKE CONCAT('%', #{customerName}, '%')</if>
+            <if test="settlementType != null and settlementType != ''">AND settlement_type = #{settlementType}</if>
+            <if test="settlementStatus != null and settlementStatus != ''">AND settlement_status = #{settlementStatus}</if>
+            <if test="settlementDateStart != null and settlementDateStart != ''">AND settlement_date &gt;= #{settlementDateStart}</if>
+            <if test="settlementDateEnd != null and settlementDateEnd != ''">AND settlement_date &lt;= #{settlementDateEnd}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sys_acc_customer_settlement WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_acc_customer_settlement WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <update id="batchUpdateStatus">
+        UPDATE sys_acc_customer_settlement SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+</mapper>

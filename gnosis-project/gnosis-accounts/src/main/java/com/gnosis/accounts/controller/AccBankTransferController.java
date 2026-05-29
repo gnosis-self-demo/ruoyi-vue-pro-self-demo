@@ -1,0 +1,119 @@
+package com.gnosis.accounts.controller;
+
+import com.gnosis.accounts.dto.transfer.AccBankTransferCreateRequest;
+import com.gnosis.accounts.dto.transfer.AccBankTransferIdsRequest;
+import com.gnosis.accounts.dto.transfer.AccBankTransferQueryRequest;
+import com.gnosis.accounts.dto.transfer.AccBankTransferUpdateRequest;
+import com.gnosis.accounts.dto.transfer.AccBankTransferVO;
+import com.gnosis.accounts.service.AccBankTransferService;
+import com.gnosis.accounts.service.AccImportExportService;
+import com.gnosis.common.dto.CommonResponse;
+import com.gnosis.common.dto.PageRequest;
+import com.gnosis.common.dto.PageResult;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Map;
+
+@Api(tags = "银存结转管理")
+@RestController
+@RequestMapping("/accounts/transfer")
+public class AccBankTransferController {
+
+    @Autowired
+    private AccBankTransferService transferService;
+
+    @Autowired
+    private AccImportExportService importExportService;
+
+    @ApiOperation("分页查询结转列表")
+    @PostMapping("/page")
+    public CommonResponse<PageResult<AccBankTransferVO>> pageList(@RequestBody PageRequest<AccBankTransferQueryRequest> request) {
+        return CommonResponse.success(transferService.pageList(request));
+    }
+
+    @ApiOperation("查询结转详情")
+    @PostMapping("/detail")
+    public CommonResponse<AccBankTransferVO> detail(@RequestBody Map<String, String> request) {
+        String id = request.get("id");
+        return CommonResponse.success(transferService.detail(id));
+    }
+
+    @ApiOperation("新建结转")
+    @PostMapping("/create")
+    public CommonResponse<Void> create(@RequestBody AccBankTransferCreateRequest request) {
+        transferService.create(request);
+        return CommonResponse.success();
+    }
+
+    @ApiOperation("编辑结转")
+    @PostMapping("/update")
+    public CommonResponse<Void> update(@RequestBody AccBankTransferUpdateRequest request) {
+        transferService.update(request);
+        return CommonResponse.success();
+    }
+
+    @ApiOperation("删除结转")
+    @PostMapping("/delete")
+    public CommonResponse<Void> delete(@RequestBody Map<String, String> request) {
+        String id = request.get("id");
+        transferService.delete(id);
+        return CommonResponse.success();
+    }
+
+    @ApiOperation("批量删除结转")
+    @PostMapping("/batchDelete")
+    public CommonResponse<Void> batchDelete(@RequestBody AccBankTransferIdsRequest request) {
+        transferService.batchDelete(request);
+        return CommonResponse.success();
+    }
+
+    @ApiOperation("批量启用结转")
+    @PostMapping("/batchEnable")
+    public CommonResponse<Void> batchEnable(@RequestBody AccBankTransferIdsRequest request) {
+        transferService.batchEnable(request);
+        return CommonResponse.success();
+    }
+
+    @ApiOperation("批量禁用结转")
+    @PostMapping("/batchDisable")
+    public CommonResponse<Void> batchDisable(@RequestBody AccBankTransferIdsRequest request) {
+        transferService.batchDisable(request);
+        return CommonResponse.success();
+    }
+
+    @ApiOperation("执行结转")
+    @PostMapping("/executeTransfer")
+    public CommonResponse<Void> executeTransfer(@RequestBody Map<String, String> request) {
+        String id = request.get("id");
+        String operatorId = request.get("operatorId");
+        transferService.executeTransfer(id, operatorId);
+        return CommonResponse.success();
+    }
+
+    @ApiOperation("导出结转")
+    @PostMapping("/export")
+    public void export(@RequestBody AccBankTransferIdsRequest request, HttpServletResponse response) throws IOException {
+        importExportService.exportSubjects(null, response);
+    }
+
+    @ApiOperation("导入结转")
+    @PostMapping("/import")
+    public CommonResponse<Void> importTransfer(@RequestParam("file") MultipartFile file) {
+        try {
+            importExportService.importSubjects(file);
+            return CommonResponse.success();
+        } catch (Exception e) {
+            return CommonResponse.error("导入失败: " + e.getMessage());
+        }
+    }
+}

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.accounts.mapper.AccAccountMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.accounts.domain.AccAccount">
+        <id column="id" property="id"/>
+        <result column="account_no" property="accountNo"/>
+        <result column="account_name" property="accountName"/>
+        <result column="subject_id" property="subjectId"/>
+        <result column="account_type" property="accountType"/>
+        <result column="channel_code" property="channelCode"/>
+        <result column="customer_id" property="customerId"/>
+        <result column="customer_name" property="customerName"/>
+        <result column="currency" property="currency"/>
+        <result column="balance" property="balance"/>
+        <result column="frozen_amount" property="frozenAmount"/>
+        <result column="balance_direction" property="balanceDirection"/>
+        <result column="description" property="description"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, account_no, account_name, subject_id, account_type, channel_code, customer_id, customer_name,
+        currency, balance, frozen_amount, balance_direction, description, status,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.accounts.domain.AccAccount">
+        INSERT INTO sys_acc_account (
+            id, account_no, account_name, subject_id, account_type, channel_code, customer_id, customer_name,
+            currency, balance, frozen_amount, balance_direction, description, status,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{accountNo}, #{accountName}, #{subjectId}, #{accountType}, #{channelCode}, #{customerId}, #{customerName},
+            #{currency}, #{balance}, #{frozenAmount}, #{balanceDirection}, #{description}, #{status},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.accounts.domain.AccAccount">
+        UPDATE sys_acc_account
+        <set>
+            <if test="accountNo != null and accountNo != ''">account_no = #{accountNo},</if>
+            <if test="accountName != null and accountName != ''">account_name = #{accountName},</if>
+            <if test="subjectId != null and subjectId != ''">subject_id = #{subjectId},</if>
+            <if test="accountType != null and accountType != ''">account_type = #{accountType},</if>
+            <if test="channelCode != null">channel_code = #{channelCode},</if>
+            <if test="customerId != null">customer_id = #{customerId},</if>
+            <if test="customerName != null">customer_name = #{customerName},</if>
+            <if test="currency != null">currency = #{currency},</if>
+            <if test="balance != null">balance = #{balance},</if>
+            <if test="frozenAmount != null">frozen_amount = #{frozenAmount},</if>
+            <if test="balanceDirection != null and balanceDirection != ''">balance_direction = #{balanceDirection},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateBalance">
+        UPDATE sys_acc_account SET balance = balance + #{amount}, update_time = CURRENT_TIMESTAMP WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_account WHERE id = #{id}
+    </select>
+
+    <select id="selectByAccountNo" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_account WHERE account_no = #{accountNo}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.accounts.dto.account.AccAccountQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_account
+        <where>
+            <if test="accountNo != null and accountNo != ''">AND account_no = #{accountNo}</if>
+            <if test="accountName != null and accountName != ''">AND account_name LIKE CONCAT('%', #{accountName}, '%')</if>
+            <if test="accountType != null and accountType != ''">AND account_type = #{accountType}</if>
+            <if test="channelCode != null and channelCode != ''">AND channel_code = #{channelCode}</if>
+            <if test="customerId != null and customerId != ''">AND customer_id = #{customerId}</if>
+            <if test="customerName != null and customerName != ''">AND customer_name LIKE CONCAT('%', #{customerName}, '%')</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.accounts.dto.account.AccAccountQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_acc_account
+        <where>
+            <if test="accountNo != null and accountNo != ''">AND account_no = #{accountNo}</if>
+            <if test="accountName != null and accountName != ''">AND account_name LIKE CONCAT('%', #{accountName}, '%')</if>
+            <if test="accountType != null and accountType != ''">AND account_type = #{accountType}</if>
+            <if test="channelCode != null and channelCode != ''">AND channel_code = #{channelCode}</if>
+            <if test="customerId != null and customerId != ''">AND customer_id = #{customerId}</if>
+            <if test="customerName != null and customerName != ''">AND customer_name LIKE CONCAT('%', #{customerName}, '%')</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+
+    <select id="selectByAccountType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_account WHERE account_type = #{accountType} AND status = 1
+    </select>
+
+    <select id="selectByChannelCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_account WHERE channel_code = #{channelCode}
+        <if test="accountType != null and accountType != ''">AND account_type = #{accountType}</if>
+        AND status = 1
+    </select>
+
+    <select id="selectByCustomerId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_account WHERE customer_id = #{customerId} AND status = 1
+    </select>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sys_acc_account WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_acc_account WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <update id="batchUpdateStatus">
+        UPDATE sys_acc_account SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+</mapper>

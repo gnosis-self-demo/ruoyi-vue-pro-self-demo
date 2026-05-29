@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.accounts.mapper.AccJournalMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.accounts.domain.AccJournal">
+        <id column="id" property="id"/>
+        <result column="journal_no" property="journalNo"/>
+        <result column="business_type" property="businessType"/>
+        <result column="business_id" property="businessId"/>
+        <result column="transaction_type" property="transactionType"/>
+        <result column="total_debit" property="totalDebit"/>
+        <result column="total_credit" property="totalCredit"/>
+        <result column="accounting_date" property="accountingDate"/>
+        <result column="status" property="status"/>
+        <result column="description" property="description"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, journal_no, business_type, business_id, transaction_type, total_debit, total_credit,
+        accounting_date, status, description, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.accounts.domain.AccJournal">
+        INSERT INTO sys_acc_journal (
+            id, journal_no, business_type, business_id, transaction_type, total_debit, total_credit,
+            accounting_date, status, description, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{journalNo}, #{businessType}, #{businessId}, #{transactionType}, #{totalDebit}, #{totalCredit},
+            #{accountingDate}, #{status}, #{description}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.accounts.domain.AccJournal">
+        UPDATE sys_acc_journal
+        <set>
+            <if test="businessType != null">business_type = #{businessType},</if>
+            <if test="businessId != null">business_id = #{businessId},</if>
+            <if test="transactionType != null">transaction_type = #{transactionType},</if>
+            <if test="totalDebit != null">total_debit = #{totalDebit},</if>
+            <if test="totalCredit != null">total_credit = #{totalCredit},</if>
+            <if test="accountingDate != null">accounting_date = #{accountingDate},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_journal WHERE id = #{id}
+    </select>
+
+    <select id="selectByJournalNo" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_journal WHERE journal_no = #{journalNo}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.accounts.dto.journal.AccJournalQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_journal
+        <where>
+            <if test="journalNo != null and journalNo != ''">AND journal_no = #{journalNo}</if>
+            <if test="businessType != null and businessType != ''">AND business_type = #{businessType}</if>
+            <if test="businessId != null and businessId != ''">AND business_id = #{businessId}</if>
+            <if test="transactionType != null and transactionType != ''">AND transaction_type = #{transactionType}</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+            <if test="accountingDateStart != null and accountingDateStart != ''">AND accounting_date &gt;= #{accountingDateStart}</if>
+            <if test="accountingDateEnd != null and accountingDateEnd != ''">AND accounting_date &lt;= #{accountingDateEnd}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.accounts.dto.journal.AccJournalQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_acc_journal
+        <where>
+            <if test="journalNo != null and journalNo != ''">AND journal_no = #{journalNo}</if>
+            <if test="businessType != null and businessType != ''">AND business_type = #{businessType}</if>
+            <if test="businessId != null and businessId != ''">AND business_id = #{businessId}</if>
+            <if test="transactionType != null and transactionType != ''">AND transaction_type = #{transactionType}</if>
+            <if test="status != null and status != ''">AND status = #{status}</if>
+            <if test="accountingDateStart != null and accountingDateStart != ''">AND accounting_date &gt;= #{accountingDateStart}</if>
+            <if test="accountingDateEnd != null and accountingDateEnd != ''">AND accounting_date &lt;= #{accountingDateEnd}</if>
+        </where>
+    </select>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sys_acc_journal WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_acc_journal WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+</mapper>

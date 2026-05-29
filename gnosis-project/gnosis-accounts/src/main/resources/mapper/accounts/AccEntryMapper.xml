@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.accounts.mapper.AccEntryMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.accounts.domain.AccEntry">
+        <id column="id" property="id"/>
+        <result column="journal_id" property="journalId"/>
+        <result column="journal_no" property="journalNo"/>
+        <result column="account_id" property="accountId"/>
+        <result column="account_no" property="accountNo"/>
+        <result column="account_name" property="accountName"/>
+        <result column="subject_code" property="subjectCode"/>
+        <result column="subject_name" property="subjectName"/>
+        <result column="entry_direction" property="entryDirection"/>
+        <result column="amount" property="amount"/>
+        <result column="description" property="description"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, journal_id, journal_no, account_id, account_no, account_name, subject_code, subject_name,
+        entry_direction, amount, description, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.accounts.domain.AccEntry">
+        INSERT INTO sys_acc_entry (
+            id, journal_id, journal_no, account_id, account_no, account_name, subject_code, subject_name,
+            entry_direction, amount, description, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{journalId}, #{journalNo}, #{accountId}, #{accountNo}, #{accountName}, #{subjectCode}, #{subjectName},
+            #{entryDirection}, #{amount}, #{description}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO sys_acc_entry (
+            id, journal_id, journal_no, account_id, account_no, account_name, subject_code, subject_name,
+            entry_direction, amount, description, create_user_id, update_user_id, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.journalId}, #{item.journalNo}, #{item.accountId}, #{item.accountNo}, #{item.accountName},
+             #{item.subjectCode}, #{item.subjectName}, #{item.entryDirection}, #{item.amount}, #{item.description},
+             #{item.createUserId}, #{item.updateUserId}, #{item.createTime}, #{item.updateTime})
+        </foreach>
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_entry WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.accounts.dto.entry.AccEntryQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_entry
+        <where>
+            <if test="journalId != null and journalId != ''">AND journal_id = #{journalId}</if>
+            <if test="journalNo != null and journalNo != ''">AND journal_no = #{journalNo}</if>
+            <if test="accountId != null and accountId != ''">AND account_id = #{accountId}</if>
+            <if test="entryDirection != null and entryDirection != ''">AND entry_direction = #{entryDirection}</if>
+        </where>
+        ORDER BY create_time ASC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.accounts.dto.entry.AccEntryQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_acc_entry
+        <where>
+            <if test="journalId != null and journalId != ''">AND journal_id = #{journalId}</if>
+            <if test="journalNo != null and journalNo != ''">AND journal_no = #{journalNo}</if>
+            <if test="accountId != null and accountId != ''">AND account_id = #{accountId}</if>
+            <if test="entryDirection != null and entryDirection != ''">AND entry_direction = #{entryDirection}</if>
+        </where>
+    </select>
+
+    <select id="selectByJournalId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sys_acc_entry WHERE journal_id = #{journalId} ORDER BY create_time ASC
+    </select>
+
+    <delete id="deleteByJournalId">
+        DELETE FROM sys_acc_entry WHERE journal_id = #{journalId}
+    </delete>
+
+</mapper>

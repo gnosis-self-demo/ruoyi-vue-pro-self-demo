@@ -22,6 +22,7 @@
         <module>gnosis-paramcheck</module>
         <module>gnosis-process-orchestration</module>
         <module>gnosis-datamapping</module>
+        <module>gnosis-accounts</module>
     </modules>
 
     <properties>
