@@ -30,18 +30,13 @@ public class ExcelImportController {
     @PostMapping("/data-exportor/import/execute")
     public BaseResponse<ImportResult> execute(@RequestBody ImportExecuteRequest body) {
         try {
-            // 校验
             if (body.getJdbcUrl() == null || body.getJdbcUrl().trim().isEmpty()) {
                 return BaseResponse.error("jdbcUrl 不能为空");
             }
             if (body.getUsername() == null || body.getUsername().trim().isEmpty()) {
                 return BaseResponse.error("username 不能为空");
             }
-            if (body.getTableName() == null || body.getTableName().trim().isEmpty()) {
-                return BaseResponse.error("tableName 不能为空");
-            }
 
-            // base64 解码并写入临时文件
             byte[] fileBytes = body.decodeFileData();
             String fileName = body.getFileName() != null ? body.getFileName() : "import.xlsx";
 
@@ -53,7 +48,20 @@ public class ExcelImportController {
 
             try {
                 ImportRequest request = body.toImportRequest();
-                ImportResult result = excelImportService.importFromExcel(tempFilePath, request);
+                ImportResult result;
+
+                // 根据文件扩展名路由：.zip → CSV多表导入，.xlsx/.xls → Excel导入
+                String lowerName = fileName.toLowerCase();
+                if (lowerName.endsWith(".zip")) {
+                    result = excelImportService.importFromCsvZip(tempFilePath, request,
+                            new com.gnosis.dataexportor.listener.LoggingProgressListener());
+                } else {
+                    if (request.getTableName() == null || request.getTableName().trim().isEmpty()) {
+                        return BaseResponse.error("Excel导入需要指定 tableName");
+                    }
+                    result = excelImportService.importFromExcel(tempFilePath, request);
+                }
+
                 return BaseResponse.success(result);
             } finally {
                 try {

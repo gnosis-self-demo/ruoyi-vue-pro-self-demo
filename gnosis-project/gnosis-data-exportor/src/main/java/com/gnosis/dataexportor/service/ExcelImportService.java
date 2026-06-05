@@ -14,4 +14,10 @@ public interface ExcelImportService {
 
     ImportResult importFromExcel(String excelPath, ImportRequest request)
             throws IOException, SQLException;
+
+    /**
+     * 从ZIP导入（含多个CSV，每个文件名=目标表名）
+     */
+    ImportResult importFromCsvZip(String zipPath, ImportRequest request, ProgressListener listener)
+            throws IOException, SQLException;
 }

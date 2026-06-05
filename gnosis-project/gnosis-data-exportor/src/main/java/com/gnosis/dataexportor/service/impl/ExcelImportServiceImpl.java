@@ -15,9 +15,12 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -29,12 +32,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Slf4j
 @Service
 public class ExcelImportServiceImpl implements ExcelImportService {
 
     private static final int DEFAULT_BATCH_SIZE = 5000;
+
+    // ──────────────── Excel 导入 ────────────────
 
     @Override
     public ImportResult importFromExcel(String excelPath, ImportRequest request) throws IOException, SQLException {
@@ -51,7 +58,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         String username = validateParam(request.getUsername(), "username");
         String password = request.getPassword() != null ? request.getPassword() : "";
 
-        log.info("开始导入，文件: {}，目标表: {}", excelPath, request.getTableName());
+        log.info("开始Excel导入，文件: {}，目标表: {}", excelPath, request.getTableName());
 
         try (InputStream is = new FileInputStream(excelPath);
              Workbook workbook = new XSSFWorkbook(is)) {
@@ -62,118 +69,268 @@ public class ExcelImportServiceImpl implements ExcelImportService {
             long totalSheetRows = 0;
             for (int si = 0; si < totalSheets; si++) {
                 Sheet sheet = workbook.getSheetAt(si);
-                int lastRowNum = sheet.getLastRowNum();
-                if (lastRowNum > 0) {
-                    totalSheetRows += lastRowNum;
-                }
+                if (sheet.getLastRowNum() > 0) totalSheetRows += sheet.getLastRowNum();
             }
 
             int batchSize = request.getBatchSize() != null ? request.getBatchSize()
                     : BatchSizeCalculator.calculateImportBatchSize(totalSheetRows);
-
-            log.info("检测到{}个Sheet，估算总行数：{}，batchSize：{}", totalSheets, totalSheetRows, batchSize);
-
             listener.onStart(totalSheetRows, totalSheets);
 
             List<String> dbColumns = getTableColumns(request.getTableName(), jdbcUrl, username, password);
 
             for (int si = 0; si < totalSheets; si++) {
                 Sheet sheet = workbook.getSheetAt(si);
-                int lastRowNum = sheet.getLastRowNum();
-                if (lastRowNum < 1) {
-                    continue;
-                }
-
-                log.info("开始处理Sheet[{}]，行数：{}", si, lastRowNum);
+                if (sheet.getLastRowNum() < 1) continue;
 
                 Row headerRow = sheet.getRow(0);
-                List<String> excelColumns = readHeaderRow(headerRow);
+                List<String> excelColumns = readExcelHeaderRow(headerRow);
+                List<Integer> mapping = buildColumnMapping(excelColumns, dbColumns, request.getColumnMapping());
+                String insertSql = buildInsertSql(request.getTableName(), dbColumns, mapping);
 
-                List<Integer> columnMappingIndexes = buildColumnMapping(excelColumns, dbColumns, request.getColumnMapping());
-
-                String insertSql = buildInsertSql(request.getTableName(), dbColumns, columnMappingIndexes);
-
-                long processedInSheet = 0;
-                List<List<Object>> batchRows = new ArrayList<>();
-
-                for (int ri = 1; ri <= lastRowNum; ri++) {
-                    Row dataRow = sheet.getRow(ri);
-                    if (dataRow == null || isRowEmpty(dataRow)) {
-                        continue;
-                    }
-
-                    try {
-                        List<Object> rowValues = extractRowValues(dataRow, dbColumns, columnMappingIndexes);
-                        batchRows.add(rowValues);
-
-                        if (batchRows.size() >= batchSize) {
-                            executeBatchInsert(insertSql, batchRows, result, jdbcUrl, username, password);
-                            result.setSuccessRows(result.getSuccessRows() + batchRows.size());
-                            processedInSheet += batchRows.size();
-                            batchRows.clear();
-
-                            listener.onProgress(result.getTotalRows(), totalSheetRows,
-                                    (int) (result.getTotalRows() / batchSize) + 1);
-                        }
-
-                        result.setTotalRows(result.getTotalRows() + 1);
-                    } catch (Exception e) {
-                        result.setFailedRows(result.getFailedRows() + 1);
-                        ErrorRecord errorRecord = new ErrorRecord();
-                        errorRecord.setSheetIndex(si);
-                        errorRecord.setRowNumber(ri);
-                        errorRecord.setErrorMessage(e.getMessage());
-                        result.getErrors().add(errorRecord);
-
-                        boolean shouldContinue = listener.onError("行数据解析失败: " + e.getMessage(), ri, e);
-                        if (!shouldContinue) {
-                            break;
-                        }
-                    }
-                }
-
-                if (!batchRows.isEmpty()) {
-                    executeBatchInsert(insertSql, batchRows, result, jdbcUrl, username, password);
-                    result.setSuccessRows(result.getSuccessRows() + batchRows.size());
-                    batchRows.clear();
-                }
-
-                log.info("Sheet[{}]处理完成，成功：{} 行", si, processedInSheet);
+                processSheet(sheet, dbColumns, mapping, insertSql, batchSize, si, totalSheetRows,
+                        result, listener, jdbcUrl, username, password);
             }
 
-            long durationMs = System.currentTimeMillis() - startTime;
-            result.setDurationMs(durationMs);
-
-            listener.onComplete(result.getTotalRows(), totalSheets, durationMs);
-
-            log.info("导入完成，总处理行数：{}，成功：{}，失败：{}，跳过：{}，耗时：{} ms",
-                    result.getTotalRows(), result.getSuccessRows(), result.getFailedRows(),
-                    result.getSkippedRows(), durationMs);
+            result.setDurationMs(System.currentTimeMillis() - startTime);
+            listener.onComplete(result.getTotalRows(), totalSheets, result.getDurationMs());
+            log.info("Excel导入完成，总行数：{}，成功：{}，失败：{}，耗时：{} ms",
+                    result.getTotalRows(), result.getSuccessRows(), result.getFailedRows(), result.getDurationMs());
         }
-
         return result;
     }
 
-    private String validateParam(String value, String name) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException("数据库连接参数 " + name + " 不能为空");
+    private void processSheet(Sheet sheet, List<String> dbColumns, List<Integer> mapping,
+                               String insertSql, int batchSize, int sheetIdx, long totalRows,
+                               ImportResult result, ProgressListener listener,
+                               String jdbcUrl, String username, String password) {
+        int lastRowNum = sheet.getLastRowNum();
+        log.info("处理Sheet[{}]，行数：{}", sheetIdx, lastRowNum);
+
+        long processed = 0;
+        List<List<Object>> batch = new ArrayList<>();
+
+        for (int ri = 1; ri <= lastRowNum; ri++) {
+            Row dataRow = sheet.getRow(ri);
+            if (dataRow == null || isExcelRowEmpty(dataRow)) continue;
+
+            try {
+                List<Object> values = extractExcelRowValues(dataRow, dbColumns, mapping);
+                batch.add(values);
+                if (batch.size() >= batchSize) {
+                    executeBatchInsert(insertSql, batch, jdbcUrl, username, password);
+                    result.setSuccessRows(result.getSuccessRows() + batch.size());
+                    processed += batch.size();
+                    batch.clear();
+                    listener.onProgress(result.getTotalRows(), totalRows, (int) (result.getTotalRows() / batchSize) + 1);
+                }
+                result.setTotalRows(result.getTotalRows() + 1);
+            } catch (Exception e) {
+                result.setFailedRows(result.getFailedRows() + 1);
+                ErrorRecord er = new ErrorRecord();
+                er.setSheetIndex(sheetIdx);
+                er.setRowNumber(ri);
+                er.setErrorMessage(e.getMessage());
+                result.getErrors().add(er);
+                if (!listener.onError("行数据解析失败", ri, e)) break;
+            }
         }
-        return value.trim();
+        if (!batch.isEmpty()) {
+            executeBatchInsert(insertSql, batch, jdbcUrl, username, password);
+            result.setSuccessRows(result.getSuccessRows() + batch.size());
+            batch.clear();
+        }
+        log.info("Sheet[{}]完成，成功：{} 行", sheetIdx, processed);
     }
 
-    private Connection createConnection(String jdbcUrl, String username, String password) throws SQLException {
-        return DriverManager.getConnection(jdbcUrl, username, password);
+    // ──────────────── CSV/ZIP 导入 ────────────────
+
+    @Override
+    public ImportResult importFromCsvZip(String zipPath, ImportRequest request, ProgressListener listener)
+            throws IOException, SQLException {
+        long startTime = System.currentTimeMillis();
+        ImportResult result = new ImportResult();
+
+        String jdbcUrl = validateParam(request.getJdbcUrl(), "jdbcUrl");
+        String username = validateParam(request.getUsername(), "username");
+        String password = request.getPassword() != null ? request.getPassword() : "";
+
+        log.info("开始ZIP导入，文件: {}", zipPath);
+
+        try (FileInputStream fis = new FileInputStream(zipPath);
+             ZipInputStream zis = new ZipInputStream(fis, StandardCharsets.UTF_8)) {
+
+            // 先遍历所有条目统计信息
+            List<ZipEntryData> entries = new ArrayList<>();
+            ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                if (!ze.isDirectory() && ze.getName().toLowerCase().endsWith(".csv")) {
+                    ZipEntryData ed = new ZipEntryData();
+                    ed.name = ze.getName();
+                    // 从文件名提取表名：去除路径和.csv后缀
+                    String baseName = ze.getName();
+                    int lastSep = Math.max(baseName.lastIndexOf('/'), baseName.lastIndexOf('\\'));
+                    if (lastSep >= 0) baseName = baseName.substring(lastSep + 1);
+                    ed.tableName = baseName.replaceAll("\\.csv$", "");
+                    entries.add(ed);
+                }
+                zis.closeEntry();
+            }
+
+            int totalSheets = entries.size();
+            result.setTotalSheets(totalSheets);
+            listener.onStart(-1, totalSheets);
+            log.info("ZIP包含{}个CSV文件", totalSheets);
+
+            // 重新打开ZIP进行导入
+            for (ZipEntryData ed : entries) {
+                importCsvEntry(zipPath, ed, result, listener, jdbcUrl, username, password, totalSheets);
+            }
+        }
+
+        result.setDurationMs(System.currentTimeMillis() - startTime);
+        listener.onComplete(result.getTotalRows(), result.getTotalSheets(), result.getDurationMs());
+        log.info("ZIP导入完成，总行数：{}，成功：{}，失败：{}，耗时：{} ms",
+                result.getTotalRows(), result.getSuccessRows(), result.getFailedRows(), result.getDurationMs());
+        return result;
     }
 
-    private List<String> readHeaderRow(Row headerRow) {
+    private void importCsvEntry(String zipPath, ZipEntryData entryData, ImportResult result,
+                                 ProgressListener listener, String jdbcUrl, String username, String password,
+                                 int totalSheets) throws IOException, SQLException {
+        log.info("处理CSV: {} → 表: {}", entryData.name, entryData.tableName);
+
+        // 先读取CSV全部行（CSV文件通常不大，可以在内存中处理）
+        List<List<String>> allRows = new ArrayList<>();
+        try (FileInputStream fis = new FileInputStream(zipPath);
+             ZipInputStream zis = new ZipInputStream(fis, StandardCharsets.UTF_8)) {
+            ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                if (ze.getName().equals(entryData.name)) {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(zis, StandardCharsets.UTF_8))) {
+                        // 跳过BOM
+                        reader.mark(1);
+                        int first = reader.read();
+                        if (first != '\uFEFF') reader.reset();
+
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            List<String> fields = parseCsvLine(line);
+                            if (!isCsvRowEmpty(fields)) {
+                                allRows.add(fields);
+                            }
+                        }
+                    }
+                    break;
+                }
+                zis.closeEntry();
+            }
+        }
+
+        if (allRows.isEmpty()) {
+            log.info("CSV无数据，跳过");
+            return;
+        }
+
+        // 第一行是表头
+        List<String> header = allRows.get(0);
+        List<String> dbColumns = getTableColumns(entryData.tableName, jdbcUrl, username, password);
+        List<Integer> mapping = buildColumnMapping(header, dbColumns, null);
+        String insertSql = buildInsertSql(entryData.tableName, dbColumns, mapping);
+
+        int batchSize = DEFAULT_BATCH_SIZE;
+        List<List<Object>> batch = new ArrayList<>();
+
+        for (int ri = 1; ri < allRows.size(); ri++) {
+            List<String> fields = allRows.get(ri);
+            // 补齐缺失的列
+            while (fields.size() < header.size()) fields.add("");
+
+            try {
+                List<Object> values = mapCsvValues(fields, dbColumns, mapping);
+                batch.add(values);
+                if (batch.size() >= batchSize) {
+                    executeBatchInsert(insertSql, batch, jdbcUrl, username, password);
+                    result.setSuccessRows(result.getSuccessRows() + batch.size());
+                    batch.clear();
+                    listener.onProgress(result.getTotalRows(), -1, (int) (result.getTotalRows() / batchSize) + 1);
+                }
+                result.setTotalRows(result.getTotalRows() + 1);
+            } catch (Exception e) {
+                result.setFailedRows(result.getFailedRows() + 1);
+                ErrorRecord er = new ErrorRecord();
+                er.setSheetIndex(0);
+                er.setRowNumber(ri);
+                er.setErrorMessage(e.getMessage());
+                result.getErrors().add(er);
+                if (!listener.onError("行数据解析失败", ri, e)) break;
+            }
+        }
+        if (!batch.isEmpty()) {
+            executeBatchInsert(insertSql, batch, jdbcUrl, username, password);
+            result.setSuccessRows(result.getSuccessRows() + batch.size());
+        }
+
+        log.info("CSV导入完成，表：{}，成功：{} 行", entryData.tableName, allRows.size() - 1);
+    }
+
+    // ──────────────── CSV 解析 (RFC 4180) ────────────────
+
+    static List<String> parseCsvLine(String line) {
+        List<String> fields = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (inQuotes) {
+                if (c == '"') {
+                    if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                        sb.append('"');
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    sb.append(c);
+                }
+            } else {
+                if (c == '"') {
+                    inQuotes = true;
+                } else if (c == ',') {
+                    fields.add(sb.toString());
+                    sb.setLength(0);
+                } else {
+                    sb.append(c);
+                }
+            }
+        }
+        fields.add(sb.toString());
+        return fields;
+    }
+
+    private boolean isCsvRowEmpty(List<String> fields) {
+        for (String f : fields) {
+            if (f != null && !f.isEmpty()) return false;
+        }
+        return true;
+    }
+
+    private List<Object> mapCsvValues(List<String> fields, List<String> dbColumns, List<Integer> mapping) {
+        List<Object> values = new ArrayList<>();
+        for (int i = 0; i < dbColumns.size(); i++) {
+            Integer idx = mapping.get(i);
+            values.add((idx != null && idx >= 0 && idx < fields.size()) ? fields.get(idx) : null);
+        }
+        return values;
+    }
+
+    // ──────────────── 共用方法 ────────────────
+
+    private List<String> readExcelHeaderRow(Row headerRow) {
         List<String> columns = new ArrayList<>();
-        if (headerRow == null) {
-            return columns;
-        }
+        if (headerRow == null) return columns;
         int cellCount = headerRow.getLastCellNum();
-        for (int i = 0; i < cellCount; i++) {
-            columns.add(ExcelUtils.getCellStringValue(headerRow.getCell(i)));
-        }
+        for (int i = 0; i < cellCount; i++) columns.add(ExcelUtils.getCellStringValue(headerRow.getCell(i)));
         return columns;
     }
 
@@ -184,120 +341,101 @@ public class ExcelImportServiceImpl implements ExcelImportService {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + " WHERE 1=0")) {
             ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
-                columns.add(metaData.getColumnName(i));
-            }
+            for (int i = 1; i <= metaData.getColumnCount(); i++) columns.add(metaData.getColumnName(i));
         }
         return columns;
     }
 
-    private List<Integer> buildColumnMapping(List<String> excelColumns, List<String> dbColumns,
+    private List<Integer> buildColumnMapping(List<String> sourceColumns, List<String> dbColumns,
                                               Map<String, String> explicitMapping) {
-        Map<String, Integer> dbColumnIndex = new HashMap<>();
-        for (int i = 0; i < dbColumns.size(); i++) {
-            dbColumnIndex.put(dbColumns.get(i).toLowerCase(), i);
-        }
+        Map<String, Integer> dbIdx = new HashMap<>();
+        for (int i = 0; i < dbColumns.size(); i++) dbIdx.put(dbColumns.get(i).toLowerCase(), i);
 
         List<Integer> mapping = new ArrayList<>();
-        for (int i = 0; i < dbColumns.size(); i++) {
-            mapping.add(-1);
+        for (int i = 0; i < dbColumns.size(); i++) mapping.add(-1);
+
+        for (int si = 0; si < sourceColumns.size(); si++) {
+            String sc = sourceColumns.get(si);
+            if (sc == null || sc.isEmpty()) continue;
+
+            String target = (explicitMapping != null && explicitMapping.containsKey(sc))
+                    ? explicitMapping.get(sc) : sc.toLowerCase();
+            Integer di = dbIdx.get(target.toLowerCase());
+            if (di != null && di < mapping.size()) mapping.set(di, si);
         }
-
-        for (int ei = 0; ei < excelColumns.size(); ei++) {
-            String excelCol = excelColumns.get(ei);
-            if (excelCol == null || excelCol.isEmpty()) {
-                continue;
-            }
-
-            String targetCol;
-
-            if (explicitMapping != null && explicitMapping.containsKey(excelCol)) {
-                targetCol = explicitMapping.get(excelCol);
-            } else {
-                targetCol = excelCol.toLowerCase();
-            }
-
-            Integer dbIdx = dbColumnIndex.get(targetCol.toLowerCase());
-            if (dbIdx != null && dbIdx < mapping.size()) {
-                mapping.set(dbIdx, ei);
-            }
-        }
-
         return mapping;
     }
 
     private String buildInsertSql(String tableName, List<String> dbColumns, List<Integer> mapping) {
-        StringBuilder sql = new StringBuilder("INSERT INTO ");
-        sql.append(tableName).append(" (");
-
-        List<String> mappedColumns = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("INSERT INTO ").append(tableName).append(" (");
+        List<String> cols = new ArrayList<>();
         for (int i = 0; i < dbColumns.size(); i++) {
-            if (mapping.get(i) >= 0) {
-                mappedColumns.add(dbColumns.get(i));
-            }
+            if (mapping.get(i) >= 0) cols.add(dbColumns.get(i));
         }
-
-        for (int i = 0; i < mappedColumns.size(); i++) {
+        for (int i = 0; i < cols.size(); i++) {
             if (i > 0) sql.append(", ");
-            sql.append(mappedColumns.get(i));
+            sql.append(cols.get(i));
         }
         sql.append(") VALUES (");
-        for (int i = 0; i < mappedColumns.size(); i++) {
+        for (int i = 0; i < cols.size(); i++) {
             if (i > 0) sql.append(", ");
             sql.append("?");
         }
         sql.append(")");
-
         return sql.toString();
     }
 
-    private List<Object> extractRowValues(Row row, List<String> dbColumns, List<Integer> mapping) {
+    private List<Object> extractExcelRowValues(Row row, List<String> dbColumns, List<Integer> mapping) {
         List<Object> values = new ArrayList<>();
         for (int i = 0; i < dbColumns.size(); i++) {
-            Integer excelIdx = mapping.get(i);
-            if (excelIdx != null && excelIdx >= 0) {
-                values.add(ExcelUtils.getCellStringValue(row.getCell(excelIdx)));
-            } else {
-                values.add(null);
-            }
+            Integer idx = mapping.get(i);
+            values.add((idx != null && idx >= 0) ? ExcelUtils.getCellStringValue(row.getCell(idx)) : null);
         }
         return values;
     }
 
-    private void executeBatchInsert(String sql, List<List<Object>> batchRows, ImportResult result,
+    private void executeBatchInsert(String sql, List<List<Object>> batchRows,
                                      String jdbcUrl, String username, String password) {
         try (Connection conn = createConnection(jdbcUrl, username, password);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             conn.setAutoCommit(false);
             for (List<Object> row : batchRows) {
-                int paramIdx = 1;
+                int idx = 1;
                 for (Object value : row) {
-                    if (value != null) {
-                        pstmt.setString(paramIdx, value.toString());
-                    } else {
-                        pstmt.setNull(paramIdx, java.sql.Types.VARCHAR);
-                    }
-                    paramIdx++;
+                    if (value != null) pstmt.setString(idx, value.toString());
+                    else pstmt.setNull(idx, java.sql.Types.VARCHAR);
+                    idx++;
                 }
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
             conn.commit();
         } catch (SQLException e) {
-            log.warn("批量插入失败: {}", e.getMessage());
             throw new RuntimeException("批量插入失败: " + e.getMessage(), e);
         }
     }
 
-    private boolean isRowEmpty(Row row) {
-        int cellCount = row.getLastCellNum();
-        for (int i = 0; i < cellCount; i++) {
-            String value = ExcelUtils.getCellStringValue(row.getCell(i));
-            if (value != null && !value.isEmpty()) {
-                return false;
-            }
+    private boolean isExcelRowEmpty(Row row) {
+        int cc = row.getLastCellNum();
+        for (int i = 0; i < cc; i++) {
+            String v = ExcelUtils.getCellStringValue(row.getCell(i));
+            if (v != null && !v.isEmpty()) return false;
         }
         return true;
+    }
+
+    private String validateParam(String value, String name) {
+        if (value == null || value.trim().isEmpty())
+            throw new IllegalArgumentException("数据库连接参数 " + name + " 不能为空");
+        return value.trim();
+    }
+
+    private Connection createConnection(String jdbcUrl, String username, String password) throws SQLException {
+        return DriverManager.getConnection(jdbcUrl, username, password);
+    }
+
+    private static class ZipEntryData {
+        String name;
+        String tableName;
     }
 }

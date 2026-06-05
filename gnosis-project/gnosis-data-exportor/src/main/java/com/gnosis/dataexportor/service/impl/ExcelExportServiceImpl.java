@@ -24,6 +24,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
@@ -47,38 +49,43 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         String password = request.getPassword() != null ? request.getPassword() : "";
 
         long startTime = System.currentTimeMillis();
-
-        response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=export_data.csv");
-
         long totalExportedRows = 0;
         int totalEntries = entries.size();
+        boolean multiple = totalEntries > 1;
 
-        try (Writer writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8)) {
-            // UTF-8 BOM for Excel compatibility
-            writer.write('\uFEFF');
-
-            for (int entryIdx = 0; entryIdx < entries.size(); entryIdx++) {
-                ExportRequest.SqlEntry entry = entries.get(entryIdx);
-
-                // blank line between entries
-                if (entryIdx > 0) {
-                    writer.write("\r\n");
+        if (multiple) {
+            // 多条SQL → ZIP，每个SQL一个CSV，sheetName作文件名
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=export_data.zip");
+            try (ZipOutputStream zos = new ZipOutputStream(response.getOutputStream())) {
+                for (ExportRequest.SqlEntry entry : entries) {
+                    String csvName = entry.getSheetName() + ".csv";
+                    zos.putNextEntry(new ZipEntry(csvName));
+                    Writer writer = new OutputStreamWriter(zos, StandardCharsets.UTF_8);
+                    writer.write('\uFEFF'); // UTF-8 BOM
+                    long rows = exportSingleSqlToCsv(writer, entry, listener, jdbcUrl, username, password);
+                    writer.flush();
+                    zos.closeEntry();
+                    totalExportedRows += rows;
                 }
-
-                long rows = exportSingleSqlToCsv(writer, entry, listener, jdbcUrl, username, password);
-                totalExportedRows += rows;
             }
-
-            writer.flush();
+        } else {
+            // 单条SQL → CSV
+            response.setContentType("text/csv;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment; filename=export_data.csv");
+            try (Writer writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8)) {
+                writer.write('\uFEFF');
+                totalExportedRows = exportSingleSqlToCsv(writer, entries.get(0), listener, jdbcUrl, username, password);
+                writer.flush();
+            }
         }
 
         long durationMs = System.currentTimeMillis() - startTime;
         listener.onComplete(totalExportedRows, totalEntries, durationMs);
-        log.info("CSV导出完成，总行数：{}，总条目数：{}，耗时：{} ms", totalExportedRows, totalEntries, durationMs);
+        log.info("导出完成，总行数：{}，条目数：{}，耗时：{} ms", totalExportedRows, totalEntries, durationMs);
     }
 
-    // ──────────────── single SQL export ────────────────
+    // ──────────────── single SQL → CSV ────────────────
 
     private long exportSingleSqlToCsv(Writer writer, ExportRequest.SqlEntry entry,
                                        ProgressListener listener,
@@ -102,9 +109,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             String pagingSql = SqlUtils.buildPagingSql(sql, batchSize, offset);
             List<Object[]> batchData = executePagingQuery(pagingSql, jdbcUrl, username, password);
 
-            if (totalRowsUnknown && batchData.isEmpty()) {
-                break;
-            }
+            if (totalRowsUnknown && batchData.isEmpty()) break;
 
             if (columnNames == null && !batchData.isEmpty()) {
                 columnNames = resolveColumnNames(sql, entry.getColumnNames(), jdbcUrl, username, password);
@@ -125,12 +130,8 @@ public class ExcelExportServiceImpl implements ExcelExportService {
 
             listener.onProgress(exportedRows, totalRowsUnknown ? -1 : totalRows,
                     (int) (offset / batchSize) + 1);
-
             offset += batchSize;
-
-            if (totalRowsUnknown && batchData.size() < batchSize) {
-                break;
-            }
+            if (totalRowsUnknown && batchData.size() < batchSize) break;
         }
 
         log.info("[{}] 导出完成，行数：{}", entry.getSheetName(), exportedRows);
@@ -147,28 +148,19 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         writer.write("\r\n");
     }
 
-    /**
-     * 按 RFC 4180 转义字段：
-     * - 含逗号/双引号/换行 → 双引号包裹
-     * - 内部双引号 → 两个双引号
-     */
-    String escapeCsvField(String value) {
+    static String escapeCsvField(String value) {
         if (value == null) return "";
         boolean needsQuote = value.indexOf(',') >= 0
                 || value.indexOf('"') >= 0
                 || value.indexOf('\n') >= 0
                 || value.indexOf('\r') >= 0;
-        if (needsQuote) {
-            return '"' + value.replace("\"", "\"\"") + '"';
-        }
+        if (needsQuote) return '"' + value.replace("\"", "\"\"") + '"';
         return value;
     }
 
     private List<String> objectArrayToStringList(Object[] row) {
         List<String> result = new ArrayList<>(row.length);
-        for (Object obj : row) {
-            result.add(obj == null ? "" : obj.toString());
-        }
+        for (Object obj : row) result.add(obj == null ? "" : obj.toString());
         return result;
     }
 
@@ -226,21 +218,15 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                 List<Object[]> result = new ArrayList<>();
                 while (rs.next()) {
                     Object[] row = new Object[columnCount];
-                    for (int i = 0; i < columnCount; i++) {
-                        row[i] = rs.getObject(i + 1);
-                    }
+                    for (int i = 0; i < columnCount; i++) row[i] = rs.getObject(i + 1);
                     result.add(row);
                 }
                 return result;
             } catch (Exception e) {
                 retryCount++;
-                if (retryCount > MAX_RETRY_COUNT) {
-                    throw new RuntimeException("分页查询失败: " + e.getMessage(), e);
-                }
+                if (retryCount > MAX_RETRY_COUNT) throw new RuntimeException("分页查询失败: " + e.getMessage(), e);
                 log.warn("分页查询失败，第{}次重试...", retryCount);
-                try {
-                    Thread.sleep(1000L * retryCount);
-                } catch (InterruptedException ie) {
+                try { Thread.sleep(1000L * retryCount); } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException("查询被中断", ie);
                 }
@@ -256,22 +242,16 @@ public class ExcelExportServiceImpl implements ExcelExportService {
 
     private List<String> resolveColumnNames(String sql, List<String> customColumnNames,
                                              String jdbcUrl, String username, String password) {
-        if (customColumnNames != null && !customColumnNames.isEmpty()) {
-            return customColumnNames;
-        }
+        if (customColumnNames != null && !customColumnNames.isEmpty()) return customColumnNames;
         List<String> columnNames = new ArrayList<>();
         String limitedSql = SqlUtils.buildPagingSql(sql, 1, 0);
         try (Connection conn = createConnection(jdbcUrl, username, password);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(limitedSql)) {
             ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
+            for (int i = 1; i <= metaData.getColumnCount(); i++)
                 columnNames.add(metaData.getColumnLabel(i));
-            }
-        } catch (SQLException e) {
-            log.warn("获取列名失败", e);
-        }
+        } catch (SQLException e) { log.warn("获取列名失败", e); }
         return columnNames;
     }
 }

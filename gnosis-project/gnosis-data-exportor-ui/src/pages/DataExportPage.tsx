@@ -7,7 +7,7 @@ function extractTableName(sql: string): string {
   const fromMatch = /\bFROM\s+/i.exec(s);
   if (!fromMatch) return 'Sheet';
   const afterFrom = s.substring(fromMatch.index + fromMatch[0].length);
-  const identMatch = /^["\[]?([a-zA-Z_][\w]*|[a-zA-Z_][\w]*\.[a-zA-Z_][\w]*)["\]]?/.exec(afterFrom);
+  const identMatch = /^["\[ ]?([a-zA-Z_][\w]*|[a-zA-Z_][\w]*\.[a-zA-Z_][\w]*)["\]]?/.exec(afterFrom);
   if (!identMatch) return 'Sheet';
   const kw = identMatch[1].toUpperCase();
   const keywords = new Set([
@@ -40,6 +40,7 @@ const DataExportPage: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const parsed = useMemo(() => parseSqlEntries(rawSql), [rawSql]);
+  const multiple = parsed.length > 1;
 
   const handleExport = async () => {
     if (!jdbcUrl.trim()) { setMessage('请输入 JDBC地址'); return; }
@@ -81,7 +82,7 @@ const DataExportPage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `export_data_${Date.now()}.csv`;
+      a.download = multiple ? `export_data_${Date.now()}.zip` : `export_data_${Date.now()}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -102,7 +103,7 @@ const DataExportPage: React.FC = () => {
     <div style={{ padding: 24, maxWidth: 960, margin: '0 auto' }}>
       <h2>数据导出</h2>
       <p style={{ color: '#888', marginBottom: 16, fontSize: 13 }}>
-        支持多条SQL（分号分隔）。导出为CSV格式，逗号/引号/换行自动转义。
+        支持多条SQL（分号分隔）。单条导出CSV，多条导出ZIP（每个SQL一个CSV文件）。
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -146,13 +147,14 @@ const DataExportPage: React.FC = () => {
         <div style={{ marginBottom: 16, border: '1px solid #e8e8e8', borderRadius: 4, overflow: 'hidden' }}>
           <div style={{ backgroundColor: '#fafafa', padding: '8px 12px', fontSize: 13, fontWeight: 'bold',
             borderBottom: '1px solid #e8e8e8', color: '#555' }}>
-            {parsed.length} 条SQL
+            {parsed.length} 条SQL → {multiple ? 'ZIP（含' + parsed.length + '个CSV）' : 'CSV文件'}
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ backgroundColor: '#f5f5f5' }}>
                 <th style={{ padding: '6px 12px', textAlign: 'left', width: 40 }}>#</th>
                 <th style={{ padding: '6px 12px', textAlign: 'left' }}>SQL（截断）</th>
+                <th style={{ padding: '6px 12px', textAlign: 'left', width: 180 }}>文件名</th>
               </tr>
             </thead>
             <tbody>
@@ -161,7 +163,10 @@ const DataExportPage: React.FC = () => {
                   <td style={{ padding: '6px 12px', color: '#888' }}>{idx + 1}</td>
                   <td style={{ padding: '6px 12px', fontFamily: 'monospace', maxWidth: 0,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.sql.length > 80 ? entry.sql.substring(0, 77) + '...' : entry.sql}
+                    {entry.sql.length > 60 ? entry.sql.substring(0, 57) + '...' : entry.sql}
+                  </td>
+                  <td style={{ padding: '6px 12px', color: '#1890ff', fontFamily: 'monospace' }}>
+                    {entry.sheetName}.csv
                   </td>
                 </tr>
               ))}
@@ -175,7 +180,7 @@ const DataExportPage: React.FC = () => {
           style={{ padding: '10px 28px', backgroundColor: loading || parsed.length === 0 ? '#b0b0b0' : '#1890ff',
             color: '#fff', border: 'none', borderRadius: 4, fontSize: 15,
             cursor: loading || parsed.length === 0 ? 'not-allowed' : 'pointer' }}>
-          {loading ? '导出中...' : '导出CSV'}
+          {loading ? '导出中...' : multiple ? '导出ZIP' : '导出CSV'}
         </button>
       </div>
 

@@ -19,13 +19,11 @@ interface ErrorRecord {
   errorMessage: string;
 }
 
-/** 读取文件并转为base64 */
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // 去掉 data:...;base64, 前缀
       const base64 = result.substring(result.indexOf(',') + 1);
       resolve(base64);
     };
@@ -46,6 +44,8 @@ const DataImportPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [result, setResult] = useState<ImportResult | null>(null);
 
+  const isZip = file?.name.toLowerCase().endsWith('.zip');
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) { setFile(selectedFile); setResult(null); setMessage(''); }
@@ -65,8 +65,8 @@ const DataImportPage: React.FC = () => {
   const handleImport = async () => {
     if (!jdbcUrl.trim()) { setMessage('请输入 JDBC地址'); return; }
     if (!username.trim()) { setMessage('请输入数据库用户名'); return; }
-    if (!tableName.trim()) { setMessage('请输入目标表名'); return; }
-    if (!file) { setMessage('请选择要导入的Excel文件'); return; }
+    if (!isZip && !tableName.trim()) { setMessage('Excel导入需要输入目标表名（ZIP导入时表名从CSV文件名自动获取）'); return; }
+    if (!file) { setMessage('请选择要导入的文件'); return; }
 
     setLoading(true);
     setMessage('正在导入...');
@@ -78,10 +78,10 @@ const DataImportPage: React.FC = () => {
         jdbcUrl: jdbcUrl.trim(),
         username: username.trim(),
         password: password,
-        tableName: tableName.trim(),
         fileName: file.name,
         fileData: fileData,
       };
+      if (!isZip) body.tableName = tableName.trim();
       if (batchSize !== '' && batchSize > 0) body.batchSize = batchSize;
       const mapping = parseColumnMapping(columnMapping);
       if (mapping) body.columnMapping = mapping;
@@ -119,6 +119,9 @@ const DataImportPage: React.FC = () => {
   return (
     <div style={{ padding: 24, maxWidth: 960, margin: '0 auto' }}>
       <h2>数据导入</h2>
+      <p style={{ color: '#888', marginBottom: 16, fontSize: 13 }}>
+        支持 Excel (.xlsx/.xls) 或 ZIP（含多个CSV，文件名=目标表名）
+      </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
         <div>
@@ -146,10 +149,12 @@ const DataImportPage: React.FC = () => {
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
-          目标表名 <span style={{ color: 'red' }}>*</span>
+          目标表名 {!isZip && <span style={{ color: 'red' }}>*</span>}
         </label>
         <input value={tableName} onChange={e => setTableName(e.target.value)}
-          placeholder="请输入数据库目标表名" style={inputStyle} />
+          placeholder={isZip ? 'ZIP导入时表名从CSV文件名自动获取' : '请输入数据库目标表名'}
+          disabled={isZip}
+          style={{ ...inputStyle, backgroundColor: isZip ? '#f5f5f5' : undefined }} />
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -170,12 +175,15 @@ const DataImportPage: React.FC = () => {
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
-          选择Excel文件 <span style={{ color: 'red' }}>*</span>
+          选择文件 <span style={{ color: 'red' }}>*</span>
         </label>
-        <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} style={{ fontSize: 14 }} />
-        {file && <div style={{ marginTop: 8, color: '#666', fontSize: 13 }}>
-          已选择: {file.name} ({(file.size / 1024).toFixed(1)} KB)
-        </div>}
+        <input type="file" accept=".xlsx,.xls,.zip" onChange={handleFileChange} style={{ fontSize: 14 }} />
+        {file && (
+          <div style={{ marginTop: 8, color: '#666', fontSize: 13 }}>
+            已选择: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+            {isZip && <span style={{ color: '#1890ff', marginLeft: 8 }}>【ZIP模式：表名从CSV文件名自动获取】</span>}
+          </div>
+        )}
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -214,7 +222,7 @@ const DataImportPage: React.FC = () => {
                 <td style={{ padding: '4px 8px', color: '#faad14' }}>{result.skippedRows}</td>
               </tr>
               <tr>
-                <td style={{ padding: '4px 8px', fontWeight: 'bold' }}>总Sheet数</td>
+                <td style={{ padding: '4px 8px', fontWeight: 'bold' }}>总条目数</td>
                 <td style={{ padding: '4px 8px' }}>{result.totalSheets}</td>
                 <td style={{ padding: '4px 8px', fontWeight: 'bold' }}>耗时</td>
                 <td style={{ padding: '4px 8px' }}>{formatDuration(result.durationMs)}</td>
@@ -229,7 +237,7 @@ const DataImportPage: React.FC = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f5f5f5' }}>
-                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>Sheet</th>
+                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>#</th>
                       <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>行号</th>
                       <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>错误信息</th>
                     </tr>
