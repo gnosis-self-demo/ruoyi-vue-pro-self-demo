@@ -1,0 +1,5 @@
+###
+#
+POST http://192.168.200.190:3000/data-exportor/export/execute
+
+{"sqlEntries":[{"sql":"select * from openplat_api_config","sheetName":"openplat_api_config"},{"sql":"select * from openplat_api_doc","sheetName":"openplat_api_doc"},{"sql":"select * from openplat_api_system_relation","sheetName":"openplat_api_system_relation"},{"sql":"select * from openplat_app_auth","sheetName":"openplat_app_auth"},{"sql":"select * from openplat_nonce_cache","sheetName":"openplat_nonce_cache"},{"sql":"select * from openplat_rate_limit","sheetName":"openplat_rate_limit"},{"sql":"select * from openplat_system","sheetName":"openplat_system"},{"sql":"select * from openplat_webhook_config","sheetName":"openplat_webhook_config"}]}
