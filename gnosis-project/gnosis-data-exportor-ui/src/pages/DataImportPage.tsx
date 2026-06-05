@@ -22,9 +22,9 @@ interface ErrorRecord {
 const DataImportPage: React.FC = () => {
   const [tableName, setTableName] = useState('');
   const [batchSize, setBatchSize] = useState<number | ''>('');
+  const [columnMapping, setColumnMapping] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState({ processed: 0, total: 0, percent: 0 });
   const [message, setMessage] = useState('');
   const [result, setResult] = useState<ImportResult | null>(null);
 
@@ -35,6 +35,19 @@ const DataImportPage: React.FC = () => {
       setResult(null);
       setMessage('');
     }
+  };
+
+  const parseColumnMapping = (text: string): Record<string, string> | undefined => {
+    const lines = text.trim().split('\n').filter(l => l.trim());
+    if (lines.length === 0) return undefined;
+    const map: Record<string, string> = {};
+    for (const line of lines) {
+      const parts = line.split(/[=:]/).map(s => s.trim());
+      if (parts.length >= 2 && parts[0] && parts[1]) {
+        map[parts[0]] = parts[1];
+      }
+    }
+    return Object.keys(map).length > 0 ? map : undefined;
   };
 
   const handleImport = async () => {
@@ -50,7 +63,6 @@ const DataImportPage: React.FC = () => {
     setLoading(true);
     setMessage('正在导入...');
     setResult(null);
-    setProgress({ processed: 0, total: 0, percent: 0 });
 
     try {
       const formData = new FormData();
@@ -58,6 +70,10 @@ const DataImportPage: React.FC = () => {
       formData.append('tableName', tableName.trim());
       if (batchSize !== '' && batchSize > 0) {
         formData.append('batchSize', String(batchSize));
+      }
+      const mapping = parseColumnMapping(columnMapping);
+      if (mapping) {
+        formData.append('columnMapping', JSON.stringify(mapping));
       }
 
       const response = await fetch(`${API_BASE}/import/execute`, {
@@ -68,13 +84,12 @@ const DataImportPage: React.FC = () => {
       const data = await response.json();
 
       if (data.code !== 200) {
-        throw new Error(data.message || '导入失败');
+        throw new Error(data.msg || data.message || '导入失败');
       }
 
       const importResult: ImportResult = data.data;
       setResult(importResult);
       setMessage('导入完成');
-      setProgress({ processed: 100, total: 100, percent: 100 });
     } catch (err: any) {
       setMessage(`导入失败: ${err.message}`);
     } finally {
@@ -89,7 +104,7 @@ const DataImportPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ padding: 24, maxWidth: 960, margin: '0 auto' }}>
       <h2>数据导入</h2>
 
       <div style={{ marginBottom: 16 }}>
@@ -106,6 +121,7 @@ const DataImportPage: React.FC = () => {
             border: '1px solid #d9d9d9',
             borderRadius: 4,
             fontSize: 14,
+            boxSizing: 'border-box',
           }}
         />
       </div>
@@ -127,6 +143,28 @@ const DataImportPage: React.FC = () => {
             border: '1px solid #d9d9d9',
             borderRadius: 4,
             fontSize: 14,
+            boxSizing: 'border-box',
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+          列映射（可选，Excel列名 = 数据库字段名，每行一条）
+        </label>
+        <textarea
+          value={columnMapping}
+          onChange={e => setColumnMapping(e.target.value)}
+          placeholder={'订单号=order_no\n金额=amount\n创建时间=create_time'}
+          rows={4}
+          style={{
+            width: '100%',
+            padding: 8,
+            border: '1px solid #d9d9d9',
+            borderRadius: 4,
+            fontSize: 13,
+            fontFamily: 'monospace',
+            boxSizing: 'border-box',
           }}
         />
       </div>
@@ -166,21 +204,6 @@ const DataImportPage: React.FC = () => {
           {loading ? '导入中...' : '执行导入'}
         </button>
       </div>
-
-      {loading && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ height: 8, backgroundColor: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
-            <div
-              style={{
-                height: '100%',
-                width: `${progress.percent}%`,
-                backgroundColor: '#52c41a',
-                transition: 'width 0.3s',
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {message && (
         <div

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -167,12 +166,14 @@ public class ExcelImportServiceImpl implements ExcelImportService {
 
     private List<String> getTableColumns(String tableName) throws SQLException {
         List<String> columns = new ArrayList<>();
-        jdbcTemplate.query("SELECT * FROM " + tableName + " WHERE 1=0", (ResultSet rs) -> {
+        jdbcTemplate.query("SELECT * FROM " + tableName + " WHERE 1=0",
+                (org.springframework.jdbc.core.ResultSetExtractor<Void>) rs -> {
             java.sql.ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
             for (int i = 1; i <= columnCount; i++) {
                 columns.add(metaData.getColumnName(i));
             }
+            return null;
         });
         return columns;
     }

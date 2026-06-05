@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.UUID;
 
 @Api(tags = "数据导入管理")
@@ -32,7 +33,8 @@ public class ExcelImportController {
     @PostMapping("/execute")
     public CommonResponse<ImportResult> execute(@RequestParam("file") MultipartFile file,
                                                  @RequestParam(value = "tableName", required = false) String tableName,
-                                                 @RequestParam(value = "batchSize", required = false) Integer batchSize) {
+                                                 @RequestParam(value = "batchSize", required = false) Integer batchSize,
+                                                 @RequestParam(value = "columnMapping", required = false) String columnMappingJson) {
         try {
             Path tempDir = Files.createTempDirectory("excel_import_");
             String tempFilePath = tempDir.resolve(UUID.randomUUID().toString() + ".xlsx").toString();
@@ -43,6 +45,12 @@ public class ExcelImportController {
                 ImportRequest request = new ImportRequest();
                 request.setTableName(tableName);
                 request.setBatchSize(batchSize);
+
+                if (columnMappingJson != null && !columnMappingJson.trim().isEmpty()) {
+                    Map<String, String> columnMapping = com.alibaba.fastjson.JSON
+                            .parseObject(columnMappingJson, new com.alibaba.fastjson.TypeReference<Map<String, String>>() {});
+                    request.setColumnMapping(columnMapping);
+                }
 
                 ImportResult result = excelImportService.importFromExcel(tempFilePath, request);
                 return CommonResponse.success(result);

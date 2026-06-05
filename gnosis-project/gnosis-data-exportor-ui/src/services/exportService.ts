@@ -1,9 +1,13 @@
 const API_BASE = '/data-exportor';
 
-export interface ExportRequest {
+export interface SqlEntry {
   sql: string;
-  sheetNamePrefix?: string;
-  columnNames?: string[];
+  sheetName: string;
+}
+
+export interface ExportRequest {
+  /** 多条SQL（推荐），每条对应一个Sheet */
+  sqlEntries: SqlEntry[];
 }
 
 export async function executeExport(request: ExportRequest): Promise<Blob> {
@@ -18,7 +22,18 @@ export async function executeExport(request: ExportRequest): Promise<Blob> {
     throw new Error(errorData.message || '导出失败');
   }
 
-  return response.blob();
+  const blob = await response.blob();
+  if (blob.size === 0) {
+    const text = await response.text();
+    try {
+      const err = JSON.parse(text);
+      throw new Error(err.msg || err.message || '导出失败');
+    } catch {
+      throw new Error(text || '导出返回空文件');
+    }
+  }
+
+  return blob;
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {

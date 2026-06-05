@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -29,7 +30,6 @@ import java.util.List;
 public class ExcelExportServiceImpl implements ExcelExportService {
 
     private static final int MAX_SHEET_ROWS = 1048576;
-    private static final int COUNT_TIMEOUT_SECONDS = 30;
     private static final int MAX_RETRY_COUNT = 3;
     private static final int FALLBACK_BATCH_SIZE = 10000;
     private static final int SXSSF_WINDOW_SIZE = 100;
@@ -46,69 +46,21 @@ public class ExcelExportServiceImpl implements ExcelExportService {
     @Transactional
     public void exportToExcel(ExportRequest request, HttpServletResponse response, ProgressListener listener)
             throws IOException, SQLException {
-        String sql = request.getSql();
-        String sheetNamePrefix = request.getSheetNamePrefix();
-        if (sheetNamePrefix == null || sheetNamePrefix.isEmpty()) {
-            sheetNamePrefix = "Sheet";
-        }
-        List<String> customColumnNames = request.getColumnNames();
+
+        List<ExportRequest.SqlEntry> entries = buildEntries(request);
 
         long startTime = System.currentTimeMillis();
-
-        SqlUtils.checkOrderBy(sql);
-
-        long totalRows = detectTotalRows(sql);
-        int batchSize = calculateBatchSize(totalRows);
-        int sheetsNeeded = BatchSizeCalculator.calculateSheetsNeeded(totalRows);
-
-        log.info("总行数检测完成：{} 行，自动设置 batchSize = {}，Sheet数 = {}", totalRows, batchSize, sheetsNeeded);
-
-        listener.onStart(totalRows, sheetsNeeded);
-
-        String countSql = SqlUtils.wrapCountSql(sql);
-        log.info("COUNT SQL: {}", countSql);
-
         SXSSFWorkbook workbook = new SXSSFWorkbook(SXSSF_WINDOW_SIZE);
         try {
-            long exportedRows = 0;
-            long offset = 0;
-            int currentSheetIndex = 0;
-            int currentSheetRowCount = 0;
-            Sheet currentSheet = null;
-            List<String> columnNames = null;
+            long totalExportedRows = 0;
+            int totalSheets = 0;
+            int globalSheetIndex = 0;
 
-            while (offset < totalRows) {
-                String pagingSql = SqlUtils.buildPagingSql(sql, batchSize, offset);
-                log.debug("执行分页查询，offset={}, batchSize={}", offset, batchSize);
-
-                List<Object[]> batchData = executePagingQuery(pagingSql);
-
-                if (columnNames == null && !batchData.isEmpty()) {
-                    columnNames = resolveColumnNames(pagingSql, customColumnNames);
-                }
-
-                for (Object[] rowData : batchData) {
-                    if (currentSheet == null || currentSheetRowCount >= MAX_SHEET_ROWS) {
-                        if (currentSheet != null) {
-                            String prevSheetName = sheetNamePrefix + "_" + (currentSheetIndex);
-                            listener.onSheetSwitch(prevSheetName, currentSheetIndex, currentSheetRowCount);
-                        }
-                        currentSheetIndex++;
-                        currentSheet = workbook.createSheet(sheetNamePrefix + "_" + currentSheetIndex);
-                        currentSheetRowCount = 0;
-                        writeHeaderRow(currentSheet, columnNames);
-                        currentSheetRowCount = 1;
-                        log.info("创建Sheet：{}", sheetNamePrefix + "_" + currentSheetIndex);
-                    }
-
-                    writeDataRow(currentSheet, currentSheetRowCount, rowData);
-                    currentSheetRowCount++;
-                    exportedRows++;
-                }
-
-                listener.onProgress(exportedRows, totalRows, (int) (offset / batchSize) + 1);
-
-                offset += batchSize;
+            for (ExportRequest.SqlEntry entry : entries) {
+                ExportResult result = exportSingleSql(workbook, entry, globalSheetIndex, listener);
+                totalExportedRows += result.exportedRows;
+                totalSheets += result.sheetCount;
+                globalSheetIndex += result.sheetCount;
             }
 
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -120,19 +72,105 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             }
 
             long durationMs = System.currentTimeMillis() - startTime;
-            listener.onComplete(exportedRows, sheetsNeeded, durationMs);
-
-            log.info("导出完成，总行数：{}，总Sheet数：{}，耗时：{} ms", exportedRows, sheetsNeeded, durationMs);
+            listener.onComplete(totalExportedRows, totalSheets, durationMs);
+            log.info("导出完成，总行数：{}，总Sheet数：{}，耗时：{} ms", totalExportedRows, totalSheets, durationMs);
         } finally {
             workbook.dispose();
             workbook.close();
         }
     }
 
+    /**
+     * 导出单条SQL到workbook（可能产生多个Sheet）
+     */
+    private ExportResult exportSingleSql(SXSSFWorkbook workbook, ExportRequest.SqlEntry entry,
+                                          int startSheetIndex, ProgressListener listener) {
+        String sql = entry.getSql();
+        String baseSheetName = entry.getSheetName();
+        if (baseSheetName == null || baseSheetName.isEmpty()) {
+            baseSheetName = "Sheet";
+        }
+
+        SqlUtils.checkOrderBy(sql);
+
+        long totalRows = detectTotalRows(sql);
+        boolean totalRowsUnknown = (totalRows < 0);
+        int batchSize = calculateBatchSize(totalRows);
+
+        log.info("[{}] 总行数：{}，batchSize = {}",
+                baseSheetName, totalRowsUnknown ? "未知" : totalRows, batchSize);
+
+        long exportedRows = 0;
+        long offset = 0;
+        int sheetSeq = 0;
+        int currentSheetRowCount = 0;
+        Sheet currentSheet = null;
+        List<String> columnNames = null;
+
+        while (totalRowsUnknown || offset < totalRows) {
+            String pagingSql = SqlUtils.buildPagingSql(sql, batchSize, offset);
+            log.debug("执行分页查询，offset={}, batchSize={}", offset, batchSize);
+
+            List<Object[]> batchData = executePagingQuery(pagingSql);
+
+            if (totalRowsUnknown && batchData.isEmpty()) {
+                break;
+            }
+
+            if (columnNames == null && !batchData.isEmpty()) {
+                columnNames = resolveColumnNames(sql, entry.getColumnNames());
+            }
+
+            for (Object[] rowData : batchData) {
+                if (currentSheet == null || currentSheetRowCount >= MAX_SHEET_ROWS) {
+                    sheetSeq++;
+                    String sheetName = sheetSeq > 1
+                            ? baseSheetName + "_" + sheetSeq
+                            : baseSheetName;
+                    currentSheet = workbook.createSheet(sheetName);
+                    currentSheetRowCount = 0;
+                    writeHeaderRow(currentSheet, columnNames);
+                    currentSheetRowCount = 1;
+                    log.info("创建Sheet：{}", sheetName);
+                }
+
+                writeDataRow(currentSheet, currentSheetRowCount, rowData);
+                currentSheetRowCount++;
+                exportedRows++;
+            }
+
+            listener.onProgress(exportedRows, totalRowsUnknown ? -1 : totalRows,
+                    (int) (offset / batchSize) + 1);
+
+            offset += batchSize;
+
+            if (totalRowsUnknown && batchData.size() < batchSize) {
+                break;
+            }
+        }
+
+        log.info("[{}] 导出完成，行数：{}，Sheet数：{}", baseSheetName, exportedRows, sheetSeq);
+
+        ExportResult result = new ExportResult();
+        result.exportedRows = exportedRows;
+        result.sheetCount = sheetSeq;
+        return result;
+    }
+
+    private List<ExportRequest.SqlEntry> buildEntries(ExportRequest request) {
+        if (request.getSqlEntries() != null && !request.getSqlEntries().isEmpty()) {
+            return request.getSqlEntries();
+        }
+        ExportRequest.SqlEntry single = new ExportRequest.SqlEntry();
+        single.setSql(request.getSql());
+        single.setSheetName(request.getSheetNamePrefix());
+        return Collections.singletonList(single);
+    }
+
     private long detectTotalRows(String sql) {
         String countSql = SqlUtils.wrapCountSql(sql);
         try {
-            Long count = jdbcTemplate.query(countSql, rs -> {
+            Long count = jdbcTemplate.query(countSql, (org.springframework.jdbc.core.ResultSetExtractor<Long>) rs -> {
                 if (rs.next()) {
                     return rs.getLong(1);
                 }
@@ -158,16 +196,14 @@ public class ExcelExportServiceImpl implements ExcelExportService {
 
         while (retryCount <= MAX_RETRY_COUNT) {
             try {
-                jdbcTemplate.query(sql, rs -> {
+                jdbcTemplate.query(sql, (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
-                    while (rs.next()) {
-                        Object[] row = new Object[columnCount];
-                        for (int i = 0; i < columnCount; i++) {
-                            row[i] = rs.getObject(i + 1);
-                        }
-                        result.add(row);
+                    Object[] row = new Object[columnCount];
+                    for (int i = 0; i < columnCount; i++) {
+                        row[i] = rs.getObject(i + 1);
                     }
+                    result.add(row);
                 });
                 return result;
             } catch (Exception e) {
@@ -196,7 +232,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         List<String> columnNames = new ArrayList<>();
         String limitedSql = SqlUtils.buildPagingSql(sql, 1, 0);
 
-        jdbcTemplate.query(limitedSql, rs -> {
+        jdbcTemplate.query(limitedSql, (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
             ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
             for (int i = 1; i <= columnCount; i++) {
@@ -232,5 +268,10 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                 cell.setCellValue(value.toString());
             }
         }
+    }
+
+    private static class ExportResult {
+        long exportedRows;
+        int sheetCount;
     }
 }
