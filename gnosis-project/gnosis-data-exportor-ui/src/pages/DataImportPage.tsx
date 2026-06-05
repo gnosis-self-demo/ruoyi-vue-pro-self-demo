@@ -19,6 +19,21 @@ interface ErrorRecord {
   errorMessage: string;
 }
 
+/** 读取文件并转为base64 */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // 去掉 data:...;base64, 前缀
+      const base64 = result.substring(result.indexOf(',') + 1);
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 const DataImportPage: React.FC = () => {
   const [jdbcUrl, setJdbcUrl] = useState('jdbc:opengauss://localserver.gnosis:5432/gnosis_sample?prepareThreshold=0');
   const [username, setUsername] = useState('gaussdb');
@@ -58,17 +73,24 @@ const DataImportPage: React.FC = () => {
     setResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('jdbcUrl', jdbcUrl.trim());
-      formData.append('username', username.trim());
-      formData.append('password', password);
-      formData.append('tableName', tableName.trim());
-      if (batchSize !== '' && batchSize > 0) formData.append('batchSize', String(batchSize));
+      const fileData = await fileToBase64(file);
+      const body: any = {
+        jdbcUrl: jdbcUrl.trim(),
+        username: username.trim(),
+        password: password,
+        tableName: tableName.trim(),
+        fileName: file.name,
+        fileData: fileData,
+      };
+      if (batchSize !== '' && batchSize > 0) body.batchSize = batchSize;
       const mapping = parseColumnMapping(columnMapping);
-      if (mapping) formData.append('columnMapping', JSON.stringify(mapping));
+      if (mapping) body.columnMapping = mapping;
 
-      const response = await fetch(`${API_BASE}/import/execute`, { method: 'POST', body: formData });
+      const response = await fetch(`${API_BASE}/import/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       const data = await response.json();
 
       if (data.code !== 200) throw new Error(data.msg || data.message || '导入失败');

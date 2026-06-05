@@ -81,7 +81,7 @@ const DataExportPage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `export_data_${Date.now()}.xlsx`;
+      a.download = `export_data_${Date.now()}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -102,7 +102,7 @@ const DataExportPage: React.FC = () => {
     <div style={{ padding: 24, maxWidth: 960, margin: '0 auto' }}>
       <h2>数据导出</h2>
       <p style={{ color: '#888', marginBottom: 16, fontSize: 13 }}>
-        支持多条SQL，用分号（;）分隔。Sheet名称自动从FROM子句的表名提取。
+        支持多条SQL（分号分隔）。导出为CSV格式，逗号/引号/换行自动转义。
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -146,14 +146,13 @@ const DataExportPage: React.FC = () => {
         <div style={{ marginBottom: 16, border: '1px solid #e8e8e8', borderRadius: 4, overflow: 'hidden' }}>
           <div style={{ backgroundColor: '#fafafa', padding: '8px 12px', fontSize: 13, fontWeight: 'bold',
             borderBottom: '1px solid #e8e8e8', color: '#555' }}>
-            {parsed.length} 条SQL → {parsed.length} 个Sheet
+            {parsed.length} 条SQL
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ backgroundColor: '#f5f5f5' }}>
                 <th style={{ padding: '6px 12px', textAlign: 'left', width: 40 }}>#</th>
                 <th style={{ padding: '6px 12px', textAlign: 'left' }}>SQL（截断）</th>
-                <th style={{ padding: '6px 12px', textAlign: 'left', width: 180 }}>Sheet名称</th>
               </tr>
             </thead>
             <tbody>
@@ -162,10 +161,7 @@ const DataExportPage: React.FC = () => {
                   <td style={{ padding: '6px 12px', color: '#888' }}>{idx + 1}</td>
                   <td style={{ padding: '6px 12px', fontFamily: 'monospace', maxWidth: 0,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.sql.length > 60 ? entry.sql.substring(0, 57) + '...' : entry.sql}
-                  </td>
-                  <td style={{ padding: '6px 12px', color: '#1890ff', fontWeight: 'bold' }}>
-                    {entry.sheetName}
+                    {entry.sql.length > 80 ? entry.sql.substring(0, 77) + '...' : entry.sql}
                   </td>
                 </tr>
               ))}
@@ -179,7 +175,7 @@ const DataExportPage: React.FC = () => {
           style={{ padding: '10px 28px', backgroundColor: loading || parsed.length === 0 ? '#b0b0b0' : '#1890ff',
             color: '#fff', border: 'none', borderRadius: 4, fontSize: 15,
             cursor: loading || parsed.length === 0 ? 'not-allowed' : 'pointer' }}>
-          {loading ? '导出中...' : '执行导出'}
+          {loading ? '导出中...' : '导出CSV'}
         </button>
       </div>
 

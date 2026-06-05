@@ -7,7 +7,7 @@ import com.gnosis.accounts.dto.settlement.AccCustomerSettlementUpdateRequest;
 import com.gnosis.accounts.dto.settlement.AccCustomerSettlementVO;
 import com.gnosis.accounts.service.AccCustomerSettlementService;
 import com.gnosis.accounts.service.AccImportExportService;
-import com.gnosis.common.dto.CommonResponse;
+import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
 import io.swagger.annotations.Api;
@@ -37,67 +37,67 @@ public class AccCustomerSettlementController {
 
     @ApiOperation("分页查询结算列表")
     @PostMapping("/page")
-    public CommonResponse<PageResult<AccCustomerSettlementVO>> pageList(@RequestBody PageRequest<AccCustomerSettlementQueryRequest> request) {
-        return CommonResponse.success(settlementService.pageList(request));
+    public BaseResponse<PageResult<AccCustomerSettlementVO>> pageList(@RequestBody PageRequest<AccCustomerSettlementQueryRequest> request) {
+        return BaseResponse.success(settlementService.pageList(request));
     }
 
     @ApiOperation("查询结算详情")
     @PostMapping("/detail")
-    public CommonResponse<AccCustomerSettlementVO> detail(@RequestBody Map<String, String> request) {
+    public BaseResponse<AccCustomerSettlementVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return CommonResponse.success(settlementService.detail(id));
+        return BaseResponse.success(settlementService.detail(id));
     }
 
     @ApiOperation("新建结算")
     @PostMapping("/create")
-    public CommonResponse<Void> create(@RequestBody AccCustomerSettlementCreateRequest request) {
+    public BaseResponse<Void> create(@RequestBody AccCustomerSettlementCreateRequest request) {
         settlementService.create(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("编辑结算")
     @PostMapping("/update")
-    public CommonResponse<Void> update(@RequestBody AccCustomerSettlementUpdateRequest request) {
+    public BaseResponse<Void> update(@RequestBody AccCustomerSettlementUpdateRequest request) {
         settlementService.update(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("删除结算")
     @PostMapping("/delete")
-    public CommonResponse<Void> delete(@RequestBody Map<String, String> request) {
+    public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         settlementService.delete(id);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("批量删除结算")
     @PostMapping("/batchDelete")
-    public CommonResponse<Void> batchDelete(@RequestBody AccCustomerSettlementIdsRequest request) {
+    public BaseResponse<Void> batchDelete(@RequestBody AccCustomerSettlementIdsRequest request) {
         settlementService.batchDelete(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("批量启用结算")
     @PostMapping("/batchEnable")
-    public CommonResponse<Void> batchEnable(@RequestBody AccCustomerSettlementIdsRequest request) {
+    public BaseResponse<Void> batchEnable(@RequestBody AccCustomerSettlementIdsRequest request) {
         settlementService.batchEnable(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("批量禁用结算")
     @PostMapping("/batchDisable")
-    public CommonResponse<Void> batchDisable(@RequestBody AccCustomerSettlementIdsRequest request) {
+    public BaseResponse<Void> batchDisable(@RequestBody AccCustomerSettlementIdsRequest request) {
         settlementService.batchDisable(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("执行结算")
     @PostMapping("/executeSettlement")
-    public CommonResponse<Void> executeSettlement(@RequestBody Map<String, String> request) {
+    public BaseResponse<Void> executeSettlement(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         String operatorId = request.get("operatorId");
         settlementService.executeSettlement(id, operatorId);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("导出结算")
@@ -108,12 +108,12 @@ public class AccCustomerSettlementController {
 
     @ApiOperation("导入结算")
     @PostMapping("/import")
-    public CommonResponse<Void> importSettlement(@RequestParam("file") MultipartFile file) {
+    public BaseResponse<Void> importSettlement(@RequestParam("file") MultipartFile file) {
         try {
             importExportService.importSubjects(file);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
-            return CommonResponse.error("导入失败: " + e.getMessage());
+            return BaseResponse.error("导入失败: " + e.getMessage());
         }
     }
 }

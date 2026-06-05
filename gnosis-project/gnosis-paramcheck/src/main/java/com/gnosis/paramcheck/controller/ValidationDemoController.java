@@ -1,6 +1,6 @@
 package com.gnosis.paramcheck.controller;
 
-import com.gnosis.common.dto.CommonResponse;
+import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.paramcheck.domain.ValidationResult;
 import com.gnosis.paramcheck.service.DynamicValidationService;
 import org.slf4j.Logger;
@@ -20,19 +20,19 @@ public class ValidationDemoController {
     private DynamicValidationService validationService;
 
     @PostMapping("/validate")
-    public CommonResponse<ValidationResult> validate(
+    public BaseResponse<ValidationResult> validate(
             @RequestParam String flowId,
             @RequestBody Map<String, Object> requestData) {
         try {
             log.info("[ValidationDemo] validate request, flowId={}, data={}", flowId, requestData);
             ValidationResult result = validationService.execute(flowId, requestData);
-            return CommonResponse.success(result);
+            return BaseResponse.success(result);
         } catch (IllegalArgumentException e) {
             log.warn("[ValidationDemo] validation argument error: {}", e.getMessage());
-            return CommonResponse.error(e.getMessage());
+            return BaseResponse.error(e.getMessage());
         } catch (Exception e) {
             log.error("[ValidationDemo] validation error", e);
-            return CommonResponse.error("校验执行异常: " + e.getMessage());
+            return BaseResponse.error("校验执行异常: " + e.getMessage());
         }
     }
 }

@@ -2,7 +2,7 @@ package com.gnosis.common.dto;
 
 import java.io.Serializable;
 
-public class CommonResponse<T> implements Serializable {
+public class BaseResponse<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -14,31 +14,31 @@ public class CommonResponse<T> implements Serializable {
 
     private Long timestamp;
 
-    public CommonResponse() {
+    public BaseResponse() {
         this.timestamp = System.currentTimeMillis();
     }
 
-    public static <T> CommonResponse<T> success(T data) {
-        CommonResponse<T> response = new CommonResponse<>();
+    public static <T> BaseResponse<T> success(T data) {
+        BaseResponse<T> response = new BaseResponse<>();
         response.setCode(200);
         response.setMessage("success");
         response.setData(data);
         return response;
     }
 
-    public static <T> CommonResponse<T> success() {
+    public static <T> BaseResponse<T> success() {
         return success(null);
     }
 
-    public static <T> CommonResponse<T> error(String message) {
-        CommonResponse<T> response = new CommonResponse<>();
+    public static <T> BaseResponse<T> error(String message) {
+        BaseResponse<T> response = new BaseResponse<>();
         response.setCode(500);
         response.setMessage(message);
         return response;
     }
 
-    public static <T> CommonResponse<T> error(Integer code, String message) {
-        CommonResponse<T> response = new CommonResponse<>();
+    public static <T> BaseResponse<T> error(Integer code, String message) {
+        BaseResponse<T> response = new BaseResponse<>();
         response.setCode(code);
         response.setMessage(message);
         return response;

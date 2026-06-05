@@ -6,7 +6,7 @@ import com.gnosis.accounts.dto.journal.AccJournalQueryRequest;
 import com.gnosis.accounts.dto.journal.AccJournalVO;
 import com.gnosis.accounts.service.AccJournalService;
 import com.gnosis.accounts.service.AccImportExportService;
-import com.gnosis.common.dto.CommonResponse;
+import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
 import io.swagger.annotations.Api;
@@ -36,53 +36,53 @@ public class AccJournalController {
 
     @ApiOperation("分页查询流水列表")
     @PostMapping("/page")
-    public CommonResponse<PageResult<AccJournalVO>> pageList(@RequestBody PageRequest<AccJournalQueryRequest> request) {
-        return CommonResponse.success(journalService.pageList(request));
+    public BaseResponse<PageResult<AccJournalVO>> pageList(@RequestBody PageRequest<AccJournalQueryRequest> request) {
+        return BaseResponse.success(journalService.pageList(request));
     }
 
     @ApiOperation("查询流水详情")
     @PostMapping("/detail")
-    public CommonResponse<AccJournalVO> detail(@RequestBody Map<String, String> request) {
+    public BaseResponse<AccJournalVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return CommonResponse.success(journalService.detail(id));
+        return BaseResponse.success(journalService.detail(id));
     }
 
     @ApiOperation("新建流水")
     @PostMapping("/create")
-    public CommonResponse<Void> create(@RequestBody AccJournalCreateRequest request) {
+    public BaseResponse<Void> create(@RequestBody AccJournalCreateRequest request) {
         journalService.create(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("删除流水")
     @PostMapping("/delete")
-    public CommonResponse<Void> delete(@RequestBody Map<String, String> request) {
+    public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         journalService.delete(id);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("批量删除流水")
     @PostMapping("/batchDelete")
-    public CommonResponse<Void> batchDelete(@RequestBody AccJournalIdsRequest request) {
+    public BaseResponse<Void> batchDelete(@RequestBody AccJournalIdsRequest request) {
         journalService.batchDelete(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("过账")
     @PostMapping("/post")
-    public CommonResponse<Void> post(@RequestBody Map<String, String> request) {
+    public BaseResponse<Void> post(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         journalService.post(id);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("冲销")
     @PostMapping("/reverse")
-    public CommonResponse<Void> reverse(@RequestBody Map<String, String> request) {
+    public BaseResponse<Void> reverse(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         journalService.reverse(id);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("导出流水")
@@ -93,12 +93,12 @@ public class AccJournalController {
 
     @ApiOperation("导入流水")
     @PostMapping("/import")
-    public CommonResponse<Void> importJournals(@RequestParam("file") MultipartFile file) {
+    public BaseResponse<Void> importJournals(@RequestParam("file") MultipartFile file) {
         try {
             importExportService.importJournals(file);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
-            return CommonResponse.error("导入失败: " + e.getMessage());
+            return BaseResponse.error("导入失败: " + e.getMessage());
         }
     }
 }

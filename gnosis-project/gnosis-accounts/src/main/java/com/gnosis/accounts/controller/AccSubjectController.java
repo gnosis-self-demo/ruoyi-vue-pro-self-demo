@@ -7,7 +7,7 @@ import com.gnosis.accounts.dto.subject.AccSubjectUpdateRequest;
 import com.gnosis.accounts.dto.subject.AccSubjectVO;
 import com.gnosis.accounts.service.AccSubjectService;
 import com.gnosis.accounts.service.AccImportExportService;
-import com.gnosis.common.dto.CommonResponse;
+import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
 import io.swagger.annotations.Api;
@@ -37,58 +37,58 @@ public class AccSubjectController {
 
     @ApiOperation("分页查询科目列表")
     @PostMapping("/page")
-    public CommonResponse<PageResult<AccSubjectVO>> pageList(@RequestBody PageRequest<AccSubjectQueryRequest> request) {
-        return CommonResponse.success(subjectService.pageList(request));
+    public BaseResponse<PageResult<AccSubjectVO>> pageList(@RequestBody PageRequest<AccSubjectQueryRequest> request) {
+        return BaseResponse.success(subjectService.pageList(request));
     }
 
     @ApiOperation("查询科目详情")
     @PostMapping("/detail")
-    public CommonResponse<AccSubjectVO> detail(@RequestBody Map<String, String> request) {
+    public BaseResponse<AccSubjectVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return CommonResponse.success(subjectService.detail(id));
+        return BaseResponse.success(subjectService.detail(id));
     }
 
     @ApiOperation("新建科目")
     @PostMapping("/create")
-    public CommonResponse<Void> create(@RequestBody AccSubjectCreateRequest request) {
+    public BaseResponse<Void> create(@RequestBody AccSubjectCreateRequest request) {
         subjectService.create(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("编辑科目")
     @PostMapping("/update")
-    public CommonResponse<Void> update(@RequestBody AccSubjectUpdateRequest request) {
+    public BaseResponse<Void> update(@RequestBody AccSubjectUpdateRequest request) {
         subjectService.update(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("删除科目")
     @PostMapping("/delete")
-    public CommonResponse<Void> delete(@RequestBody Map<String, String> request) {
+    public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         subjectService.delete(id);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("批量删除科目")
     @PostMapping("/batchDelete")
-    public CommonResponse<Void> batchDelete(@RequestBody AccSubjectIdsRequest request) {
+    public BaseResponse<Void> batchDelete(@RequestBody AccSubjectIdsRequest request) {
         subjectService.batchDelete(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("批量启用科目")
     @PostMapping("/batchEnable")
-    public CommonResponse<Void> batchEnable(@RequestBody AccSubjectIdsRequest request) {
+    public BaseResponse<Void> batchEnable(@RequestBody AccSubjectIdsRequest request) {
         subjectService.batchEnable(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("批量禁用科目")
     @PostMapping("/batchDisable")
-    public CommonResponse<Void> batchDisable(@RequestBody AccSubjectIdsRequest request) {
+    public BaseResponse<Void> batchDisable(@RequestBody AccSubjectIdsRequest request) {
         subjectService.batchDisable(request);
-        return CommonResponse.success();
+        return BaseResponse.success();
     }
 
     @ApiOperation("导出科目")
@@ -99,12 +99,12 @@ public class AccSubjectController {
 
     @ApiOperation("导入科目")
     @PostMapping("/import")
-    public CommonResponse<Void> importSubjects(@RequestParam("file") MultipartFile file) {
+    public BaseResponse<Void> importSubjects(@RequestParam("file") MultipartFile file) {
         try {
             importExportService.importSubjects(file);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
-            return CommonResponse.error("导入失败: " + e.getMessage());
+            return BaseResponse.error("导入失败: " + e.getMessage());
         }
     }
 }

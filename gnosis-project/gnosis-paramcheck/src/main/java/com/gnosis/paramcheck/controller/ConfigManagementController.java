@@ -1,6 +1,6 @@
 package com.gnosis.paramcheck.controller;
 
-import com.gnosis.common.dto.CommonResponse;
+import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.paramcheck.domain.ValidationFlow;
 import com.gnosis.paramcheck.dto.PageResult;
 import com.gnosis.paramcheck.service.FlowConfigService;
@@ -26,7 +26,7 @@ public class ConfigManagementController {
     private FlowRefreshService flowRefreshService;
 
     @GetMapping("/flows/page")
-    public CommonResponse<PageResult<ValidationFlow>> pageQuery(
+    public BaseResponse<PageResult<ValidationFlow>> pageQuery(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String flowId,
@@ -38,115 +38,115 @@ public class ConfigManagementController {
         pageRequest.setPage(page);
         pageRequest.setPageSize(pageSize);
         PageResult<ValidationFlow> result = flowConfigService.findPage(flowId, flowName, businessType, modeType, isActive, pageRequest);
-        return CommonResponse.success(result);
+        return BaseResponse.success(result);
     }
 
     @GetMapping("/flows")
-    public CommonResponse<List<ValidationFlow>> getActiveFlows() {
-        return CommonResponse.success(flowConfigService.findAllActive());
+    public BaseResponse<List<ValidationFlow>> getActiveFlows() {
+        return BaseResponse.success(flowConfigService.findAllActive());
     }
 
     @GetMapping("/flows/all")
-    public CommonResponse<List<ValidationFlow>> getAllFlows() {
-        return CommonResponse.success(flowConfigService.findAll());
+    public BaseResponse<List<ValidationFlow>> getAllFlows() {
+        return BaseResponse.success(flowConfigService.findAll());
     }
 
     @GetMapping("/flows/{flowId}")
-    public CommonResponse<ValidationFlow> getFlow(@PathVariable String flowId) {
+    public BaseResponse<ValidationFlow> getFlow(@PathVariable String flowId) {
         ValidationFlow flow = flowConfigService.findById(flowId);
         if (flow == null) {
-            return CommonResponse.error(404, "Flow not found: " + flowId);
+            return BaseResponse.error(404, "Flow not found: " + flowId);
         }
-        return CommonResponse.success(flow);
+        return BaseResponse.success(flow);
     }
 
     @PostMapping("/flows")
-    public CommonResponse<Void> saveFlow(@RequestBody ValidationFlow flow) {
+    public BaseResponse<Void> saveFlow(@RequestBody ValidationFlow flow) {
         try {
             flowConfigService.save(flow);
             flowRefreshService.refreshFlow(flow.getFlowId());
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to save flow: {}", flow.getFlowId(), e);
-            return CommonResponse.error("保存失败: " + e.getMessage());
+            return BaseResponse.error("保存失败: " + e.getMessage());
         }
     }
 
     @PutMapping("/flows")
-    public CommonResponse<Void> updateFlow(@RequestBody ValidationFlow flow) {
+    public BaseResponse<Void> updateFlow(@RequestBody ValidationFlow flow) {
         try {
             flowConfigService.save(flow);
             flowRefreshService.refreshFlow(flow.getFlowId());
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to update flow: {}", flow.getFlowId(), e);
-            return CommonResponse.error("更新失败: " + e.getMessage());
+            return BaseResponse.error("更新失败: " + e.getMessage());
         }
     }
 
     @DeleteMapping("/flows/{flowId}")
-    public CommonResponse<Void> deleteFlow(@PathVariable String flowId) {
+    public BaseResponse<Void> deleteFlow(@PathVariable String flowId) {
         try {
             flowConfigService.delete(flowId);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to delete flow: {}", flowId, e);
-            return CommonResponse.error("删除失败: " + e.getMessage());
+            return BaseResponse.error("删除失败: " + e.getMessage());
         }
     }
 
     @PostMapping("/flows/batch/delete")
-    public CommonResponse<Void> batchDeleteFlows(@RequestBody List<String> flowIds) {
+    public BaseResponse<Void> batchDeleteFlows(@RequestBody List<String> flowIds) {
         try {
             flowConfigService.batchDelete(flowIds);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to batch delete flows", e);
-            return CommonResponse.error("批量删除失败: " + e.getMessage());
+            return BaseResponse.error("批量删除失败: " + e.getMessage());
         }
     }
 
     @PostMapping("/flows/batch/activate")
-    public CommonResponse<Void> batchActivateFlows(@RequestBody List<String> flowIds) {
+    public BaseResponse<Void> batchActivateFlows(@RequestBody List<String> flowIds) {
         try {
             flowConfigService.batchActivate(flowIds);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to batch activate flows", e);
-            return CommonResponse.error("批量启用失败: " + e.getMessage());
+            return BaseResponse.error("批量启用失败: " + e.getMessage());
         }
     }
 
     @PostMapping("/flows/batch/deactivate")
-    public CommonResponse<Void> batchDeactivateFlows(@RequestBody List<String> flowIds) {
+    public BaseResponse<Void> batchDeactivateFlows(@RequestBody List<String> flowIds) {
         try {
             flowConfigService.batchDeactivate(flowIds);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to batch deactivate flows", e);
-            return CommonResponse.error("批量禁用失败: " + e.getMessage());
+            return BaseResponse.error("批量禁用失败: " + e.getMessage());
         }
     }
 
     @PostMapping("/flows/{flowId}/refresh")
-    public CommonResponse<Void> refreshFlow(@PathVariable String flowId) {
+    public BaseResponse<Void> refreshFlow(@PathVariable String flowId) {
         try {
             flowRefreshService.refreshFlow(flowId);
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to refresh flow: {}", flowId, e);
-            return CommonResponse.error("刷新失败: " + e.getMessage());
+            return BaseResponse.error("刷新失败: " + e.getMessage());
         }
     }
 
     @PostMapping("/flows/refresh-all")
-    public CommonResponse<Void> refreshAllFlows() {
+    public BaseResponse<Void> refreshAllFlows() {
         try {
             flowRefreshService.refreshAllFlows();
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] failed to refresh all flows", e);
-            return CommonResponse.error("刷新失败: " + e.getMessage());
+            return BaseResponse.error("刷新失败: " + e.getMessage());
         }
     }
 
@@ -170,15 +170,15 @@ public class ConfigManagementController {
     }
 
     @PostMapping("/flows/import")
-    public CommonResponse<Void> importFlows(@RequestBody List<ValidationFlow> flows) {
+    public BaseResponse<Void> importFlows(@RequestBody List<ValidationFlow> flows) {
         try {
             for (ValidationFlow flow : flows) {
                 flowConfigService.save(flow);
             }
-            return CommonResponse.success();
+            return BaseResponse.success();
         } catch (Exception e) {
             log.error("[ConfigManagement] import failed", e);
-            return CommonResponse.error("导入失败: " + e.getMessage());
+            return BaseResponse.error("导入失败: " + e.getMessage());
         }
     }
 }
