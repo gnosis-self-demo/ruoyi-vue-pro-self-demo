@@ -11,16 +11,18 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,20 +36,19 @@ public class ExcelExportServiceImpl implements ExcelExportService {
     private static final int FALLBACK_BATCH_SIZE = 10000;
     private static final int SXSSF_WINDOW_SIZE = 100;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     @Override
     public void exportToExcel(ExportRequest request, HttpServletResponse response) throws IOException, SQLException {
         exportToExcel(request, response, new LoggingProgressListener());
     }
 
     @Override
-    @Transactional
     public void exportToExcel(ExportRequest request, HttpServletResponse response, ProgressListener listener)
             throws IOException, SQLException {
 
         List<ExportRequest.SqlEntry> entries = buildEntries(request);
+        String jdbcUrl = validateConnectionParam(request.getJdbcUrl(), "jdbcUrl");
+        String username = validateConnectionParam(request.getUsername(), "username");
+        String password = request.getPassword() != null ? request.getPassword() : "";
 
         long startTime = System.currentTimeMillis();
         SXSSFWorkbook workbook = new SXSSFWorkbook(SXSSF_WINDOW_SIZE);
@@ -57,7 +58,8 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             int globalSheetIndex = 0;
 
             for (ExportRequest.SqlEntry entry : entries) {
-                ExportResult result = exportSingleSql(workbook, entry, globalSheetIndex, listener);
+                ExportResult result = exportSingleSql(workbook, entry, globalSheetIndex, listener,
+                        jdbcUrl, username, password);
                 totalExportedRows += result.exportedRows;
                 totalSheets += result.sheetCount;
                 globalSheetIndex += result.sheetCount;
@@ -80,11 +82,23 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         }
     }
 
+    private String validateConnectionParam(String value, String name) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("数据库连接参数 " + name + " 不能为空");
+        }
+        return value.trim();
+    }
+
+    private Connection createConnection(String jdbcUrl, String username, String password) throws SQLException {
+        return DriverManager.getConnection(jdbcUrl, username, password);
+    }
+
     /**
      * 导出单条SQL到workbook（可能产生多个Sheet）
      */
     private ExportResult exportSingleSql(SXSSFWorkbook workbook, ExportRequest.SqlEntry entry,
-                                          int startSheetIndex, ProgressListener listener) {
+                                          int startSheetIndex, ProgressListener listener,
+                                          String jdbcUrl, String username, String password) {
         String sql = entry.getSql();
         String baseSheetName = entry.getSheetName();
         if (baseSheetName == null || baseSheetName.isEmpty()) {
@@ -93,7 +107,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
 
         SqlUtils.checkOrderBy(sql);
 
-        long totalRows = detectTotalRows(sql);
+        long totalRows = detectTotalRows(sql, jdbcUrl, username, password);
         boolean totalRowsUnknown = (totalRows < 0);
         int batchSize = calculateBatchSize(totalRows);
 
@@ -111,14 +125,14 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             String pagingSql = SqlUtils.buildPagingSql(sql, batchSize, offset);
             log.debug("执行分页查询，offset={}, batchSize={}", offset, batchSize);
 
-            List<Object[]> batchData = executePagingQuery(pagingSql);
+            List<Object[]> batchData = executePagingQuery(pagingSql, jdbcUrl, username, password);
 
             if (totalRowsUnknown && batchData.isEmpty()) {
                 break;
             }
 
             if (columnNames == null && !batchData.isEmpty()) {
-                columnNames = resolveColumnNames(sql, entry.getColumnNames());
+                columnNames = resolveColumnNames(sql, entry.getColumnNames(), jdbcUrl, username, password);
             }
 
             for (Object[] rowData : batchData) {
@@ -167,16 +181,17 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         return Collections.singletonList(single);
     }
 
-    private long detectTotalRows(String sql) {
+    private long detectTotalRows(String sql, String jdbcUrl, String username, String password) {
         String countSql = SqlUtils.wrapCountSql(sql);
-        try {
-            Long count = jdbcTemplate.query(countSql, (org.springframework.jdbc.core.ResultSetExtractor<Long>) rs -> {
+        try (Connection conn = createConnection(jdbcUrl, username, password);
+             PreparedStatement pstmt = conn.prepareStatement(countSql)) {
+            pstmt.setQueryTimeout(30);
+            try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
                 }
-                return 0L;
-            });
-            return count != null ? count : 0L;
+            }
+            return 0L;
         } catch (Exception e) {
             log.warn("COUNT查询异常（可能超时），采用保守batchSize={}继续导出", FALLBACK_BATCH_SIZE, e);
             return -1L;
@@ -190,22 +205,24 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         return BatchSizeCalculator.calculateExportBatchSize(totalRows);
     }
 
-    private List<Object[]> executePagingQuery(String sql) {
-        List<Object[]> result = new ArrayList<>();
+    private List<Object[]> executePagingQuery(String sql, String jdbcUrl, String username, String password) {
         int retryCount = 0;
-
         while (retryCount <= MAX_RETRY_COUNT) {
-            try {
-                jdbcTemplate.query(sql, (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
+            try (Connection conn = createConnection(jdbcUrl, username, password);
+                 PreparedStatement pstmt = createPagingStatement(conn, sql)) {
+                try (ResultSet rs = pstmt.executeQuery()) {
                     ResultSetMetaData metaData = rs.getMetaData();
                     int columnCount = metaData.getColumnCount();
-                    Object[] row = new Object[columnCount];
-                    for (int i = 0; i < columnCount; i++) {
-                        row[i] = rs.getObject(i + 1);
+                    List<Object[]> result = new ArrayList<>();
+                    while (rs.next()) {
+                        Object[] row = new Object[columnCount];
+                        for (int i = 0; i < columnCount; i++) {
+                            row[i] = rs.getObject(i + 1);
+                        }
+                        result.add(row);
                     }
-                    result.add(row);
-                });
-                return result;
+                    return result;
+                }
             } catch (Exception e) {
                 retryCount++;
                 if (retryCount > MAX_RETRY_COUNT) {
@@ -221,10 +238,16 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                 }
             }
         }
-        return result;
+        return Collections.emptyList();
     }
 
-    private List<String> resolveColumnNames(String sql, List<String> customColumnNames) {
+    private PreparedStatement createPagingStatement(Connection conn, String sql) throws SQLException {
+        conn.setAutoCommit(false);
+        return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    }
+
+    private List<String> resolveColumnNames(String sql, List<String> customColumnNames,
+                                             String jdbcUrl, String username, String password) {
         if (customColumnNames != null && !customColumnNames.isEmpty()) {
             return customColumnNames;
         }
@@ -232,13 +255,17 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         List<String> columnNames = new ArrayList<>();
         String limitedSql = SqlUtils.buildPagingSql(sql, 1, 0);
 
-        jdbcTemplate.query(limitedSql, (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
+        try (Connection conn = createConnection(jdbcUrl, username, password);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(limitedSql)) {
             ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
             for (int i = 1; i <= columnCount; i++) {
                 columnNames.add(metaData.getColumnLabel(i));
             }
-        });
+        } catch (SQLException e) {
+            log.warn("获取列名失败", e);
+        }
 
         return columnNames;
     }

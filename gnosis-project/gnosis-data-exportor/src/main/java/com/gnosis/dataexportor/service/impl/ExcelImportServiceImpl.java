@@ -13,17 +13,18 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,9 +36,6 @@ public class ExcelImportServiceImpl implements ExcelImportService {
 
     private static final int DEFAULT_BATCH_SIZE = 5000;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     @Override
     public ImportResult importFromExcel(String excelPath, ImportRequest request) throws IOException, SQLException {
         return importFromExcel(excelPath, request, new LoggingProgressListener());
@@ -48,6 +46,10 @@ public class ExcelImportServiceImpl implements ExcelImportService {
             throws IOException, SQLException {
         long startTime = System.currentTimeMillis();
         ImportResult result = new ImportResult();
+
+        String jdbcUrl = validateParam(request.getJdbcUrl(), "jdbcUrl");
+        String username = validateParam(request.getUsername(), "username");
+        String password = request.getPassword() != null ? request.getPassword() : "";
 
         log.info("开始导入，文件: {}，目标表: {}", excelPath, request.getTableName());
 
@@ -73,7 +75,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
 
             listener.onStart(totalSheetRows, totalSheets);
 
-            List<String> dbColumns = getTableColumns(request.getTableName());
+            List<String> dbColumns = getTableColumns(request.getTableName(), jdbcUrl, username, password);
 
             for (int si = 0; si < totalSheets; si++) {
                 Sheet sheet = workbook.getSheetAt(si);
@@ -105,7 +107,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                         batchRows.add(rowValues);
 
                         if (batchRows.size() >= batchSize) {
-                            executeBatchInsert(insertSql, batchRows, result);
+                            executeBatchInsert(insertSql, batchRows, result, jdbcUrl, username, password);
                             result.setSuccessRows(result.getSuccessRows() + batchRows.size());
                             processedInSheet += batchRows.size();
                             batchRows.clear();
@@ -131,7 +133,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 }
 
                 if (!batchRows.isEmpty()) {
-                    executeBatchInsert(insertSql, batchRows, result);
+                    executeBatchInsert(insertSql, batchRows, result, jdbcUrl, username, password);
                     result.setSuccessRows(result.getSuccessRows() + batchRows.size());
                     batchRows.clear();
                 }
@@ -152,6 +154,17 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         return result;
     }
 
+    private String validateParam(String value, String name) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("数据库连接参数 " + name + " 不能为空");
+        }
+        return value.trim();
+    }
+
+    private Connection createConnection(String jdbcUrl, String username, String password) throws SQLException {
+        return DriverManager.getConnection(jdbcUrl, username, password);
+    }
+
     private List<String> readHeaderRow(Row headerRow) {
         List<String> columns = new ArrayList<>();
         if (headerRow == null) {
@@ -164,17 +177,18 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         return columns;
     }
 
-    private List<String> getTableColumns(String tableName) throws SQLException {
+    private List<String> getTableColumns(String tableName, String jdbcUrl, String username, String password)
+            throws SQLException {
         List<String> columns = new ArrayList<>();
-        jdbcTemplate.query("SELECT * FROM " + tableName + " WHERE 1=0",
-                (org.springframework.jdbc.core.ResultSetExtractor<Void>) rs -> {
-            java.sql.ResultSetMetaData metaData = rs.getMetaData();
+        try (Connection conn = createConnection(jdbcUrl, username, password);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + " WHERE 1=0")) {
+            ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
             for (int i = 1; i <= columnCount; i++) {
                 columns.add(metaData.getColumnName(i));
             }
-            return null;
-        });
+        }
         return columns;
     }
 
@@ -196,7 +210,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 continue;
             }
 
-            String targetCol = null;
+            String targetCol;
 
             if (explicitMapping != null && explicitMapping.containsKey(excelCol)) {
                 targetCol = explicitMapping.get(excelCol);
@@ -251,29 +265,29 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         return values;
     }
 
-    @Transactional
-    private void executeBatchInsert(String sql, List<List<Object>> batchRows, ImportResult result) {
-        jdbcTemplate.execute((Connection conn) -> {
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                for (List<Object> row : batchRows) {
-                    int paramIdx = 1;
-                    for (Object value : row) {
-                        if (value != null) {
-                            pstmt.setString(paramIdx, value.toString());
-                        } else {
-                            pstmt.setNull(paramIdx, java.sql.Types.VARCHAR);
-                        }
-                        paramIdx++;
+    private void executeBatchInsert(String sql, List<List<Object>> batchRows, ImportResult result,
+                                     String jdbcUrl, String username, String password) {
+        try (Connection conn = createConnection(jdbcUrl, username, password);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            conn.setAutoCommit(false);
+            for (List<Object> row : batchRows) {
+                int paramIdx = 1;
+                for (Object value : row) {
+                    if (value != null) {
+                        pstmt.setString(paramIdx, value.toString());
+                    } else {
+                        pstmt.setNull(paramIdx, java.sql.Types.VARCHAR);
                     }
-                    pstmt.addBatch();
+                    paramIdx++;
                 }
-                pstmt.executeBatch();
-            } catch (SQLException e) {
-                log.warn("批量插入中部分数据可能失败: {}", e.getMessage());
-                throw e;
+                pstmt.addBatch();
             }
-            return null;
-        });
+            pstmt.executeBatch();
+            conn.commit();
+        } catch (SQLException e) {
+            log.warn("批量插入失败: {}", e.getMessage());
+            throw new RuntimeException("批量插入失败: " + e.getMessage(), e);
+        }
     }
 
     private boolean isRowEmpty(Row row) {

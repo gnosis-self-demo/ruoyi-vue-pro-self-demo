@@ -20,6 +20,9 @@ interface ErrorRecord {
 }
 
 const DataImportPage: React.FC = () => {
+  const [jdbcUrl, setJdbcUrl] = useState('jdbc:opengauss://localserver.gnosis:5432/gnosis_sample?prepareThreshold=0');
+  const [username, setUsername] = useState('gaussdb');
+  const [password, setPassword] = useState('');
   const [tableName, setTableName] = useState('');
   const [batchSize, setBatchSize] = useState<number | ''>('');
   const [columnMapping, setColumnMapping] = useState('');
@@ -30,11 +33,7 @@ const DataImportPage: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setResult(null);
-      setMessage('');
-    }
+    if (selectedFile) { setFile(selectedFile); setResult(null); setMessage(''); }
   };
 
   const parseColumnMapping = (text: string): Record<string, string> | undefined => {
@@ -43,22 +42,16 @@ const DataImportPage: React.FC = () => {
     const map: Record<string, string> = {};
     for (const line of lines) {
       const parts = line.split(/[=:]/).map(s => s.trim());
-      if (parts.length >= 2 && parts[0] && parts[1]) {
-        map[parts[0]] = parts[1];
-      }
+      if (parts.length >= 2 && parts[0] && parts[1]) map[parts[0]] = parts[1];
     }
     return Object.keys(map).length > 0 ? map : undefined;
   };
 
   const handleImport = async () => {
-    if (!tableName.trim()) {
-      setMessage('请输入目标表名');
-      return;
-    }
-    if (!file) {
-      setMessage('请选择要导入的Excel文件');
-      return;
-    }
+    if (!jdbcUrl.trim()) { setMessage('请输入 JDBC地址'); return; }
+    if (!username.trim()) { setMessage('请输入数据库用户名'); return; }
+    if (!tableName.trim()) { setMessage('请输入目标表名'); return; }
+    if (!file) { setMessage('请选择要导入的Excel文件'); return; }
 
     setLoading(true);
     setMessage('正在导入...');
@@ -67,25 +60,18 @@ const DataImportPage: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('jdbcUrl', jdbcUrl.trim());
+      formData.append('username', username.trim());
+      formData.append('password', password);
       formData.append('tableName', tableName.trim());
-      if (batchSize !== '' && batchSize > 0) {
-        formData.append('batchSize', String(batchSize));
-      }
+      if (batchSize !== '' && batchSize > 0) formData.append('batchSize', String(batchSize));
       const mapping = parseColumnMapping(columnMapping);
-      if (mapping) {
-        formData.append('columnMapping', JSON.stringify(mapping));
-      }
+      if (mapping) formData.append('columnMapping', JSON.stringify(mapping));
 
-      const response = await fetch(`${API_BASE}/import/execute`, {
-        method: 'POST',
-        body: formData,
-      });
-
+      const response = await fetch(`${API_BASE}/import/execute`, { method: 'POST', body: formData });
       const data = await response.json();
 
-      if (data.code !== 200) {
-        throw new Error(data.msg || data.message || '导入失败');
-      }
+      if (data.code !== 200) throw new Error(data.msg || data.message || '导入失败');
 
       const importResult: ImportResult = data.data;
       setResult(importResult);
@@ -103,132 +89,93 @@ const DataImportPage: React.FC = () => {
     return `${(ms / 60000).toFixed(1)} 分钟`;
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', border: '1px solid #d9d9d9',
+    borderRadius: 4, fontSize: 14, boxSizing: 'border-box',
+  };
+
   return (
     <div style={{ padding: 24, maxWidth: 960, margin: '0 auto' }}>
       <h2>数据导入</h2>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold', fontSize: 13 }}>
+            JDBC地址 <span style={{ color: 'red' }}>*</span>
+          </label>
+          <input value={jdbcUrl} onChange={e => setJdbcUrl(e.target.value)}
+            placeholder="jdbc:opengauss://host:port/db" style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold', fontSize: 13 }}>
+            用户名 <span style={{ color: 'red' }}>*</span>
+          </label>
+          <input value={username} onChange={e => setUsername(e.target.value)}
+            placeholder="数据库用户名" style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 4, fontWeight: 'bold', fontSize: 13 }}>
+            密码
+          </label>
+          <input value={password} onChange={e => setPassword(e.target.value)}
+            type="password" placeholder="数据库密码" style={inputStyle} />
+        </div>
+      </div>
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
           目标表名 <span style={{ color: 'red' }}>*</span>
         </label>
-        <input
-          value={tableName}
-          onChange={e => setTableName(e.target.value)}
-          placeholder="请输入数据库目标表名"
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            border: '1px solid #d9d9d9',
-            borderRadius: 4,
-            fontSize: 14,
-            boxSizing: 'border-box',
-          }}
-        />
+        <input value={tableName} onChange={e => setTableName(e.target.value)}
+          placeholder="请输入数据库目标表名" style={inputStyle} />
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
-          批次大小
-        </label>
-        <input
-          type="number"
-          value={batchSize}
+        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>批次大小</label>
+        <input type="number" value={batchSize}
           onChange={e => setBatchSize(e.target.value === '' ? '' : Number(e.target.value))}
-          placeholder="默认自动计算（5000）"
-          min={100}
-          max={50000}
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            border: '1px solid #d9d9d9',
-            borderRadius: 4,
-            fontSize: 14,
-            boxSizing: 'border-box',
-          }}
-        />
+          placeholder="默认自动计算（5000）" min={100} max={50000} style={inputStyle} />
       </div>
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
-          列映射（可选，Excel列名 = 数据库字段名，每行一条）
+          列映射（可选，每行一条 Excel列名=数据库字段名）
         </label>
-        <textarea
-          value={columnMapping}
-          onChange={e => setColumnMapping(e.target.value)}
-          placeholder={'订单号=order_no\n金额=amount\n创建时间=create_time'}
-          rows={4}
-          style={{
-            width: '100%',
-            padding: 8,
-            border: '1px solid #d9d9d9',
-            borderRadius: 4,
-            fontSize: 13,
-            fontFamily: 'monospace',
-            boxSizing: 'border-box',
-          }}
-        />
+        <textarea value={columnMapping} onChange={e => setColumnMapping(e.target.value)}
+          placeholder={'订单号=order_no\n金额=amount'} rows={3}
+          style={{ ...inputStyle, fontFamily: 'monospace', resize: 'vertical' }} />
       </div>
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
           选择Excel文件 <span style={{ color: 'red' }}>*</span>
         </label>
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleFileChange}
-          style={{ fontSize: 14 }}
-        />
-        {file && (
-          <div style={{ marginTop: 8, color: '#666', fontSize: 13 }}>
-            已选择: {file.name} ({(file.size / 1024).toFixed(1)} KB)
-          </div>
-        )}
+        <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} style={{ fontSize: 14 }} />
+        {file && <div style={{ marginTop: 8, color: '#666', fontSize: 13 }}>
+          已选择: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+        </div>}
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <button
-          onClick={handleImport}
-          disabled={loading}
-          style={{
-            padding: '10px 24px',
-            backgroundColor: loading ? '#b0b0b0' : '#52c41a',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            fontSize: 15,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            marginRight: 12,
-          }}
-        >
+        <button onClick={handleImport} disabled={loading}
+          style={{ padding: '10px 24px', backgroundColor: loading ? '#b0b0b0' : '#52c41a',
+            color: '#fff', border: 'none', borderRadius: 4, fontSize: 15,
+            cursor: loading ? 'not-allowed' : 'pointer', marginRight: 12 }}>
           {loading ? '导入中...' : '执行导入'}
         </button>
       </div>
 
       {message && (
-        <div
-          style={{
-            padding: '10px 16px',
-            backgroundColor: message.includes('失败') ? '#fff2f0' : '#f6ffed',
-            border: `1px solid ${message.includes('失败') ? '#ffccc7' : '#b7eb8f'}`,
-            borderRadius: 4,
-            color: message.includes('失败') ? '#cf1322' : '#389e0d',
-            marginBottom: 16,
-          }}
-        >
+        <div style={{ padding: '10px 16px',
+          backgroundColor: message.includes('失败') ? '#fff2f0' : '#f6ffed',
+          border: `1px solid ${message.includes('失败') ? '#ffccc7' : '#b7eb8f'}`,
+          borderRadius: 4, color: message.includes('失败') ? '#cf1322' : '#389e0d', marginBottom: 16 }}>
           {message}
         </div>
       )}
 
       {result && (
-        <div
-          style={{
-            border: '1px solid #d9d9d9',
-            borderRadius: 4,
-            padding: 16,
-            backgroundColor: '#fafafa',
-          }}
-        >
+        <div style={{ border: '1px solid #d9d9d9', borderRadius: 4, padding: 16, backgroundColor: '#fafafa' }}>
           <h4 style={{ marginTop: 0 }}>导入结果</h4>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
@@ -260,26 +207,16 @@ const DataImportPage: React.FC = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f5f5f5' }}>
-                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>
-                        Sheet
-                      </th>
-                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>
-                        行号
-                      </th>
-                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>
-                        错误信息
-                      </th>
+                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>Sheet</th>
+                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>行号</th>
+                      <th style={{ padding: '6px 8px', border: '1px solid #e8e8e8', textAlign: 'left' }}>错误信息</th>
                     </tr>
                   </thead>
                   <tbody>
                     {result.errors.map((err, idx) => (
                       <tr key={idx}>
-                        <td style={{ padding: '4px 8px', border: '1px solid #e8e8e8' }}>
-                          {err.sheetIndex + 1}
-                        </td>
-                        <td style={{ padding: '4px 8px', border: '1px solid #e8e8e8' }}>
-                          {err.rowNumber}
-                        </td>
+                        <td style={{ padding: '4px 8px', border: '1px solid #e8e8e8' }}>{err.sheetIndex + 1}</td>
+                        <td style={{ padding: '4px 8px', border: '1px solid #e8e8e8' }}>{err.rowNumber}</td>
                         <td style={{ padding: '4px 8px', border: '1px solid #e8e8e8', color: '#cf1322' }}>
                           {err.errorMessage}
                         </td>

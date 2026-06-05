@@ -7,6 +7,15 @@ import java.util.List;
 @Data
 public class ExportRequest {
 
+    /** JDBC连接地址 */
+    private String jdbcUrl;
+
+    /** 数据库用户名 */
+    private String username;
+
+    /** 数据库密码 */
+    private String password;
+
     /** 单条SQL（兼容旧接口） */
     private String sql;
 

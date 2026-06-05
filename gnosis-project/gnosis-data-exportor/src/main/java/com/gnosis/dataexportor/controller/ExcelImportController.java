@@ -17,7 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,6 +31,9 @@ public class ExcelImportController {
     @ApiOperation("执行数据导入")
     @PostMapping("/execute")
     public CommonResponse<ImportResult> execute(@RequestParam("file") MultipartFile file,
+                                                 @RequestParam(value = "jdbcUrl", required = false) String jdbcUrl,
+                                                 @RequestParam(value = "username", required = false) String username,
+                                                 @RequestParam(value = "password", required = false) String password,
                                                  @RequestParam(value = "tableName", required = false) String tableName,
                                                  @RequestParam(value = "batchSize", required = false) Integer batchSize,
                                                  @RequestParam(value = "columnMapping", required = false) String columnMappingJson) {
@@ -43,6 +45,9 @@ public class ExcelImportController {
 
             try {
                 ImportRequest request = new ImportRequest();
+                request.setJdbcUrl(jdbcUrl);
+                request.setUsername(username);
+                request.setPassword(password);
                 request.setTableName(tableName);
                 request.setBatchSize(batchSize);
 
