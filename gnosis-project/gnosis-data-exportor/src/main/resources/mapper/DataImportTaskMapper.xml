@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.dataexportor.mapper.DataImportTaskMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.dataexportor.entity.DataImportTask">
+        <id column="id" property="id"/>
+        <result column="task_name" property="taskName"/>
+        <result column="table_name" property="tableName"/>
+        <result column="file_name" property="fileName"/>
+        <result column="import_format" property="importFormat"/>
+        <result column="total_rows" property="totalRows"/>
+        <result column="success_rows" property="successRows"/>
+        <result column="failed_rows" property="failedRows"/>
+        <result column="skipped_rows" property="skippedRows"/>
+        <result column="total_sheets" property="totalSheets"/>
+        <result column="status" property="status"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="duration_ms" property="durationMs"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT * FROM data_import_task
+        <where>
+            <if test="params.taskName != null and params.taskName != ''">
+                AND task_name LIKE CONCAT('%', #{params.taskName}, '%')
+            </if>
+            <if test="params.status != null and params.status != ''">
+                AND status = #{params.status}
+            </if>
+            <if test="params.format != null and params.format != ''">
+                AND import_format = #{params.format}
+            </if>
+            <if test="params.createUserId != null and params.createUserId != ''">
+                AND create_user_id = #{params.createUserId}
+            </if>
+            <if test="params.createTimeStart != null and params.createTimeStart != ''">
+                AND create_time &gt;= #{params.createTimeStart}
+            </if>
+            <if test="params.createTimeEnd != null and params.createTimeEnd != ''">
+                AND create_time &lt;= #{params.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{params.limit} OFFSET #{params.offset}
+    </select>
+
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM data_import_task
+        <where>
+            <if test="params.taskName != null and params.taskName != ''">
+                AND task_name LIKE CONCAT('%', #{params.taskName}, '%')
+            </if>
+            <if test="params.status != null and params.status != ''">
+                AND status = #{params.status}
+            </if>
+            <if test="params.format != null and params.format != ''">
+                AND import_format = #{params.format}
+            </if>
+            <if test="params.createUserId != null and params.createUserId != ''">
+                AND create_user_id = #{params.createUserId}
+            </if>
+            <if test="params.createTimeStart != null and params.createTimeStart != ''">
+                AND create_time &gt;= #{params.createTimeStart}
+            </if>
+            <if test="params.createTimeEnd != null and params.createTimeEnd != ''">
+                AND create_time &lt;= #{params.createTimeEnd}
+            </if>
+        </where>
+    </select>
+
+</mapper>

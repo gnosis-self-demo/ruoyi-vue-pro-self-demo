@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.dataexportor.mapper.DataExportTaskMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.dataexportor.entity.DataExportTask">
+        <id column="id" property="id"/>
+        <result column="task_name" property="taskName"/>
+        <result column="business_type" property="businessType"/>
+        <result column="scene" property="scene"/>
+        <result column="module" property="module"/>
+        <result column="operator" property="operator"/>
+        <result column="client_ip" property="clientIp"/>
+        <result column="request_params" property="requestParams"/>
+        <result column="sql_content" property="sqlContent"/>
+        <result column="sheet_name" property="sheetName"/>
+        <result column="file_name" property="fileName"/>
+        <result column="export_format" property="exportFormat"/>
+        <result column="total_rows" property="totalRows"/>
+        <result column="processed_rows" property="processedRows"/>
+        <result column="download_url" property="downloadUrl"/>
+        <result column="status" property="status"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="duration_ms" property="durationMs"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT * FROM data_export_task
+        <where>
+            <if test="params.taskName != null and params.taskName != ''">
+                AND task_name LIKE CONCAT('%', #{params.taskName}, '%')
+            </if>
+            <if test="params.businessType != null and params.businessType != ''">
+                AND business_type = #{params.businessType}
+            </if>
+            <if test="params.scene != null and params.scene != ''">
+                AND scene = #{params.scene}
+            </if>
+            <if test="params.module != null and params.module != ''">
+                AND module = #{params.module}
+            </if>
+            <if test="params.operator != null and params.operator != ''">
+                AND operator LIKE CONCAT('%', #{params.operator}, '%')
+            </if>
+            <if test="params.status != null and params.status != ''">
+                AND status = #{params.status}
+            </if>
+            <if test="params.format != null and params.format != ''">
+                AND export_format = #{params.format}
+            </if>
+            <if test="params.createUserId != null and params.createUserId != ''">
+                AND create_user_id = #{params.createUserId}
+            </if>
+            <if test="params.createTimeStart != null and params.createTimeStart != ''">
+                AND create_time &gt;= #{params.createTimeStart}
+            </if>
+            <if test="params.createTimeEnd != null and params.createTimeEnd != ''">
+                AND create_time &lt;= #{params.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{params.limit} OFFSET #{params.offset}
+    </select>
+
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM data_export_task
+        <where>
+            <if test="params.taskName != null and params.taskName != ''">
+                AND task_name LIKE CONCAT('%', #{params.taskName}, '%')
+            </if>
+            <if test="params.businessType != null and params.businessType != ''">
+                AND business_type = #{params.businessType}
+            </if>
+            <if test="params.scene != null and params.scene != ''">
+                AND scene = #{params.scene}
+            </if>
+            <if test="params.module != null and params.module != ''">
+                AND module = #{params.module}
+            </if>
+            <if test="params.operator != null and params.operator != ''">
+                AND operator LIKE CONCAT('%', #{params.operator}, '%')
+            </if>
+            <if test="params.status != null and params.status != ''">
+                AND status = #{params.status}
+            </if>
+            <if test="params.format != null and params.format != ''">
+                AND export_format = #{params.format}
+            </if>
+            <if test="params.createUserId != null and params.createUserId != ''">
+                AND create_user_id = #{params.createUserId}
+            </if>
+            <if test="params.createTimeStart != null and params.createTimeStart != ''">
+                AND create_time &gt;= #{params.createTimeStart}
+            </if>
+            <if test="params.createTimeEnd != null and params.createTimeEnd != ''">
+                AND create_time &lt;= #{params.createTimeEnd}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteByIds">
+        DELETE FROM data_export_task WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

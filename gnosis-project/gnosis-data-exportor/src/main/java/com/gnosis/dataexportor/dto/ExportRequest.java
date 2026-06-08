@@ -28,6 +28,12 @@ public class ExportRequest {
     /** 自定义列名 */
     private List<String> columnNames;
 
+    /** 用户ID（记录任务用） */
+    private String userId;
+
+    /** 任务名称 */
+    private String taskName;
+
     @Data
     public static class SqlEntry {
         /** SQL查询语句（建议包含ORDER BY） */

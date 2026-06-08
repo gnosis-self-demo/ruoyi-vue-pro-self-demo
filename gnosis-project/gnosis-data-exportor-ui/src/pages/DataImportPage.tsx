@@ -62,6 +62,46 @@ const DataImportPage: React.FC = () => {
     return Object.keys(map).length > 0 ? map : undefined;
   };
 
+  const handleDownloadTemplate = async () => {
+    if (!tableName.trim()) { setMessage('请输入目标表名'); return; }
+    if (!jdbcUrl.trim()) { setMessage('请输入JDBC地址'); return; }
+
+    try {
+      const response = await fetch(`${API_BASE}/import/downloadTemplate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableName: tableName.trim(),
+          jdbcUrl: jdbcUrl.trim(),
+          username: username.trim(),
+          password: password,
+        }),
+      });
+
+      if (!response.ok) {
+        const ct = response.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const err = await response.json();
+          throw new Error(err.msg || err.message || '下载失败');
+        }
+        throw new Error('下载失败');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${tableName.trim()}_template.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setMessage('模板下载完成');
+    } catch (err: any) {
+      setMessage(`下载模板失败: ${err.message}`);
+    }
+  };
+
   const handleImport = async () => {
     if (!jdbcUrl.trim()) { setMessage('请输入 JDBC地址'); return; }
     if (!username.trim()) { setMessage('请输入数据库用户名'); return; }
@@ -151,10 +191,18 @@ const DataImportPage: React.FC = () => {
         <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
           目标表名 {!isZip && <span style={{ color: 'red' }}>*</span>}
         </label>
-        <input value={tableName} onChange={e => setTableName(e.target.value)}
-          placeholder={isZip ? 'ZIP导入时表名从CSV文件名自动获取' : '请输入数据库目标表名'}
-          disabled={isZip}
-          style={{ ...inputStyle, backgroundColor: isZip ? '#f5f5f5' : undefined }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={tableName} onChange={e => setTableName(e.target.value)}
+            placeholder={isZip ? 'ZIP导入时表名从CSV文件名自动获取' : '请输入数据库目标表名'}
+            disabled={isZip}
+            style={{ ...inputStyle, backgroundColor: isZip ? '#f5f5f5' : undefined, flex: 1 }} />
+          <button onClick={handleDownloadTemplate} disabled={!tableName.trim() || !jdbcUrl.trim()}
+            style={{ padding: '8px 16px', backgroundColor: !tableName.trim() ? '#b0b0b0' : '#1890ff',
+              color: '#fff', border: 'none', borderRadius: 4, fontSize: 14,
+              cursor: !tableName.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+            下载模板
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>

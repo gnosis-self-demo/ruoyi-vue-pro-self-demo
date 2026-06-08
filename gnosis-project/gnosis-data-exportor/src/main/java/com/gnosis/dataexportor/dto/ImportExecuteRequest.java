@@ -32,6 +32,12 @@ public class ImportExecuteRequest {
     /** 文件内容（base64编码） */
     private String fileData;
 
+    /** 用户ID（记录任务用） */
+    private String userId;
+
+    /** 任务名称 */
+    private String taskName;
+
     /**
      * 将base64解码为字节数组
      */

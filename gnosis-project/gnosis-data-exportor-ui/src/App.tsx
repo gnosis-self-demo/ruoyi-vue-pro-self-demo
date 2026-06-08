@@ -2,6 +2,8 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
 import DataExportPage from './pages/DataExportPage'
 import DataImportPage from './pages/DataImportPage'
+import ExportTaskHistoryPage from './pages/ExportTaskHistoryPage'
+import ImportTaskHistoryPage from './pages/ImportTaskHistoryPage'
 
 const App: React.FC = () => {
   const navStyle = {
@@ -28,11 +30,15 @@ const App: React.FC = () => {
         <nav style={navStyle}>
           <NavLink to="/export" style={linkStyle}>数据导出</NavLink>
           <NavLink to="/import" style={linkStyle}>数据导入</NavLink>
+          <NavLink to="/export-history" style={linkStyle}>导出记录</NavLink>
+          <NavLink to="/import-history" style={linkStyle}>导入记录</NavLink>
         </nav>
         <div style={{ padding: 0 }}>
           <Routes>
             <Route path="/export" element={<DataExportPage />} />
             <Route path="/import" element={<DataImportPage />} />
+            <Route path="/export-history" element={<ExportTaskHistoryPage />} />
+            <Route path="/import-history" element={<ImportTaskHistoryPage />} />
             <Route path="/" element={<DataExportPage />} />
           </Routes>
         </div>
