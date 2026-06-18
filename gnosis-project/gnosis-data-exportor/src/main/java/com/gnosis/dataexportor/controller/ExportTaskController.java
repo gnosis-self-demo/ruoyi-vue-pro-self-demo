@@ -1,6 +1,7 @@
 package com.gnosis.dataexportor.controller;
 
 import com.gnosis.common.dto.BaseResponse;
+import com.gnosis.common.util.ResponseUtil;
 import com.gnosis.dataexportor.dto.*;
 import com.gnosis.dataexportor.entity.DataExportTask;
 import com.gnosis.dataexportor.service.TaskService;
@@ -59,9 +60,9 @@ public class ExportTaskController {
             task.setStatus("PENDING");
 
             String taskId = taskService.createExportTask(task);
-            return BaseResponse.success(taskId);
+            return ResponseUtil.ok(taskId);
         } catch (Exception e) {
-            return BaseResponse.error("创建任务失败: " + e.getMessage());
+            return ResponseUtil.fail("创建任务失败: " + e.getMessage());
         }
     }
 
@@ -71,9 +72,9 @@ public class ExportTaskController {
         try {
             taskService.updateProgress(request.getTaskId(), request.getProcessedRows(),
                     request.getTotalRows(), request.getUpdateUserId());
-            return BaseResponse.success("ok");
+            return ResponseUtil.ok("ok");
         } catch (Exception e) {
-            return BaseResponse.error("更新进度失败: " + e.getMessage());
+            return ResponseUtil.fail("更新进度失败: " + e.getMessage());
         }
     }
 
@@ -83,9 +84,9 @@ public class ExportTaskController {
         try {
             taskService.completeExportTask(request.getTaskId(), request.getFileName(),
                     request.getDownloadUrl(), request.getTotalRows(), request.getUpdateUserId());
-            return BaseResponse.success("ok");
+            return ResponseUtil.ok("ok");
         } catch (Exception e) {
-            return BaseResponse.error("完成任务失败: " + e.getMessage());
+            return ResponseUtil.fail("完成任务失败: " + e.getMessage());
         }
     }
 
@@ -95,9 +96,9 @@ public class ExportTaskController {
         try {
             taskService.failExportTask(request.getTaskId(), request.getErrorMessage(),
                     request.getUpdateUserId());
-            return BaseResponse.success("ok");
+            return ResponseUtil.ok("ok");
         } catch (Exception e) {
-            return BaseResponse.error("标记失败: " + e.getMessage());
+            return ResponseUtil.fail("标记失败: " + e.getMessage());
         }
     }
 
@@ -107,9 +108,9 @@ public class ExportTaskController {
     @PostMapping("/data-exportor/export/tasks/page")
     public BaseResponse<TaskPageResponse<DataExportTask>> page(@RequestBody TaskPageQueryRequest request) {
         try {
-            return BaseResponse.success(taskService.pageExportTasks(request));
+            return ResponseUtil.ok(taskService.pageExportTasks(request));
         } catch (Exception e) {
-            return BaseResponse.error("查询失败: " + e.getMessage());
+            return ResponseUtil.fail("查询失败: " + e.getMessage());
         }
     }
 
@@ -119,15 +120,15 @@ public class ExportTaskController {
         try {
             String id = body.get("id");
             if (id == null || id.trim().isEmpty()) {
-                return BaseResponse.error("id 不能为空");
+                return ResponseUtil.fail("id 不能为空");
             }
             DataExportTask task = taskService.getExportTaskDetail(id);
             if (task == null) {
-                return BaseResponse.error("任务不存在");
+                return ResponseUtil.fail("任务不存在");
             }
-            return BaseResponse.success(task);
+            return ResponseUtil.ok(task);
         } catch (Exception e) {
-            return BaseResponse.error("查询失败: " + e.getMessage());
+            return ResponseUtil.fail("查询失败: " + e.getMessage());
         }
     }
 
@@ -139,12 +140,12 @@ public class ExportTaskController {
         try {
             List<String> ids = body.get("ids");
             if (ids == null || ids.isEmpty()) {
-                return BaseResponse.error("ids 不能为空");
+                return ResponseUtil.fail("ids 不能为空");
             }
             int count = taskService.deleteExportTasks(ids);
-            return BaseResponse.success(count);
+            return ResponseUtil.ok(count);
         } catch (Exception e) {
-            return BaseResponse.error("删除失败: " + e.getMessage());
+            return ResponseUtil.fail("删除失败: " + e.getMessage());
         }
     }
 

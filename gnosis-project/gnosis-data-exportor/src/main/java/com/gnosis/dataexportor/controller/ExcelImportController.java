@@ -1,6 +1,7 @@
 package com.gnosis.dataexportor.controller;
 
 import com.gnosis.common.dto.BaseResponse;
+import com.gnosis.common.util.ResponseUtil;
 import com.gnosis.dataexportor.dto.ImportExecuteRequest;
 import com.gnosis.dataexportor.dto.ImportRequest;
 import com.gnosis.dataexportor.dto.ImportResult;
@@ -43,10 +44,10 @@ public class ExcelImportController {
 
         try {
             if (body.getJdbcUrl() == null || body.getJdbcUrl().trim().isEmpty()) {
-                return BaseResponse.error("jdbcUrl 不能为空");
+                return ResponseUtil.fail("jdbcUrl 不能为空");
             }
             if (body.getUsername() == null || body.getUsername().trim().isEmpty()) {
-                return BaseResponse.error("username 不能为空");
+                return ResponseUtil.fail("username 不能为空");
             }
 
             byte[] fileBytes = body.decodeFileData();
@@ -84,7 +85,7 @@ public class ExcelImportController {
                             new com.gnosis.dataexportor.listener.LoggingProgressListener());
                 } else {
                     if (request.getTableName() == null || request.getTableName().trim().isEmpty()) {
-                        return BaseResponse.error("Excel导入需要指定 tableName");
+                        return ResponseUtil.fail("Excel导入需要指定 tableName");
                     }
                     result = excelImportService.importFromExcel(tempFilePath, request);
                 }
@@ -102,7 +103,7 @@ public class ExcelImportController {
                 } catch (Exception ignored) {
                 }
 
-                return BaseResponse.success(result);
+                return ResponseUtil.ok(result);
             } catch (Exception e) {
                 // 更新任务为失败
                 task.setStatus("FAILED");
@@ -121,7 +122,7 @@ public class ExcelImportController {
                 }
             }
         } catch (Exception e) {
-            return BaseResponse.error("导入失败: " + e.getMessage());
+            return ResponseUtil.fail("导入失败: " + e.getMessage());
         }
     }
 
@@ -165,9 +166,9 @@ public class ExcelImportController {
     @PostMapping("/data-exportor/import/page")
     public BaseResponse<TaskPageResponse<DataImportTask>> page(@RequestBody TaskPageQueryRequest request) {
         try {
-            return BaseResponse.success(taskService.pageImportTasks(request));
+            return ResponseUtil.ok(taskService.pageImportTasks(request));
         } catch (Exception e) {
-            return BaseResponse.error("查询失败: " + e.getMessage());
+            return ResponseUtil.fail("查询失败: " + e.getMessage());
         }
     }
 
@@ -177,15 +178,15 @@ public class ExcelImportController {
         try {
             String id = body.get("id");
             if (id == null || id.trim().isEmpty()) {
-                return BaseResponse.error("id 不能为空");
+                return ResponseUtil.fail("id 不能为空");
             }
             DataImportTask task = taskService.getImportTaskDetail(id);
             if (task == null) {
-                return BaseResponse.error("任务不存在");
+                return ResponseUtil.fail("任务不存在");
             }
-            return BaseResponse.success(task);
+            return ResponseUtil.ok(task);
         } catch (Exception e) {
-            return BaseResponse.error("查询失败: " + e.getMessage());
+            return ResponseUtil.fail("查询失败: " + e.getMessage());
         }
     }
 }

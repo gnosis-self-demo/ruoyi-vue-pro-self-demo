@@ -1,6 +1,7 @@
 package com.gnosis.dataexportor.controller;
 
 import com.gnosis.common.dto.BaseResponse;
+import com.gnosis.common.util.ResponseUtil;
 import com.gnosis.dataexportor.dto.ExportRequest;
 import com.gnosis.dataexportor.dto.TaskPageQueryRequest;
 import com.gnosis.dataexportor.dto.TaskPageResponse;
@@ -96,9 +97,9 @@ public class ExcelExportController {
     @PostMapping("/data-exportor/export/page")
     public BaseResponse<TaskPageResponse<DataExportTask>> page(@RequestBody TaskPageQueryRequest request) {
         try {
-            return BaseResponse.success(taskService.pageExportTasks(request));
+            return ResponseUtil.ok(taskService.pageExportTasks(request));
         } catch (Exception e) {
-            return BaseResponse.error("查询失败: " + e.getMessage());
+            return ResponseUtil.fail("查询失败: " + e.getMessage());
         }
     }
 
@@ -108,15 +109,15 @@ public class ExcelExportController {
         try {
             String id = body.get("id");
             if (id == null || id.trim().isEmpty()) {
-                return BaseResponse.error("id 不能为空");
+                return ResponseUtil.fail("id 不能为空");
             }
             DataExportTask task = taskService.getExportTaskDetail(id);
             if (task == null) {
-                return BaseResponse.error("任务不存在");
+                return ResponseUtil.fail("任务不存在");
             }
-            return BaseResponse.success(task);
+            return ResponseUtil.ok(task);
         } catch (Exception e) {
-            return BaseResponse.error("查询失败: " + e.getMessage());
+            return ResponseUtil.fail("查询失败: " + e.getMessage());
         }
     }
 }
