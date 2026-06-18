@@ -10,6 +10,7 @@ import com.gnosis.accounts.service.AccImportExportService;
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
+import com.gnosis.common.util.ResponseUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,28 +39,28 @@ public class AccChannelClearingController {
     @ApiOperation("分页查询清算列表")
     @PostMapping("/page")
     public BaseResponse<PageResult<AccChannelClearingVO>> pageList(@RequestBody PageRequest<AccChannelClearingQueryRequest> request) {
-        return BaseResponse.success(clearingService.pageList(request));
+        return ResponseUtil.ok(clearingService.pageList(request));
     }
 
     @ApiOperation("查询清算详情")
     @PostMapping("/detail")
     public BaseResponse<AccChannelClearingVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return BaseResponse.success(clearingService.detail(id));
+        return ResponseUtil.ok(clearingService.detail(id));
     }
 
     @ApiOperation("新建清算")
     @PostMapping("/create")
     public BaseResponse<Void> create(@RequestBody AccChannelClearingCreateRequest request) {
         clearingService.create(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("编辑清算")
     @PostMapping("/update")
     public BaseResponse<Void> update(@RequestBody AccChannelClearingUpdateRequest request) {
         clearingService.update(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("删除清算")
@@ -67,28 +68,28 @@ public class AccChannelClearingController {
     public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         clearingService.delete(id);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量删除清算")
     @PostMapping("/batchDelete")
     public BaseResponse<Void> batchDelete(@RequestBody AccChannelClearingIdsRequest request) {
         clearingService.batchDelete(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量启用清算")
     @PostMapping("/batchEnable")
     public BaseResponse<Void> batchEnable(@RequestBody AccChannelClearingIdsRequest request) {
         clearingService.batchEnable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量禁用清算")
     @PostMapping("/batchDisable")
     public BaseResponse<Void> batchDisable(@RequestBody AccChannelClearingIdsRequest request) {
         clearingService.batchDisable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("执行清算")
@@ -97,23 +98,23 @@ public class AccChannelClearingController {
         String id = request.get("id");
         String operatorId = request.get("operatorId");
         clearingService.executeClearing(id, operatorId);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("导出清算")
     @PostMapping("/export")
     public void export(@RequestBody AccChannelClearingIdsRequest request, HttpServletResponse response) throws IOException {
-        importExportService.exportSubjects(null, response);
+        importExportService.exportClearings(request, response);
     }
 
     @ApiOperation("导入清算")
     @PostMapping("/import")
     public BaseResponse<Void> importClearing(@RequestParam("file") MultipartFile file) {
         try {
-            importExportService.importSubjects(file);
-            return BaseResponse.success();
+            importExportService.importClearings(file);
+            return ResponseUtil.ok();
         } catch (Exception e) {
-            return BaseResponse.error("导入失败: " + e.getMessage());
+            return ResponseUtil.fail("导入失败: " + e.getMessage());
         }
     }
 }

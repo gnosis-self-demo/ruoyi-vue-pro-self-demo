@@ -10,6 +10,7 @@ import com.gnosis.accounts.service.AccImportExportService;
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
+import com.gnosis.common.util.ResponseUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,28 +39,28 @@ public class AccBankTransferController {
     @ApiOperation("分页查询结转列表")
     @PostMapping("/page")
     public BaseResponse<PageResult<AccBankTransferVO>> pageList(@RequestBody PageRequest<AccBankTransferQueryRequest> request) {
-        return BaseResponse.success(transferService.pageList(request));
+        return ResponseUtil.ok(transferService.pageList(request));
     }
 
     @ApiOperation("查询结转详情")
     @PostMapping("/detail")
     public BaseResponse<AccBankTransferVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return BaseResponse.success(transferService.detail(id));
+        return ResponseUtil.ok(transferService.detail(id));
     }
 
     @ApiOperation("新建结转")
     @PostMapping("/create")
     public BaseResponse<Void> create(@RequestBody AccBankTransferCreateRequest request) {
         transferService.create(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("编辑结转")
     @PostMapping("/update")
     public BaseResponse<Void> update(@RequestBody AccBankTransferUpdateRequest request) {
         transferService.update(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("删除结转")
@@ -67,28 +68,28 @@ public class AccBankTransferController {
     public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         transferService.delete(id);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量删除结转")
     @PostMapping("/batchDelete")
     public BaseResponse<Void> batchDelete(@RequestBody AccBankTransferIdsRequest request) {
         transferService.batchDelete(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量启用结转")
     @PostMapping("/batchEnable")
     public BaseResponse<Void> batchEnable(@RequestBody AccBankTransferIdsRequest request) {
         transferService.batchEnable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量禁用结转")
     @PostMapping("/batchDisable")
     public BaseResponse<Void> batchDisable(@RequestBody AccBankTransferIdsRequest request) {
         transferService.batchDisable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("执行结转")
@@ -97,23 +98,23 @@ public class AccBankTransferController {
         String id = request.get("id");
         String operatorId = request.get("operatorId");
         transferService.executeTransfer(id, operatorId);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("导出结转")
     @PostMapping("/export")
     public void export(@RequestBody AccBankTransferIdsRequest request, HttpServletResponse response) throws IOException {
-        importExportService.exportSubjects(null, response);
+        importExportService.exportTransfers(request, response);
     }
 
     @ApiOperation("导入结转")
     @PostMapping("/import")
     public BaseResponse<Void> importTransfer(@RequestParam("file") MultipartFile file) {
         try {
-            importExportService.importSubjects(file);
-            return BaseResponse.success();
+            importExportService.importTransfers(file);
+            return ResponseUtil.ok();
         } catch (Exception e) {
-            return BaseResponse.error("导入失败: " + e.getMessage());
+            return ResponseUtil.fail("导入失败: " + e.getMessage());
         }
     }
 }

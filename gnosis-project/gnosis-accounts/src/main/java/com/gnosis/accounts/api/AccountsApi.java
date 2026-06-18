@@ -1,6 +1,5 @@
 package com.gnosis.accounts.api;
 
-import com.gnosis.accounts.dto.account.AccAccountVO;
 import com.gnosis.accounts.service.AccAccountService;
 import com.gnosis.accounts.service.AccAccountingEngineService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,12 +47,11 @@ public class AccountsApi {
     }
 
     public BigDecimal getCustomerBalance(String customerId) {
-        AccAccountVO account = accountService.detail(customerId);
-        return account != null ? account.getBalance() : BigDecimal.ZERO;
+        return accountService.getCustomerBalance(customerId);
     }
 
     public BigDecimal getChannelPendingAmount(String channelCode) {
-        return accountService.getAccountBalance("acc_channel_a_pending_collection");
+        return accountService.getChannelPendingAmount(channelCode);
     }
 
     public String customEntry(List<EntryItem> debitEntries, List<EntryItem> creditEntries, String businessType, String businessId, String operatorId) {

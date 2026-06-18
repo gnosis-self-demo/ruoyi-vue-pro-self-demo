@@ -9,6 +9,7 @@ import com.gnosis.accounts.service.AccImportExportService;
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
+import com.gnosis.common.util.ResponseUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,21 +38,21 @@ public class AccJournalController {
     @ApiOperation("分页查询流水列表")
     @PostMapping("/page")
     public BaseResponse<PageResult<AccJournalVO>> pageList(@RequestBody PageRequest<AccJournalQueryRequest> request) {
-        return BaseResponse.success(journalService.pageList(request));
+        return ResponseUtil.ok(journalService.pageList(request));
     }
 
     @ApiOperation("查询流水详情")
     @PostMapping("/detail")
     public BaseResponse<AccJournalVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return BaseResponse.success(journalService.detail(id));
+        return ResponseUtil.ok(journalService.detail(id));
     }
 
     @ApiOperation("新建流水")
     @PostMapping("/create")
     public BaseResponse<Void> create(@RequestBody AccJournalCreateRequest request) {
         journalService.create(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("删除流水")
@@ -59,14 +60,14 @@ public class AccJournalController {
     public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         journalService.delete(id);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量删除流水")
     @PostMapping("/batchDelete")
     public BaseResponse<Void> batchDelete(@RequestBody AccJournalIdsRequest request) {
         journalService.batchDelete(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("过账")
@@ -74,7 +75,7 @@ public class AccJournalController {
     public BaseResponse<Void> post(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         journalService.post(id);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("冲销")
@@ -82,7 +83,7 @@ public class AccJournalController {
     public BaseResponse<Void> reverse(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         journalService.reverse(id);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("导出流水")
@@ -96,9 +97,9 @@ public class AccJournalController {
     public BaseResponse<Void> importJournals(@RequestParam("file") MultipartFile file) {
         try {
             importExportService.importJournals(file);
-            return BaseResponse.success();
+            return ResponseUtil.ok();
         } catch (Exception e) {
-            return BaseResponse.error("导入失败: " + e.getMessage());
+            return ResponseUtil.fail("导入失败: " + e.getMessage());
         }
     }
 }

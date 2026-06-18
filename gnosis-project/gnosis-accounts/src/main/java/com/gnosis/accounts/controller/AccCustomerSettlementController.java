@@ -10,6 +10,7 @@ import com.gnosis.accounts.service.AccImportExportService;
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
+import com.gnosis.common.util.ResponseUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,28 +39,28 @@ public class AccCustomerSettlementController {
     @ApiOperation("分页查询结算列表")
     @PostMapping("/page")
     public BaseResponse<PageResult<AccCustomerSettlementVO>> pageList(@RequestBody PageRequest<AccCustomerSettlementQueryRequest> request) {
-        return BaseResponse.success(settlementService.pageList(request));
+        return ResponseUtil.ok(settlementService.pageList(request));
     }
 
     @ApiOperation("查询结算详情")
     @PostMapping("/detail")
     public BaseResponse<AccCustomerSettlementVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return BaseResponse.success(settlementService.detail(id));
+        return ResponseUtil.ok(settlementService.detail(id));
     }
 
     @ApiOperation("新建结算")
     @PostMapping("/create")
     public BaseResponse<Void> create(@RequestBody AccCustomerSettlementCreateRequest request) {
         settlementService.create(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("编辑结算")
     @PostMapping("/update")
     public BaseResponse<Void> update(@RequestBody AccCustomerSettlementUpdateRequest request) {
         settlementService.update(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("删除结算")
@@ -67,28 +68,28 @@ public class AccCustomerSettlementController {
     public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         settlementService.delete(id);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量删除结算")
     @PostMapping("/batchDelete")
     public BaseResponse<Void> batchDelete(@RequestBody AccCustomerSettlementIdsRequest request) {
         settlementService.batchDelete(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量启用结算")
     @PostMapping("/batchEnable")
     public BaseResponse<Void> batchEnable(@RequestBody AccCustomerSettlementIdsRequest request) {
         settlementService.batchEnable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量禁用结算")
     @PostMapping("/batchDisable")
     public BaseResponse<Void> batchDisable(@RequestBody AccCustomerSettlementIdsRequest request) {
         settlementService.batchDisable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("执行结算")
@@ -97,23 +98,23 @@ public class AccCustomerSettlementController {
         String id = request.get("id");
         String operatorId = request.get("operatorId");
         settlementService.executeSettlement(id, operatorId);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("导出结算")
     @PostMapping("/export")
     public void export(@RequestBody AccCustomerSettlementIdsRequest request, HttpServletResponse response) throws IOException {
-        importExportService.exportSubjects(null, response);
+        importExportService.exportSettlements(request, response);
     }
 
     @ApiOperation("导入结算")
     @PostMapping("/import")
     public BaseResponse<Void> importSettlement(@RequestParam("file") MultipartFile file) {
         try {
-            importExportService.importSubjects(file);
-            return BaseResponse.success();
+            importExportService.importSettlements(file);
+            return ResponseUtil.ok();
         } catch (Exception e) {
-            return BaseResponse.error("导入失败: " + e.getMessage());
+            return ResponseUtil.fail("导入失败: " + e.getMessage());
         }
     }
 }

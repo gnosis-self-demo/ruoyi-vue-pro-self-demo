@@ -10,6 +10,7 @@ import com.gnosis.accounts.service.AccImportExportService;
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
+import com.gnosis.common.util.ResponseUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,28 +39,28 @@ public class AccSubjectController {
     @ApiOperation("分页查询科目列表")
     @PostMapping("/page")
     public BaseResponse<PageResult<AccSubjectVO>> pageList(@RequestBody PageRequest<AccSubjectQueryRequest> request) {
-        return BaseResponse.success(subjectService.pageList(request));
+        return ResponseUtil.ok(subjectService.pageList(request));
     }
 
     @ApiOperation("查询科目详情")
     @PostMapping("/detail")
     public BaseResponse<AccSubjectVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return BaseResponse.success(subjectService.detail(id));
+        return ResponseUtil.ok(subjectService.detail(id));
     }
 
     @ApiOperation("新建科目")
     @PostMapping("/create")
     public BaseResponse<Void> create(@RequestBody AccSubjectCreateRequest request) {
         subjectService.create(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("编辑科目")
     @PostMapping("/update")
     public BaseResponse<Void> update(@RequestBody AccSubjectUpdateRequest request) {
         subjectService.update(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("删除科目")
@@ -67,28 +68,28 @@ public class AccSubjectController {
     public BaseResponse<Void> delete(@RequestBody Map<String, String> request) {
         String id = request.get("id");
         subjectService.delete(id);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量删除科目")
     @PostMapping("/batchDelete")
     public BaseResponse<Void> batchDelete(@RequestBody AccSubjectIdsRequest request) {
         subjectService.batchDelete(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量启用科目")
     @PostMapping("/batchEnable")
     public BaseResponse<Void> batchEnable(@RequestBody AccSubjectIdsRequest request) {
         subjectService.batchEnable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("批量禁用科目")
     @PostMapping("/batchDisable")
     public BaseResponse<Void> batchDisable(@RequestBody AccSubjectIdsRequest request) {
         subjectService.batchDisable(request);
-        return BaseResponse.success();
+        return ResponseUtil.ok();
     }
 
     @ApiOperation("导出科目")
@@ -102,9 +103,9 @@ public class AccSubjectController {
     public BaseResponse<Void> importSubjects(@RequestParam("file") MultipartFile file) {
         try {
             importExportService.importSubjects(file);
-            return BaseResponse.success();
+            return ResponseUtil.ok();
         } catch (Exception e) {
-            return BaseResponse.error("导入失败: " + e.getMessage());
+            return ResponseUtil.fail("导入失败: " + e.getMessage());
         }
     }
 }

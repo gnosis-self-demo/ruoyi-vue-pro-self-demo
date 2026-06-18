@@ -133,6 +133,25 @@ public class AccAccountService {
         return account != null ? account.getBalance() : BigDecimal.ZERO;
     }
 
+    public BigDecimal getCustomerBalance(String customerId) {
+        AccAccount account = accountMapper.selectByCustomerId(customerId);
+        return account != null ? account.getBalance() : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getChannelPendingAmount(String channelCode) {
+        List<AccAccount> accounts = accountMapper.selectByChannelCode(channelCode, "CHANNEL_CLEARING");
+        if (accounts != null && !accounts.isEmpty()) {
+            BigDecimal total = BigDecimal.ZERO;
+            for (AccAccount account : accounts) {
+                if (account.getBalance() != null) {
+                    total = total.add(account.getBalance());
+                }
+            }
+            return total;
+        }
+        return BigDecimal.ZERO;
+    }
+
     public int updateBalance(String id, BigDecimal amount) {
         return accountMapper.updateBalance(id, amount);
     }

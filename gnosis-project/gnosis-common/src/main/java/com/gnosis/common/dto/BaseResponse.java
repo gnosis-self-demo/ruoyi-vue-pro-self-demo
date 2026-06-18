@@ -18,32 +18,6 @@ public class BaseResponse<T> implements Serializable {
         this.timestamp = System.currentTimeMillis();
     }
 
-    public static <T> BaseResponse<T> success(T data) {
-        BaseResponse<T> response = new BaseResponse<>();
-        response.setCode(200);
-        response.setMessage("success");
-        response.setData(data);
-        return response;
-    }
-
-    public static <T> BaseResponse<T> success() {
-        return success(null);
-    }
-
-    public static <T> BaseResponse<T> error(String message) {
-        BaseResponse<T> response = new BaseResponse<>();
-        response.setCode(500);
-        response.setMessage(message);
-        return response;
-    }
-
-    public static <T> BaseResponse<T> error(Integer code, String message) {
-        BaseResponse<T> response = new BaseResponse<>();
-        response.setCode(code);
-        response.setMessage(message);
-        return response;
-    }
-
     public Integer getCode() {
         return code;
     }

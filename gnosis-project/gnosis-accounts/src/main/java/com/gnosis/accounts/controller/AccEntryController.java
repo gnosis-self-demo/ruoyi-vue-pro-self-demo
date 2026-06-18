@@ -6,6 +6,7 @@ import com.gnosis.accounts.service.AccEntryService;
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageRequest;
 import com.gnosis.common.dto.PageResult;
+import com.gnosis.common.util.ResponseUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,20 +29,20 @@ public class AccEntryController {
     @ApiOperation("分页查询分录列表")
     @PostMapping("/page")
     public BaseResponse<PageResult<AccEntryVO>> pageList(@RequestBody PageRequest<AccEntryQueryRequest> request) {
-        return BaseResponse.success(entryService.pageList(request));
+        return ResponseUtil.ok(entryService.pageList(request));
     }
 
     @ApiOperation("查询分录详情")
     @PostMapping("/detail")
     public BaseResponse<AccEntryVO> detail(@RequestBody Map<String, String> request) {
         String id = request.get("id");
-        return BaseResponse.success(entryService.detail(id));
+        return ResponseUtil.ok(entryService.detail(id));
     }
 
     @ApiOperation("根据流水ID查询分录列表")
     @PostMapping("/listByJournal")
     public BaseResponse<List<AccEntryVO>> listByJournal(@RequestBody Map<String, String> request) {
         String journalId = request.get("journalId");
-        return BaseResponse.success(entryService.selectByJournalId(journalId));
+        return ResponseUtil.ok(entryService.selectByJournalId(journalId));
     }
 }

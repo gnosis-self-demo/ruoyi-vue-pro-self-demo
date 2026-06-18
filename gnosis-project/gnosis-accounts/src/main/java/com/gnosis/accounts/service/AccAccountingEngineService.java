@@ -66,7 +66,7 @@ public class AccAccountingEngineService {
         journal.setJournalNo(journalNo);
         journal.setBusinessType("COLLECTION");
         journal.setBusinessId(businessId);
-        journal.setTransactionType("COLLECTION");
+        journal.setTransactionType("ONLINE");
         journal.setTotalDebit(amount);
         journal.setTotalCredit(amount);
         journal.setAccountingDate(new Date());
@@ -161,7 +161,7 @@ public class AccAccountingEngineService {
         journal.setJournalNo(journalNo);
         journal.setBusinessType("REFUND");
         journal.setBusinessId(businessId);
-        journal.setTransactionType("REFUND");
+        journal.setTransactionType("ONLINE");
         journal.setTotalDebit(amount);
         journal.setTotalCredit(amount);
         journal.setAccountingDate(new Date());
@@ -231,7 +231,7 @@ public class AccAccountingEngineService {
         journal.setJournalNo(journalNo);
         journal.setBusinessType("PAYMENT");
         journal.setBusinessId(businessId);
-        journal.setTransactionType("PAYMENT");
+        journal.setTransactionType("ONLINE");
         journal.setTotalDebit(amount);
         journal.setTotalCredit(amount);
         journal.setAccountingDate(new Date());
@@ -334,7 +334,7 @@ public class AccAccountingEngineService {
         journal.setId(journalId);
         journal.setJournalNo(journalNo);
         journal.setBusinessType("CHANNEL_CLEARING");
-        journal.setTransactionType("CLEARING");
+        journal.setTransactionType("CHANNEL_CLEARING");
         journal.setTotalDebit(clearingAmount);
         journal.setTotalCredit(clearingAmount);
         journal.setAccountingDate(clearingDate);
@@ -425,7 +425,7 @@ public class AccAccountingEngineService {
         journal.setId(journalId);
         journal.setJournalNo(journalNo);
         journal.setBusinessType("BANK_TRANSFER");
-        journal.setTransactionType("TRANSFER");
+        journal.setTransactionType("BANK_TRANSFER");
         journal.setTotalDebit(transferAmount);
         journal.setTotalCredit(transferAmount);
         journal.setAccountingDate(transferDate);
@@ -522,7 +522,7 @@ public class AccAccountingEngineService {
         journal.setId(journalId);
         journal.setJournalNo(journalNo);
         journal.setBusinessType("CUSTOMER_SETTLEMENT");
-        journal.setTransactionType("SETTLEMENT");
+        journal.setTransactionType("CUSTOMER_SETTLEMENT");
         journal.setTotalDebit(settlementAmount);
         journal.setTotalCredit(settlementAmount);
         journal.setAccountingDate(settlementDate);

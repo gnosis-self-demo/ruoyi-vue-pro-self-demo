@@ -1,6 +1,9 @@
 package com.gnosis.accounts.service;
 
 import com.gnosis.accounts.domain.AccAccount;
+import com.gnosis.accounts.domain.AccBankTransfer;
+import com.gnosis.accounts.domain.AccChannelClearing;
+import com.gnosis.accounts.domain.AccCustomerSettlement;
 import com.gnosis.accounts.domain.AccJournal;
 import com.gnosis.accounts.domain.AccSubject;
 import com.gnosis.accounts.dto.account.AccAccountIdsRequest;
@@ -9,7 +12,16 @@ import com.gnosis.accounts.dto.journal.AccJournalIdsRequest;
 import com.gnosis.accounts.dto.journal.AccJournalCreateRequest;
 import com.gnosis.accounts.dto.subject.AccSubjectIdsRequest;
 import com.gnosis.accounts.dto.subject.AccSubjectCreateRequest;
+import com.gnosis.accounts.dto.clearing.AccChannelClearingCreateRequest;
+import com.gnosis.accounts.dto.clearing.AccChannelClearingIdsRequest;
+import com.gnosis.accounts.dto.transfer.AccBankTransferCreateRequest;
+import com.gnosis.accounts.dto.transfer.AccBankTransferIdsRequest;
+import com.gnosis.accounts.dto.settlement.AccCustomerSettlementCreateRequest;
+import com.gnosis.accounts.dto.settlement.AccCustomerSettlementIdsRequest;
 import com.gnosis.accounts.mapper.AccAccountMapper;
+import com.gnosis.accounts.mapper.AccBankTransferMapper;
+import com.gnosis.accounts.mapper.AccChannelClearingMapper;
+import com.gnosis.accounts.mapper.AccCustomerSettlementMapper;
 import com.gnosis.accounts.mapper.AccJournalMapper;
 import com.gnosis.accounts.mapper.AccSubjectMapper;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -50,6 +62,24 @@ public class AccImportExportService {
 
     @Autowired
     private AccJournalMapper journalMapper;
+
+    @Autowired
+    private AccChannelClearingMapper clearingMapper;
+
+    @Autowired
+    private AccBankTransferMapper transferMapper;
+
+    @Autowired
+    private AccCustomerSettlementMapper settlementMapper;
+
+    @Autowired
+    private AccChannelClearingService clearingService;
+
+    @Autowired
+    private AccBankTransferService transferService;
+
+    @Autowired
+    private AccCustomerSettlementService settlementService;
 
     public void exportSubjects(AccSubjectIdsRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.ms-excel");
@@ -319,5 +349,253 @@ public class AccImportExportService {
             default:
                 return "";
         }
+    }
+
+    public void exportClearings(AccChannelClearingIdsRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.ms-excel");
+        response.setHeader("Content-Disposition", "attachment; filename=acc_clearings.xls");
+
+        Workbook workbook = new HSSFWorkbook();
+        Sheet sheet = workbook.createSheet("渠道清算");
+
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"清算单号", "清算日期", "渠道编码", "渠道名称", "清算类型",
+                           "清算金额", "清算状态", "描述", "创建人ID", "创建时间"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        List<AccChannelClearing> clearings = getClearingsToExport(request);
+        for (int i = 0; i < clearings.size(); i++) {
+            AccChannelClearing clearing = clearings.get(i);
+            Row row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue(clearing.getClearingNo() != null ? clearing.getClearingNo() : "");
+            row.createCell(1).setCellValue(clearing.getClearingDate() != null ? clearing.getClearingDate().toString() : "");
+            row.createCell(2).setCellValue(clearing.getChannelCode() != null ? clearing.getChannelCode() : "");
+            row.createCell(3).setCellValue(clearing.getChannelName() != null ? clearing.getChannelName() : "");
+            row.createCell(4).setCellValue(clearing.getClearingType() != null ? clearing.getClearingType() : "");
+            row.createCell(5).setCellValue(clearing.getClearingAmount() != null ? clearing.getClearingAmount().doubleValue() : 0);
+            row.createCell(6).setCellValue(clearing.getClearingStatus() != null ? clearing.getClearingStatus() : "");
+            row.createCell(7).setCellValue(clearing.getDescription() != null ? clearing.getDescription() : "");
+            row.createCell(8).setCellValue(clearing.getCreateUserId() != null ? clearing.getCreateUserId() : "");
+            row.createCell(9).setCellValue(clearing.getCreateTime() != null ? clearing.getCreateTime().toString() : "");
+        }
+
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+
+    public void exportTransfers(AccBankTransferIdsRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.ms-excel");
+        response.setHeader("Content-Disposition", "attachment; filename=acc_transfers.xls");
+
+        Workbook workbook = new HSSFWorkbook();
+        Sheet sheet = workbook.createSheet("银存结转");
+
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"结转单号", "结转日期", "渠道编码", "渠道名称", "结转类型",
+                           "结转金额", "转出账户", "转入账户", "结转状态", "描述", "创建人ID", "创建时间"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        List<AccBankTransfer> transfers = getTransfersToExport(request);
+        for (int i = 0; i < transfers.size(); i++) {
+            AccBankTransfer transfer = transfers.get(i);
+            Row row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue(transfer.getTransferNo() != null ? transfer.getTransferNo() : "");
+            row.createCell(1).setCellValue(transfer.getTransferDate() != null ? transfer.getTransferDate().toString() : "");
+            row.createCell(2).setCellValue(transfer.getChannelCode() != null ? transfer.getChannelCode() : "");
+            row.createCell(3).setCellValue(transfer.getChannelName() != null ? transfer.getChannelName() : "");
+            row.createCell(4).setCellValue(transfer.getTransferType() != null ? transfer.getTransferType() : "");
+            row.createCell(5).setCellValue(transfer.getTransferAmount() != null ? transfer.getTransferAmount().doubleValue() : 0);
+            row.createCell(6).setCellValue(transfer.getFromAccountName() != null ? transfer.getFromAccountName() : "");
+            row.createCell(7).setCellValue(transfer.getToAccountName() != null ? transfer.getToAccountName() : "");
+            row.createCell(8).setCellValue(transfer.getTransferStatus() != null ? transfer.getTransferStatus() : "");
+            row.createCell(9).setCellValue(transfer.getDescription() != null ? transfer.getDescription() : "");
+            row.createCell(10).setCellValue(transfer.getCreateUserId() != null ? transfer.getCreateUserId() : "");
+            row.createCell(11).setCellValue(transfer.getCreateTime() != null ? transfer.getCreateTime().toString() : "");
+        }
+
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+
+    public void exportSettlements(AccCustomerSettlementIdsRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.ms-excel");
+        response.setHeader("Content-Disposition", "attachment; filename=acc_settlements.xls");
+
+        Workbook workbook = new HSSFWorkbook();
+        Sheet sheet = workbook.createSheet("客资结算");
+
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"结算单号", "结算日期", "客户ID", "客户名称", "结算类型",
+                           "结算金额", "手续费", "实际金额", "转出账户", "转入账户", "结算状态", "描述", "创建人ID", "创建时间"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        List<AccCustomerSettlement> settlements = getSettlementsToExport(request);
+        for (int i = 0; i < settlements.size(); i++) {
+            AccCustomerSettlement settlement = settlements.get(i);
+            Row row = sheet.createRow(i + 1);
+            row.createCell(0).setCellValue(settlement.getSettlementNo() != null ? settlement.getSettlementNo() : "");
+            row.createCell(1).setCellValue(settlement.getSettlementDate() != null ? settlement.getSettlementDate().toString() : "");
+            row.createCell(2).setCellValue(settlement.getCustomerId() != null ? settlement.getCustomerId() : "");
+            row.createCell(3).setCellValue(settlement.getCustomerName() != null ? settlement.getCustomerName() : "");
+            row.createCell(4).setCellValue(settlement.getSettlementType() != null ? settlement.getSettlementType() : "");
+            row.createCell(5).setCellValue(settlement.getSettlementAmount() != null ? settlement.getSettlementAmount().doubleValue() : 0);
+            row.createCell(6).setCellValue(settlement.getFeeAmount() != null ? settlement.getFeeAmount().doubleValue() : 0);
+            row.createCell(7).setCellValue(settlement.getActualAmount() != null ? settlement.getActualAmount().doubleValue() : 0);
+            row.createCell(8).setCellValue(settlement.getFromAccountName() != null ? settlement.getFromAccountName() : "");
+            row.createCell(9).setCellValue(settlement.getToAccountName() != null ? settlement.getToAccountName() : "");
+            row.createCell(10).setCellValue(settlement.getSettlementStatus() != null ? settlement.getSettlementStatus() : "");
+            row.createCell(11).setCellValue(settlement.getDescription() != null ? settlement.getDescription() : "");
+            row.createCell(12).setCellValue(settlement.getCreateUserId() != null ? settlement.getCreateUserId() : "");
+            row.createCell(13).setCellValue(settlement.getCreateTime() != null ? settlement.getCreateTime().toString() : "");
+        }
+
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
+    }
+
+    public void importClearings(MultipartFile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            Workbook workbook = WorkbookFactory.create(is);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) {
+                    continue;
+                }
+
+                AccChannelClearingCreateRequest request = new AccChannelClearingCreateRequest();
+                request.setChannelCode(getCellStringValue(row.getCell(2)));
+                request.setChannelName(getCellStringValue(row.getCell(3)));
+                request.setClearingType(getCellStringValue(row.getCell(4)));
+                String amountStr = getCellStringValue(row.getCell(5));
+                request.setClearingAmount(amountStr.isEmpty() ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(amountStr));
+                request.setDescription(getCellStringValue(row.getCell(7)));
+                request.setCreateUserId("admin");
+
+                clearingService.create(request);
+            }
+        }
+    }
+
+    public void importTransfers(MultipartFile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            Workbook workbook = WorkbookFactory.create(is);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) {
+                    continue;
+                }
+
+                AccBankTransferCreateRequest request = new AccBankTransferCreateRequest();
+                request.setChannelCode(getCellStringValue(row.getCell(2)));
+                request.setChannelName(getCellStringValue(row.getCell(3)));
+                request.setTransferType(getCellStringValue(row.getCell(4)));
+                String amountStr = getCellStringValue(row.getCell(5));
+                request.setTransferAmount(amountStr.isEmpty() ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(amountStr));
+                request.setFromAccountName(getCellStringValue(row.getCell(6)));
+                request.setToAccountName(getCellStringValue(row.getCell(7)));
+                request.setDescription(getCellStringValue(row.getCell(9)));
+                request.setCreateUserId("admin");
+
+                transferService.create(request);
+            }
+        }
+    }
+
+    public void importSettlements(MultipartFile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            Workbook workbook = WorkbookFactory.create(is);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) {
+                    continue;
+                }
+
+                AccCustomerSettlementCreateRequest request = new AccCustomerSettlementCreateRequest();
+                request.setCustomerId(getCellStringValue(row.getCell(2)));
+                request.setCustomerName(getCellStringValue(row.getCell(3)));
+                request.setSettlementType(getCellStringValue(row.getCell(4)));
+                String amountStr = getCellStringValue(row.getCell(5));
+                request.setSettlementAmount(amountStr.isEmpty() ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(amountStr));
+                String feeStr = getCellStringValue(row.getCell(6));
+                request.setFeeAmount(feeStr.isEmpty() ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(feeStr));
+                String actualStr = getCellStringValue(row.getCell(7));
+                request.setActualAmount(actualStr.isEmpty() ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(actualStr));
+                request.setFromAccountName(getCellStringValue(row.getCell(8)));
+                request.setToAccountName(getCellStringValue(row.getCell(9)));
+                request.setDescription(getCellStringValue(row.getCell(11)));
+                request.setCreateUserId("admin");
+
+                settlementService.create(request);
+            }
+        }
+    }
+
+    private List<AccChannelClearing> getClearingsToExport(AccChannelClearingIdsRequest request) {
+        if (request != null && request.getIds() != null && !request.getIds().isEmpty()) {
+            List<AccChannelClearing> list = new ArrayList<>();
+            for (String id : request.getIds()) {
+                AccChannelClearing clearing = clearingMapper.selectById(id);
+                if (clearing != null) {
+                    list.add(clearing);
+                }
+            }
+            return list;
+        }
+        return new ArrayList<AccChannelClearing>();
+    }
+
+    private List<AccBankTransfer> getTransfersToExport(AccBankTransferIdsRequest request) {
+        if (request != null && request.getIds() != null && !request.getIds().isEmpty()) {
+            List<AccBankTransfer> list = new ArrayList<>();
+            for (String id : request.getIds()) {
+                AccBankTransfer transfer = transferMapper.selectById(id);
+                if (transfer != null) {
+                    list.add(transfer);
+                }
+            }
+            return list;
+        }
+        return new ArrayList<AccBankTransfer>();
+    }
+
+    private List<AccCustomerSettlement> getSettlementsToExport(AccCustomerSettlementIdsRequest request) {
+        if (request != null && request.getIds() != null && !request.getIds().isEmpty()) {
+            List<AccCustomerSettlement> list = new ArrayList<>();
+            for (String id : request.getIds()) {
+                AccCustomerSettlement settlement = settlementMapper.selectById(id);
+                if (settlement != null) {
+                    list.add(settlement);
+                }
+            }
+            return list;
+        }
+        return new ArrayList<AccCustomerSettlement>();
     }
 }
