@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.notice.mapper.NoticeInboxMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.notice.domain.NoticeInbox">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="subject" property="subject"/>
+        <result column="content" property="content"/>
+        <result column="attachment_paths" property="attachmentPaths"/>
+        <result column="is_read" property="isRead"/>
+        <result column="read_time" property="readTime"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, subject, content, attachment_paths, is_read, read_time,
+        create_user_id, create_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.notice.domain.NoticeInbox">
+        INSERT INTO sys_notice_inbox (
+            id, user_id, subject, content, attachment_paths, is_read, read_time,
+            create_user_id, create_time
+        ) VALUES (
+            #{id}, #{userId}, #{subject}, #{content}, #{attachmentPaths}, #{isRead}, #{readTime},
+            #{createUserId}, #{createTime}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO sys_notice_inbox (
+            id, user_id, subject, content, attachment_paths, is_read, read_time,
+            create_user_id, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.id}, #{item.userId}, #{item.subject}, #{item.content},
+                #{item.attachmentPaths}, #{item.isRead}, #{item.readTime},
+                #{item.createUserId}, #{item.createTime}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_inbox
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap" parameterType="com.gnosis.notice.dto.inbox.NoticeInboxQueryRequest">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_inbox
+        <where>
+            <if test="userId != null and userId != ''">AND user_id = #{userId}</if>
+            <if test="subject != null and subject != ''">AND subject LIKE CONCAT('%', #{subject}, '%')</if>
+            <if test="isRead != null">AND is_read = #{isRead}</if>
+            <if test="startTime != null">AND create_time &gt;= #{startTime}</if>
+            <if test="endTime != null">AND create_time &lt;= #{endTime}</if>
+        </where>
+        ORDER BY create_time DESC
+        <if test="pageNum != null and pageSize != null">
+            LIMIT #{pageSize} OFFSET #{pageNum}
+        </if>
+    </select>
+
+    <select id="countByCondition" resultType="java.lang.Long" parameterType="com.gnosis.notice.dto.inbox.NoticeInboxQueryRequest">
+        SELECT COUNT(*) FROM sys_notice_inbox
+        <where>
+            <if test="userId != null and userId != ''">AND user_id = #{userId}</if>
+            <if test="subject != null and subject != ''">AND subject LIKE CONCAT('%', #{subject}, '%')</if>
+            <if test="isRead != null">AND is_read = #{isRead}</if>
+            <if test="startTime != null">AND create_time &gt;= #{startTime}</if>
+            <if test="endTime != null">AND create_time &lt;= #{endTime}</if>
+        </where>
+    </select>
+
+    <select id="countUnread" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_notice_inbox
+        WHERE user_id = #{userId} AND is_read = 0
+    </select>
+
+    <update id="markRead">
+        UPDATE sys_notice_inbox
+        SET is_read = 1, read_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="batchMarkRead">
+        UPDATE sys_notice_inbox
+        SET is_read = 1, read_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_notice_inbox WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_notice_inbox WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

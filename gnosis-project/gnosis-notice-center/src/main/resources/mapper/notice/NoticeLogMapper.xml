@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.notice.mapper.NoticeLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.notice.domain.NoticeLog">
+        <id column="id" property="id"/>
+        <result column="template_id" property="templateId"/>
+        <result column="template_code" property="templateCode"/>
+        <result column="notice_type" property="noticeType"/>
+        <result column="receiver" property="receiver"/>
+        <result column="subject" property="subject"/>
+        <result column="content" property="content"/>
+        <result column="attachment_paths" property="attachmentPaths"/>
+        <result column="send_status" property="sendStatus"/>
+        <result column="error_msg" property="errorMsg"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="max_retry" property="maxRetry"/>
+        <result column="request_id" property="requestId"/>
+        <result column="third_party_response" property="thirdPartyResponse"/>
+        <result column="send_time" property="sendTime"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, template_id, template_code, notice_type, receiver, subject, content,
+        attachment_paths, send_status, error_msg, retry_count, max_retry,
+        request_id, third_party_response, send_time, create_user_id, create_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.notice.domain.NoticeLog">
+        INSERT INTO sys_notice_log (
+            id, template_id, template_code, notice_type, receiver, subject, content,
+            attachment_paths, send_status, error_msg, retry_count, max_retry,
+            request_id, third_party_response, send_time, create_user_id, create_time
+        ) VALUES (
+            #{id}, #{templateId}, #{templateCode}, #{noticeType}, #{receiver}, #{subject}, #{content},
+            #{attachmentPaths}, #{sendStatus}, #{errorMsg}, #{retryCount}, #{maxRetry},
+            #{requestId}, #{thirdPartyResponse}, #{sendTime}, #{createUserId}, #{createTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.notice.domain.NoticeLog">
+        UPDATE sys_notice_log
+        <set>
+            <if test="templateId != null">template_id = #{templateId},</if>
+            <if test="templateCode != null">template_code = #{templateCode},</if>
+            <if test="noticeType != null">notice_type = #{noticeType},</if>
+            <if test="receiver != null">receiver = #{receiver},</if>
+            <if test="subject != null">subject = #{subject},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="attachmentPaths != null">attachment_paths = #{attachmentPaths},</if>
+            <if test="sendStatus != null">send_status = #{sendStatus},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="retryCount != null">retry_count = #{retryCount},</if>
+            <if test="maxRetry != null">max_retry = #{maxRetry},</if>
+            <if test="requestId != null">request_id = #{requestId},</if>
+            <if test="thirdPartyResponse != null">third_party_response = #{thirdPartyResponse},</if>
+            <if test="sendTime != null">send_time = #{sendTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_log
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap" parameterType="com.gnosis.notice.dto.log.NoticeLogQueryRequest">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_log
+        <where>
+            <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
+            <if test="templateCode != null and templateCode != ''">AND template_code = #{templateCode}</if>
+            <if test="noticeType != null and noticeType != ''">AND notice_type = #{noticeType}</if>
+            <if test="receiver != null and receiver != ''">AND receiver LIKE CONCAT('%', #{receiver}, '%')</if>
+            <if test="sendStatus != null">AND send_status = #{sendStatus}</if>
+            <if test="startTime != null">AND create_time &gt;= #{startTime}</if>
+            <if test="endTime != null">AND create_time &lt;= #{endTime}</if>
+        </where>
+        ORDER BY create_time DESC
+        <if test="pageNum != null and pageSize != null">
+            LIMIT #{pageSize} OFFSET #{pageNum}
+        </if>
+    </select>
+
+    <select id="countByCondition" resultType="java.lang.Long" parameterType="com.gnosis.notice.dto.log.NoticeLogQueryRequest">
+        SELECT COUNT(*) FROM sys_notice_log
+        <where>
+            <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
+            <if test="templateCode != null and templateCode != ''">AND template_code = #{templateCode}</if>
+            <if test="noticeType != null and noticeType != ''">AND notice_type = #{noticeType}</if>
+            <if test="receiver != null and receiver != ''">AND receiver LIKE CONCAT('%', #{receiver}, '%')</if>
+            <if test="sendStatus != null">AND send_status = #{sendStatus}</if>
+            <if test="startTime != null">AND create_time &gt;= #{startTime}</if>
+            <if test="endTime != null">AND create_time &lt;= #{endTime}</if>
+        </where>
+    </select>
+
+    <select id="selectRetryList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_log
+        WHERE send_status = 3
+        AND retry_count &lt; max_retry
+        ORDER BY create_time ASC
+        LIMIT 100
+    </select>
+
+    <update id="updateRetryCount">
+        UPDATE sys_notice_log
+        SET retry_count = #{retryCount}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

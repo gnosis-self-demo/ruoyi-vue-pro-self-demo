@@ -24,6 +24,7 @@
         <module>gnosis-datamapping</module>
         <module>gnosis-accounts</module>
         <module>gnosis-data-exportor</module>
+        <module>gnosis-notice-center</module>
     </modules>
 
     <properties>
