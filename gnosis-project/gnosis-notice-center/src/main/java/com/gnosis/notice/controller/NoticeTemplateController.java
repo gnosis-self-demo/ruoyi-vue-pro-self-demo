@@ -12,7 +12,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -81,5 +83,19 @@ public class NoticeTemplateController {
     public BaseResponse<Integer> batchDisable(@RequestBody List<String> ids) {
         int result = templateService.batchDisable(ids);
         return ResponseUtil.ok(result);
+    }
+
+    @ApiOperation("导出模板")
+    @PostMapping("/export")
+    public void export(@RequestBody NoticeTemplateQueryRequest request, HttpServletResponse response) throws Exception {
+        templateService.export(request, response);
+    }
+
+    @ApiOperation("导入模板")
+    @PostMapping("/import")
+    public BaseResponse<Integer> importExcel(@RequestParam("file") MultipartFile file) throws Exception {
+        String userId = "admin"; // TODO: 从登录上下文获取
+        int count = templateService.importExcel(file.getInputStream(), userId);
+        return ResponseUtil.ok(count);
     }
 }

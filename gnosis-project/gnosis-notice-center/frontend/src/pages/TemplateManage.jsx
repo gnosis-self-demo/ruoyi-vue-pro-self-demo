@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
-  Table, Button, Space, Form, Input, Select, Modal, Popconfirm, message, Tag, Tabs, InputNumber
+  Table, Button, Space, Form, Input, Select, Modal, Popconfirm, message, Tag, Upload
 } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons'
+import {
+  PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, StopOutlined,
+  ExportOutlined, ImportOutlined, DownloadOutlined
+} from '@ant-design/icons'
 import { templateApi } from '../api/templateApi'
 import dayjs from 'dayjs'
 
@@ -20,6 +23,7 @@ const TemplateManage = () => {
   const [editingRecord, setEditingRecord] = useState(null)
   const [form] = Form.useForm()
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
+  const importRef = useRef(null)
 
   const noticeTypeOptions = [
     { value: 'SMS', label: '短信' },
@@ -133,6 +137,61 @@ const TemplateManage = () => {
     } catch (error) {
       console.error(error)
     }
+  }
+
+  // 导出模板
+  const handleExport = async () => {
+    try {
+      const values = queryForm.getFieldsValue()
+      const res = await templateApi.export(values)
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `消息模板_${dayjs().format('YYYYMMDDHHmmss')}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      message.success('导出成功')
+    } catch (error) {
+      console.error(error)
+      message.error('导出失败')
+    }
+  }
+
+  // 下载导入模板
+  const handleDownloadTemplate = () => {
+    const headers = ['模板编码', '模板名称', '模板类型', '通知类型', '消息主题', '模板内容', '备注']
+    const example = [
+      ['SMS_001', '验证码短信', 'TEXT', 'SMS', '验证码通知', '您的验证码是：${code}', '示例模板'],
+      ['EMAIL_001', '订单通知', 'HTML', 'EMAIL', '订单创建通知', '<h1>您的订单已创建</h1>', '示例模板'],
+    ]
+    const csvContent = [headers.join(','), ...example.map(row => row.join(','))].join('\n')
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '消息模板导入模板.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  }
+
+  // 导入模板
+  const handleImport = async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await templateApi.import(formData)
+      message.success(`导入成功，共导入 ${res.data} 条数据`)
+      fetchData()
+    } catch (error) {
+      console.error(error)
+      message.error('导入失败')
+    }
+    return false
   }
 
   const handleModalOk = async () => {
@@ -275,6 +334,16 @@ const TemplateManage = () => {
         </Popconfirm>
         <Button icon={<CheckCircleOutlined />} onClick={handleBatchEnable}>批量启用</Button>
         <Button icon={<StopOutlined />} onClick={handleBatchDisable}>批量禁用</Button>
+        <Button icon={<ExportOutlined />} onClick={handleExport}>导出</Button>
+        <Upload
+          accept=".xlsx,.xls"
+          showUploadList={false}
+          beforeUpload={handleImport}
+          ref={importRef}
+        >
+          <Button icon={<ImportOutlined />}>导入</Button>
+        </Upload>
+        <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>导入模板</Button>
       </Space>
 
       <Table

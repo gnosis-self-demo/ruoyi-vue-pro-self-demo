@@ -7,6 +7,8 @@ import com.gnosis.notice.dto.template.NoticeTemplateQueryRequest;
 import com.gnosis.notice.dto.template.NoticeTemplateUpdateRequest;
 import com.gnosis.notice.dto.template.NoticeTemplateVO;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -58,4 +60,14 @@ public interface NoticeTemplateService {
      * 批量禁用
      */
     int batchDisable(List<String> ids);
+
+    /**
+     * 导出模板
+     */
+    void export(NoticeTemplateQueryRequest request, HttpServletResponse response) throws Exception;
+
+    /**
+     * 导入模板
+     */
+    int importExcel(InputStream inputStream, String userId) throws Exception;
 }

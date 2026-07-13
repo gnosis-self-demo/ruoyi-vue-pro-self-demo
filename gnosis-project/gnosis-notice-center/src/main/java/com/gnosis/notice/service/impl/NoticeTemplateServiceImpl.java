@@ -9,10 +9,15 @@ import com.gnosis.notice.dto.template.NoticeTemplateUpdateRequest;
 import com.gnosis.notice.dto.template.NoticeTemplateVO;
 import com.gnosis.notice.mapper.NoticeTemplateMapper;
 import com.gnosis.notice.service.NoticeTemplateService;
+import com.gnosis.notice.util.ExcelUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,6 +28,8 @@ import java.util.UUID;
  */
 @Service
 public class NoticeTemplateServiceImpl implements NoticeTemplateService {
+
+    private static final Logger log = LoggerFactory.getLogger(NoticeTemplateServiceImpl.class);
 
     @Autowired
     private NoticeTemplateMapper templateMapper;
@@ -150,6 +157,77 @@ public class NoticeTemplateServiceImpl implements NoticeTemplateService {
             return 0;
         }
         return templateMapper.batchUpdateStatus(ids, 0);
+    }
+
+    @Override
+    public void export(NoticeTemplateQueryRequest request, HttpServletResponse response) throws Exception {
+        List<NoticeTemplate> templates = templateMapper.selectByCondition(request);
+        List<String[]> data = new ArrayList<>();
+        for (NoticeTemplate template : templates) {
+            String[] row = new String[]{
+                template.getTemplateCode(),
+                template.getTemplateName(),
+                template.getTemplateType(),
+                template.getNoticeType(),
+                template.getSubject(),
+                template.getContent(),
+                template.getStatus() != null && template.getStatus() == 1 ? "启用" : "禁用",
+                template.getRemark(),
+                template.getCreateUserId(),
+                template.getCreateTime() != null ? template.getCreateTime().toString() : "",
+                template.getUpdateUserId(),
+                template.getUpdateTime() != null ? template.getUpdateTime().toString() : ""
+            };
+            data.add(row);
+        }
+        String[] headers = {"模板编码", "模板名称", "模板类型", "通知类型", "消息主题", "模板内容",
+            "状态", "备注", "创建人", "创建时间", "更新人", "更新时间"};
+        ExcelUtils.export(response, "消息模板", "模板列表", headers, data);
+    }
+
+    @Override
+    public int importExcel(InputStream inputStream, String userId) throws Exception {
+        List<String[]> data = ExcelUtils.read(inputStream, true);
+        int count = 0;
+        for (String[] row : data) {
+            if (row.length < 6 || StringUtils.isEmpty(row[0])) {
+                continue;
+            }
+            NoticeTemplate template = new NoticeTemplate();
+            template.setId(UUID.randomUUID().toString().replace("-", ""));
+            template.setTemplateCode(row[0]);
+            template.setTemplateName(row[1]);
+            template.setTemplateType(row[2]);
+            template.setNoticeType(row[3]);
+            template.setSubject(row[4]);
+            template.setContent(row[5]);
+            template.setRemark(row.length > 6 ? row[6] : "");
+
+            // 检查模板编码是否已存在
+            NoticeTemplate exist = templateMapper.selectByCode(row[0]);
+            if (exist != null) {
+                // 更新已存在的模板
+                exist.setTemplateName(template.getTemplateName());
+                exist.setTemplateType(template.getTemplateType());
+                exist.setNoticeType(template.getNoticeType());
+                exist.setSubject(template.getSubject());
+                exist.setContent(template.getContent());
+                exist.setRemark(template.getRemark());
+                exist.setUpdateUserId(userId);
+                exist.setUpdateTime(new Date());
+                templateMapper.updateById(exist);
+            } else {
+                // 新增模板
+                template.setCreateUserId(userId);
+                template.setUpdateUserId(userId);
+                template.setCreateTime(new Date());
+                template.setUpdateTime(new Date());
+                template.setStatus(1); // 默认启用
+                templateMapper.insert(template);
+            }
+            count++;
+        }
+        return count;
     }
 
     /**
