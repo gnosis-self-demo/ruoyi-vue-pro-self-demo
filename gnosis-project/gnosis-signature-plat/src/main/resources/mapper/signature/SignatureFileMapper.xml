@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.signature.mapper.SignatureFileMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.signature.domain.SignatureFile">
+        <id column="id" property="id"/>
+        <result column="file_name" property="fileName"/>
+        <result column="file_type" property="fileType"/>
+        <result column="file_size" property="fileSize"/>
+        <result column="file_path" property="filePath"/>
+        <result column="file_hash" property="fileHash"/>
+        <result column="template_id" property="templateId"/>
+        <result column="process_id" property="processId"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="sign_status" property="signStatus"/>
+        <result column="description" property="description"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, file_name, file_type, file_size, file_path, file_hash, template_id, process_id,
+        supplier_id, sign_status, description, status, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.signature.domain.SignatureFile">
+        INSERT INTO sig_file (
+            id, file_name, file_type, file_size, file_path, file_hash, template_id, process_id,
+            supplier_id, sign_status, description, status, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{fileName}, #{fileType}, #{fileSize}, #{filePath}, #{fileHash}, #{templateId}, #{processId},
+            #{supplierId}, #{signStatus}, #{description}, #{status}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.signature.domain.SignatureFile">
+        UPDATE sig_file
+        <set>
+            <if test="fileName != null and fileName != ''">file_name = #{fileName},</if>
+            <if test="fileType != null and fileType != ''">file_type = #{fileType},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+            <if test="filePath != null">file_path = #{filePath},</if>
+            <if test="fileHash != null">file_hash = #{fileHash},</if>
+            <if test="templateId != null">template_id = #{templateId},</if>
+            <if test="processId != null">process_id = #{processId},</if>
+            <if test="supplierId != null">supplier_id = #{supplierId},</if>
+            <if test="signStatus != null">sign_status = #{signStatus},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_file WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.signature.dto.file.SignatureFileQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_file
+        <where>
+            <if test="fileName != null and fileName != ''">AND file_name LIKE CONCAT('%', #{fileName}, '%')</if>
+            <if test="fileType != null and fileType != ''">AND file_type = #{fileType}</if>
+            <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
+            <if test="processId != null and processId != ''">AND process_id = #{processId}</if>
+            <if test="supplierId != null and supplierId != ''">AND supplier_id = #{supplierId}</if>
+            <if test="signStatus != null">AND sign_status = #{signStatus}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.signature.dto.file.SignatureFileQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sig_file
+        <where>
+            <if test="fileName != null and fileName != ''">AND file_name LIKE CONCAT('%', #{fileName}, '%')</if>
+            <if test="fileType != null and fileType != ''">AND file_type = #{fileType}</if>
+            <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
+            <if test="processId != null and processId != ''">AND process_id = #{processId}</if>
+            <if test="supplierId != null and supplierId != ''">AND supplier_id = #{supplierId}</if>
+            <if test="signStatus != null">AND sign_status = #{signStatus}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sig_file WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sig_file WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <update id="batchUpdateStatus">
+        UPDATE sig_file SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+</mapper>

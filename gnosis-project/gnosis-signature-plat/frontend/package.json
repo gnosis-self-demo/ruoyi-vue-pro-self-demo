@@ -1,0 +1,24 @@
+{
+  "name": "gnosis-signature-plat-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "antd": "^5.1.0",
+    "axios": "^1.3.0",
+    "dayjs": "^1.11.0",
+    "@ant-design/icons": "^5.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.1.0"
+  }
+}

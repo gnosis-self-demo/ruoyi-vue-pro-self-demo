@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.signature.mapper.SignatureAuditLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.signature.domain.SignatureAuditLog">
+        <id column="id" property="id"/>
+        <result column="operation_type" property="operationType"/>
+        <result column="operation_module" property="operationModule"/>
+        <result column="operation_desc" property="operationDesc"/>
+        <result column="request_params" property="requestParams"/>
+        <result column="response_result" property="responseResult"/>
+        <result column="operation_ip" property="operationIp"/>
+        <result column="operation_result" property="operationResult"/>
+        <result column="error_msg" property="errorMsg"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, operation_type, operation_module, operation_desc, request_params, response_result,
+        operation_ip, operation_result, error_msg, create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.signature.domain.SignatureAuditLog">
+        INSERT INTO sig_audit_log (
+            id, operation_type, operation_module, operation_desc, request_params, response_result,
+            operation_ip, operation_result, error_msg, create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{operationType}, #{operationModule}, #{operationDesc}, #{requestParams}, #{responseResult},
+            #{operationIp}, #{operationResult}, #{errorMsg}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_audit_log WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.signature.dto.audit.SignatureAuditLogQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_audit_log
+        <where>
+            <if test="operationType != null and operationType != ''">AND operation_type = #{operationType}</if>
+            <if test="operationModule != null and operationModule != ''">AND operation_module = #{operationModule}</if>
+            <if test="operationResult != null">AND operation_result = #{operationResult}</if>
+            <if test="createUserId != null and createUserId != ''">AND create_user_id = #{createUserId}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.signature.dto.audit.SignatureAuditLogQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sig_audit_log
+        <where>
+            <if test="operationType != null and operationType != ''">AND operation_type = #{operationType}</if>
+            <if test="operationModule != null and operationModule != ''">AND operation_module = #{operationModule}</if>
+            <if test="operationResult != null">AND operation_result = #{operationResult}</if>
+            <if test="createUserId != null and createUserId != ''">AND create_user_id = #{createUserId}</if>
+        </where>
+    </select>
+
+    <delete id="deleteByIds">
+        DELETE FROM sig_audit_log WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+</mapper>

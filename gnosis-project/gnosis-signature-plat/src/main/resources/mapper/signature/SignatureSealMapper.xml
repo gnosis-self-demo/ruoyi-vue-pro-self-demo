@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.signature.mapper.SignatureSealMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.signature.domain.SignatureSeal">
+        <id column="id" property="id"/>
+        <result column="seal_code" property="sealCode"/>
+        <result column="seal_name" property="sealName"/>
+        <result column="seal_type" property="sealType"/>
+        <result column="seal_image_path" property="sealImagePath"/>
+        <result column="seal_image_data" property="sealImageData"/>
+        <result column="authorize_user_id" property="authorizeUserId"/>
+        <result column="authorize_time" property="authorizeTime"/>
+        <result column="expire_time" property="expireTime"/>
+        <result column="description" property="description"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, seal_code, seal_name, seal_type, seal_image_path, seal_image_data,
+        authorize_user_id, authorize_time, expire_time, description, status,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.signature.domain.SignatureSeal">
+        INSERT INTO sig_seal (
+            id, seal_code, seal_name, seal_type, seal_image_path, seal_image_data,
+            authorize_user_id, authorize_time, expire_time, description, status,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{sealCode}, #{sealName}, #{sealType}, #{sealImagePath}, #{sealImageData},
+            #{authorizeUserId}, #{authorizeTime}, #{expireTime}, #{description}, #{status},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.signature.domain.SignatureSeal">
+        UPDATE sig_seal
+        <set>
+            <if test="sealCode != null and sealCode != ''">seal_code = #{sealCode},</if>
+            <if test="sealName != null and sealName != ''">seal_name = #{sealName},</if>
+            <if test="sealType != null and sealType != ''">seal_type = #{sealType},</if>
+            <if test="sealImagePath != null">seal_image_path = #{sealImagePath},</if>
+            <if test="sealImageData != null">seal_image_data = #{sealImageData},</if>
+            <if test="authorizeUserId != null">authorize_user_id = #{authorizeUserId},</if>
+            <if test="authorizeTime != null">authorize_time = #{authorizeTime},</if>
+            <if test="expireTime != null">expire_time = #{expireTime},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_seal WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" parameterType="com.gnosis.signature.dto.seal.SignatureSealQueryRequest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_seal
+        <where>
+            <if test="sealCode != null and sealCode != ''">AND seal_code = #{sealCode}</if>
+            <if test="sealName != null and sealName != ''">AND seal_name LIKE CONCAT('%', #{sealName}, '%')</if>
+            <if test="sealType != null and sealType != ''">AND seal_type = #{sealType}</if>
+            <if test="authorizeUserId != null and authorizeUserId != ''">AND authorize_user_id = #{authorizeUserId}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByCondition" parameterType="com.gnosis.signature.dto.seal.SignatureSealQueryRequest" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sig_seal
+        <where>
+            <if test="sealCode != null and sealCode != ''">AND seal_code = #{sealCode}</if>
+            <if test="sealName != null and sealName != ''">AND seal_name LIKE CONCAT('%', #{sealName}, '%')</if>
+            <if test="sealType != null and sealType != ''">AND seal_type = #{sealType}</if>
+            <if test="authorizeUserId != null and authorizeUserId != ''">AND authorize_user_id = #{authorizeUserId}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sig_seal WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sig_seal WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <update id="batchUpdateStatus">
+        UPDATE sig_seal SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+</mapper>

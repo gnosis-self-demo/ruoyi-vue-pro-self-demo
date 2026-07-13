@@ -25,6 +25,7 @@
         <module>gnosis-accounts</module>
         <module>gnosis-data-exportor</module>
         <module>gnosis-notice-center</module>
+        <module>gnosis-signature-plat</module>
     </modules>
 
     <properties>
