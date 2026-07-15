@@ -57,7 +57,7 @@ const TemplateManage = () => {
       const requestData = {
         pageNum: params.current || pagination.current,
         pageSize: params.pageSize || pagination.pageSize,
-        ...searchFields,
+        query: searchFields,
       };
       const res = await templateApi.pageList(requestData);
       if (res && res.data) {
@@ -202,17 +202,35 @@ const TemplateManage = () => {
   // 导出
   const handleExport = async () => {
     try {
-      const ids = selectedRowKeys.length > 0 ? selectedRowKeys : null;
-      await templateApi.export(ids);
+      const response = await templateApi.export(selectedRowKeys);
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'template_export.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       message.success('导出成功');
     } catch (error) {
-      message.error('导出失败');
+      console.error('导出失败:', error);
     }
   };
 
-  // 导入（占位）
-  const handleImport = () => {
-    message.info('请通过上传文件进行导入');
+  // 导入
+  const handleImport = (info) => {
+    const { status, response } = info.file;
+    if (status === 'done') {
+      if (response && response.code === 200) {
+        message.success('导入成功');
+        fetchList();
+      } else {
+        message.error('导入失败');
+      }
+    } else if (status === 'error') {
+      message.error('导入失败');
+    }
   };
 
   // 行选择配置
@@ -465,7 +483,12 @@ const TemplateManage = () => {
             <Button icon={<DownloadOutlined />} onClick={handleExport}>
               导出
             </Button>
-            <Upload showUploadList={false} beforeUpload={() => { handleImport(); return false; }}>
+            <Upload
+              action="/signature/template/import"
+              showUploadList={false}
+              onChange={handleImport}
+              accept=".xlsx,.xls"
+            >
               <Button icon={<UploadOutlined />}>导入</Button>
             </Upload>
           </Space>

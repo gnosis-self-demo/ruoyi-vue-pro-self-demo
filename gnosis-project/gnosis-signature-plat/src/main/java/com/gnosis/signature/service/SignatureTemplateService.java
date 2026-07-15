@@ -9,12 +9,18 @@ import com.gnosis.signature.dto.template.SignatureTemplateQueryRequest;
 import com.gnosis.signature.dto.template.SignatureTemplateUpdateRequest;
 import com.gnosis.signature.dto.template.SignatureTemplateVO;
 import com.gnosis.signature.mapper.SignatureTemplateMapper;
+import com.gnosis.signature.util.ExcelExportImportUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -158,6 +164,83 @@ public class SignatureTemplateService {
     }
 
     /**
+     * 导出模板数据
+     */
+    public void exportData(SignatureTemplateIdsRequest request, HttpServletResponse response) throws IOException {
+        List<SignatureTemplate> list;
+        if (request != null && request.getIds() != null && !request.getIds().isEmpty()) {
+            list = templateMapper.selectByIds(request.getIds());
+        } else {
+            list = templateMapper.selectByCondition(new SignatureTemplateQueryRequest());
+        }
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("id", "ID");
+        headers.put("templateCode", "模板编码");
+        headers.put("templateName", "模板名称");
+        headers.put("templateType", "模板类型");
+        headers.put("templateContent", "模板内容");
+        headers.put("signPosition", "签章位置");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+        headers.put("createUserId", "创建人ID");
+        headers.put("updateUserId", "更新人ID");
+        headers.put("createTime", "创建时间");
+        headers.put("updateTime", "更新时间");
+
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        for (SignatureTemplate entity : list) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", entity.getId());
+            row.put("templateCode", entity.getTemplateCode());
+            row.put("templateName", entity.getTemplateName());
+            row.put("templateType", entity.getTemplateType());
+            row.put("templateContent", entity.getTemplateContent());
+            row.put("signPosition", entity.getSignPosition());
+            row.put("description", entity.getDescription());
+            row.put("status", entity.getStatus());
+            row.put("createUserId", entity.getCreateUserId());
+            row.put("updateUserId", entity.getUpdateUserId());
+            row.put("createTime", entity.getCreateTime());
+            row.put("updateTime", entity.getUpdateTime());
+            dataList.add(row);
+        }
+        ExcelExportImportUtil.exportExcel(response, "template_export", headers, dataList);
+    }
+
+    /**
+     * 导入模板数据
+     */
+    public int importData(MultipartFile file) throws IOException {
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("templateCode", "模板编码");
+        headers.put("templateName", "模板名称");
+        headers.put("templateType", "模板类型");
+        headers.put("templateContent", "模板内容");
+        headers.put("signPosition", "签章位置");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+
+        List<Map<String, Object>> dataList = ExcelExportImportUtil.importExcel(file.getInputStream(), headers);
+        int count = 0;
+        for (Map<String, Object> row : dataList) {
+            SignatureTemplate entity = new SignatureTemplate();
+            entity.setId(UUID.randomUUID().toString());
+            entity.setTemplateCode(getStringValue(row, "templateCode"));
+            entity.setTemplateName(getStringValue(row, "templateName"));
+            entity.setTemplateType(getStringValue(row, "templateType"));
+            entity.setTemplateContent(getStringValue(row, "templateContent"));
+            entity.setSignPosition(getStringValue(row, "signPosition"));
+            entity.setDescription(getStringValue(row, "description"));
+            entity.setStatus(getIntegerValue(row, "status"));
+            entity.setCreateTime(new Date());
+            entity.setUpdateTime(new Date());
+            templateMapper.insert(entity);
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * 转换为VO
      */
     private SignatureTemplateVO convertToVO(SignatureTemplate template) {
@@ -175,5 +258,22 @@ public class SignatureTemplateService {
         vo.setCreateTime(template.getCreateTime());
         vo.setUpdateTime(template.getUpdateTime());
         return vo;
+    }
+
+    private String getStringValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private Integer getIntegerValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null || String.valueOf(value).isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

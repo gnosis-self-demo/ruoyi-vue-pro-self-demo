@@ -57,16 +57,19 @@
     </select>
 
     <select id="selectByCondition" parameterType="com.gnosis.signature.dto.certificate.SignatureCertificateQueryRequest" resultMap="BaseResultMap">
+        <bind name="offset" value="(pageNum != null and pageNum > 0 ? pageNum - 1 : 0) * (pageSize != null and pageSize > 0 ? pageSize : 10)" />
         SELECT <include refid="Base_Column_List"/> FROM sig_certificate
         <where>
             <if test="certCode != null and certCode != ''">AND cert_code = #{certCode}</if>
             <if test="certName != null and certName != ''">AND cert_name LIKE CONCAT('%', #{certName}, '%')</if>
             <if test="certType != null and certType != ''">AND cert_type = #{certType}</if>
-            <if test="caOrg != null and caOrg != ''">AND ca_org = #{caOrg}</if>
+            <if test="caOrg != null and caOrg != ''">AND ca_org LIKE CONCAT('%', #{caOrg}, '%')</if>
             <if test="certSn != null and certSn != ''">AND cert_sn = #{certSn}</if>
+            <if test="expireTime != null">AND expire_time &lt;= #{expireTime}</if>
             <if test="status != null">AND status = #{status}</if>
         </where>
         ORDER BY expire_time ASC
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countByCondition" parameterType="com.gnosis.signature.dto.certificate.SignatureCertificateQueryRequest" resultType="java.lang.Long">
@@ -75,8 +78,9 @@
             <if test="certCode != null and certCode != ''">AND cert_code = #{certCode}</if>
             <if test="certName != null and certName != ''">AND cert_name LIKE CONCAT('%', #{certName}, '%')</if>
             <if test="certType != null and certType != ''">AND cert_type = #{certType}</if>
-            <if test="caOrg != null and caOrg != ''">AND ca_org = #{caOrg}</if>
+            <if test="caOrg != null and caOrg != ''">AND ca_org LIKE CONCAT('%', #{caOrg}, '%')</if>
             <if test="certSn != null and certSn != ''">AND cert_sn = #{certSn}</if>
+            <if test="expireTime != null">AND expire_time &lt;= #{expireTime}</if>
             <if test="status != null">AND status = #{status}</if>
         </where>
     </select>
@@ -94,5 +98,10 @@
         UPDATE sig_certificate SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </update>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_certificate WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
 
 </mapper>

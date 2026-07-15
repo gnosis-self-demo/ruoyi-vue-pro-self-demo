@@ -20,6 +20,9 @@ public class SignatureAuditLogQueryRequest {
     /** 操作结果(0-失败 1-成功) */
     private Integer operationResult;
 
+    /** 状态(0-禁用 1-启用) */
+    private Integer status;
+
     /** 页码 */
     private Integer pageNum;
 
@@ -64,6 +67,14 @@ public class SignatureAuditLogQueryRequest {
 
     public void setOperationResult(Integer operationResult) {
         this.operationResult = operationResult;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
     public Integer getPageNum() {

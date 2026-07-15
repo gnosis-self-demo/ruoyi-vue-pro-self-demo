@@ -1,9 +1,13 @@
 package com.gnosis.signature.dto.audit;
 
+import java.io.Serializable;
+
 /**
  * 审计日志创建请求
  */
-public class SignatureAuditLogCreateRequest {
+public class SignatureAuditLogCreateRequest implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /** 操作类型 */
     private String operationType;
@@ -28,6 +32,9 @@ public class SignatureAuditLogCreateRequest {
 
     /** 错误信息 */
     private String errorMsg;
+
+    /** 状态(0-禁用 1-启用) */
+    private Integer status;
 
     /** 创建人ID */
     private String createUserId;
@@ -97,6 +104,14 @@ public class SignatureAuditLogCreateRequest {
 
     public void setErrorMsg(String errorMsg) {
         this.errorMsg = errorMsg;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
     public String getCreateUserId() {

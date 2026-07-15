@@ -91,14 +91,14 @@ public class SignatureSupplierController {
     @ApiOperation("导出供应商")
     @PostMapping("/export")
     public void export(@RequestBody SignatureSupplierIdsRequest request, HttpServletResponse response) throws IOException {
-        // TODO: 实现导出逻辑
+        supplierService.exportData(request, response);
     }
 
     @ApiOperation("导入供应商")
     @PostMapping("/import")
     public BaseResponse<Void> importSuppliers(@RequestParam("file") MultipartFile file) {
         try {
-            // TODO: 实现导入逻辑
+            supplierService.importData(file);
             return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.fail("导入失败: " + e.getMessage());

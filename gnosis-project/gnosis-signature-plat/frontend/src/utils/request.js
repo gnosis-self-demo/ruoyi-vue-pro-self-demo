@@ -20,6 +20,10 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
+    // 处理二进制响应(文件下载)
+    if (response.config.responseType === 'blob' || response.data instanceof Blob) {
+      return response;
+    }
     const res = response.data;
     if (res.code !== 200) {
       message.error(res.message || '请求失败');

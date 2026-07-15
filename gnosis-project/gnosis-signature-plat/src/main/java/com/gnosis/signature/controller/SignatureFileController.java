@@ -91,14 +91,14 @@ public class SignatureFileController {
     @ApiOperation("导出文件")
     @PostMapping("/export")
     public void export(@RequestBody SignatureFileIdsRequest request, HttpServletResponse response) throws IOException {
-        // TODO: 实现导出逻辑
+        fileService.exportData(request, response);
     }
 
     @ApiOperation("导入文件")
     @PostMapping("/import")
     public BaseResponse<Void> importFiles(@RequestParam("file") MultipartFile file) {
         try {
-            // TODO: 实现导入逻辑
+            fileService.importData(file);
             return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.fail("导入失败: " + e.getMessage());

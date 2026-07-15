@@ -91,14 +91,14 @@ public class SignatureSealController {
     @ApiOperation("导出印章")
     @PostMapping("/export")
     public void export(@RequestBody SignatureSealIdsRequest request, HttpServletResponse response) throws IOException {
-        // TODO: 实现导出逻辑
+        sealService.exportData(request, response);
     }
 
     @ApiOperation("导入印章")
     @PostMapping("/import")
     public BaseResponse<Void> importSeals(@RequestParam("file") MultipartFile file) {
         try {
-            // TODO: 实现导入逻辑
+            sealService.importData(file);
             return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.fail("导入失败: " + e.getMessage());

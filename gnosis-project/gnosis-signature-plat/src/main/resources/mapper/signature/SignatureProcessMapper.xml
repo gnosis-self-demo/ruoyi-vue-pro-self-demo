@@ -53,6 +53,7 @@
     </select>
 
     <select id="selectByCondition" parameterType="com.gnosis.signature.dto.process.SignatureProcessQueryRequest" resultMap="BaseResultMap">
+        <bind name="offset" value="(pageNum != null and pageNum > 0 ? pageNum - 1 : 0) * (pageSize != null and pageSize > 0 ? pageSize : 10)" />
         SELECT <include refid="Base_Column_List"/> FROM sig_process
         <where>
             <if test="processCode != null and processCode != ''">AND process_code = #{processCode}</if>
@@ -61,6 +62,7 @@
             <if test="status != null">AND status = #{status}</if>
         </where>
         ORDER BY sign_order ASC, create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countByCondition" parameterType="com.gnosis.signature.dto.process.SignatureProcessQueryRequest" resultType="java.lang.Long">
@@ -86,5 +88,10 @@
         UPDATE sig_process SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </update>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_process WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
 
 </mapper>

@@ -61,10 +61,12 @@
     </select>
 
     <select id="selectByCondition" parameterType="com.gnosis.signature.dto.file.SignatureFileQueryRequest" resultMap="BaseResultMap">
+        <bind name="offset" value="(pageNum != null and pageNum > 0 ? pageNum - 1 : 0) * (pageSize != null and pageSize > 0 ? pageSize : 10)" />
         SELECT <include refid="Base_Column_List"/> FROM sig_file
         <where>
             <if test="fileName != null and fileName != ''">AND file_name LIKE CONCAT('%', #{fileName}, '%')</if>
             <if test="fileType != null and fileType != ''">AND file_type = #{fileType}</if>
+            <if test="filePath != null and filePath != ''">AND file_path LIKE CONCAT('%', #{filePath}, '%')</if>
             <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
             <if test="processId != null and processId != ''">AND process_id = #{processId}</if>
             <if test="supplierId != null and supplierId != ''">AND supplier_id = #{supplierId}</if>
@@ -72,6 +74,7 @@
             <if test="status != null">AND status = #{status}</if>
         </where>
         ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countByCondition" parameterType="com.gnosis.signature.dto.file.SignatureFileQueryRequest" resultType="java.lang.Long">
@@ -79,6 +82,7 @@
         <where>
             <if test="fileName != null and fileName != ''">AND file_name LIKE CONCAT('%', #{fileName}, '%')</if>
             <if test="fileType != null and fileType != ''">AND file_type = #{fileType}</if>
+            <if test="filePath != null and filePath != ''">AND file_path LIKE CONCAT('%', #{filePath}, '%')</if>
             <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
             <if test="processId != null and processId != ''">AND process_id = #{processId}</if>
             <if test="supplierId != null and supplierId != ''">AND supplier_id = #{supplierId}</if>
@@ -100,5 +104,10 @@
         UPDATE sig_file SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </update>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_file WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
 
 </mapper>

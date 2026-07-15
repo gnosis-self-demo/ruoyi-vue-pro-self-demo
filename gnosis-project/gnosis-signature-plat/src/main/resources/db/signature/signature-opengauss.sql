@@ -233,6 +233,7 @@ CREATE TABLE sig_audit_log (
     operation_ip        varchar(64)     DEFAULT '',
     operation_result    int             DEFAULT 1,
     error_msg           varchar(512)    DEFAULT '',
+    status              int             DEFAULT 1,
     create_user_id      varchar(128)    DEFAULT '',
     update_user_id      varchar(128)    DEFAULT '',
     create_time         timestamp       DEFAULT CURRENT_TIMESTAMP,
@@ -250,6 +251,7 @@ COMMENT ON COLUMN sig_audit_log.response_result IS '响应结果';
 COMMENT ON COLUMN sig_audit_log.operation_ip IS '操作IP';
 COMMENT ON COLUMN sig_audit_log.operation_result IS '操作结果(0-失败 1-成功)';
 COMMENT ON COLUMN sig_audit_log.error_msg IS '错误信息';
+COMMENT ON COLUMN sig_audit_log.status IS '状态(0-禁用 1-启用)';
 COMMENT ON COLUMN sig_audit_log.create_user_id IS '创建人ID';
 COMMENT ON COLUMN sig_audit_log.update_user_id IS '更新人ID';
 COMMENT ON COLUMN sig_audit_log.create_time IS '创建时间';
@@ -274,7 +276,7 @@ INSERT INTO sig_process (id, process_code, process_name, process_type, process_c
 VALUES ('PROC001', 'SEQUENTIAL_SIGN', '顺序签', 'SEQUENTIAL', '{"steps":[{"order":1,"signer":"first"},{"order":2,"signer":"second"}]}', 1, '按顺序依次签署', 1, 'system', CURRENT_TIMESTAMP);
 
 INSERT INTO sig_process (id, process_code, process_name, process_type, process_config, sign_order, description, status, create_user_id, create_time) 
-VALUES ('PROC002', 'COUNTER_SIGN', '会签', 'COUNTER', '{"steps":[{"order":1,"signer":"all"}]', 1, '所有签署人同时签署', 1, 'system', CURRENT_TIMESTAMP);
+VALUES ('PROC002', 'COUNTER_SIGN', '会签', 'COUNTER', '{"steps":[{"order":1,"signer":"all"}]}', 1, '所有签署人同时签署', 1, 'system', CURRENT_TIMESTAMP);
 
 INSERT INTO sig_process (id, process_code, process_name, process_type, process_config, sign_order, description, status, create_user_id, create_time) 
-VALUES ('PROC003', 'PARALLEL_SIGN', '并行签', 'PARALLEL', '{"steps":[{"order":1,"signer":"any"}]', 1, '任意一人签署即可', 1, 'system', CURRENT_TIMESTAMP);
+VALUES ('PROC003', 'PARALLEL_SIGN', '并行签', 'PARALLEL', '{"steps":[{"order":1,"signer":"any"}]}', 1, '任意一人签署即可', 1, 'system', CURRENT_TIMESTAMP);

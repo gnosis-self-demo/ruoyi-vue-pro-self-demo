@@ -52,4 +52,9 @@ public interface SignatureTemplateMapper {
      * 批量更新状态
      */
     int batchUpdateStatus(@Param("ids") List<String> ids, @Param("status") Integer status);
+
+    /**
+     * 根据ID列表批量查询模板
+     */
+    List<SignatureTemplate> selectByIds(@Param("ids") List<String> ids);
 }

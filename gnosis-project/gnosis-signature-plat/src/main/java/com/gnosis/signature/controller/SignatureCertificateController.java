@@ -91,14 +91,14 @@ public class SignatureCertificateController {
     @ApiOperation("导出证书")
     @PostMapping("/export")
     public void export(@RequestBody SignatureCertificateIdsRequest request, HttpServletResponse response) throws IOException {
-        // TODO: 实现导出逻辑
+        certificateService.exportData(request, response);
     }
 
     @ApiOperation("导入证书")
     @PostMapping("/import")
     public BaseResponse<Void> importCertificates(@RequestParam("file") MultipartFile file) {
         try {
-            // TODO: 实现导入逻辑
+            certificateService.importData(file);
             return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.fail("导入失败: " + e.getMessage());

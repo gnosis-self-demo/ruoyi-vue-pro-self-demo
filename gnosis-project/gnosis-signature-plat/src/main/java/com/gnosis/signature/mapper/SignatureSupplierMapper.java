@@ -52,4 +52,9 @@ public interface SignatureSupplierMapper {
      * 批量更新供应商状态
      */
     int batchUpdateStatus(@Param("ids") List<String> ids, @Param("status") Integer status);
+
+    /**
+     * 根据ID列表批量查询供应商
+     */
+    List<SignatureSupplier> selectByIds(@Param("ids") List<String> ids);
 }

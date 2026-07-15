@@ -52,4 +52,9 @@ public interface SignatureCertificateMapper {
      * 批量更新状态
      */
     int batchUpdateStatus(@Param("ids") List<String> ids, @Param("status") Integer status);
+
+    /**
+     * 根据ID列表批量查询证书
+     */
+    List<SignatureCertificate> selectByIds(@Param("ids") List<String> ids);
 }

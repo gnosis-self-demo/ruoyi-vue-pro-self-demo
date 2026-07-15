@@ -12,6 +12,7 @@
         <result column="operation_ip" property="operationIp"/>
         <result column="operation_result" property="operationResult"/>
         <result column="error_msg" property="errorMsg"/>
+        <result column="status" property="status"/>
         <result column="create_user_id" property="createUserId"/>
         <result column="update_user_id" property="updateUserId"/>
         <result column="create_time" property="createTime"/>
@@ -20,32 +21,54 @@
 
     <sql id="Base_Column_List">
         id, operation_type, operation_module, operation_desc, request_params, response_result,
-        operation_ip, operation_result, error_msg, create_user_id, update_user_id, create_time, update_time
+        operation_ip, operation_result, error_msg, status, create_user_id, update_user_id, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="com.gnosis.signature.domain.SignatureAuditLog">
         INSERT INTO sig_audit_log (
             id, operation_type, operation_module, operation_desc, request_params, response_result,
-            operation_ip, operation_result, error_msg, create_user_id, update_user_id, create_time, update_time
+            operation_ip, operation_result, error_msg, status, create_user_id, update_user_id, create_time, update_time
         ) VALUES (
             #{id}, #{operationType}, #{operationModule}, #{operationDesc}, #{requestParams}, #{responseResult},
-            #{operationIp}, #{operationResult}, #{errorMsg}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+            #{operationIp}, #{operationResult}, #{errorMsg}, #{status}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
         )
     </insert>
+
+    <update id="updateById" parameterType="com.gnosis.signature.domain.SignatureAuditLog">
+        UPDATE sig_audit_log
+        <set>
+            <if test="operationType != null and operationType != ''">operation_type = #{operationType},</if>
+            <if test="operationModule != null and operationModule != ''">operation_module = #{operationModule},</if>
+            <if test="operationDesc != null">operation_desc = #{operationDesc},</if>
+            <if test="requestParams != null">request_params = #{requestParams},</if>
+            <if test="responseResult != null">response_result = #{responseResult},</if>
+            <if test="operationIp != null">operation_ip = #{operationIp},</if>
+            <if test="operationResult != null">operation_result = #{operationResult},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateUserId != null and updateUserId != ''">update_user_id = #{updateUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
 
     <select id="selectById" parameterType="java.lang.String" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/> FROM sig_audit_log WHERE id = #{id}
     </select>
 
     <select id="selectByCondition" parameterType="com.gnosis.signature.dto.audit.SignatureAuditLogQueryRequest" resultMap="BaseResultMap">
+        <bind name="offset" value="(pageNum != null and pageNum > 0 ? pageNum - 1 : 0) * (pageSize != null and pageSize > 0 ? pageSize : 10)" />
         SELECT <include refid="Base_Column_List"/> FROM sig_audit_log
         <where>
             <if test="operationType != null and operationType != ''">AND operation_type = #{operationType}</if>
             <if test="operationModule != null and operationModule != ''">AND operation_module = #{operationModule}</if>
+            <if test="operationDesc != null and operationDesc != ''">AND operation_desc LIKE CONCAT('%', #{operationDesc}, '%')</if>
+            <if test="operationIp != null and operationIp != ''">AND operation_ip = #{operationIp}</if>
             <if test="operationResult != null">AND operation_result = #{operationResult}</if>
-            <if test="createUserId != null and createUserId != ''">AND create_user_id = #{createUserId}</if>
+            <if test="status != null">AND status = #{status}</if>
         </where>
         ORDER BY create_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 
     <select id="countByCondition" parameterType="com.gnosis.signature.dto.audit.SignatureAuditLogQueryRequest" resultType="java.lang.Long">
@@ -53,14 +76,30 @@
         <where>
             <if test="operationType != null and operationType != ''">AND operation_type = #{operationType}</if>
             <if test="operationModule != null and operationModule != ''">AND operation_module = #{operationModule}</if>
+            <if test="operationDesc != null and operationDesc != ''">AND operation_desc LIKE CONCAT('%', #{operationDesc}, '%')</if>
+            <if test="operationIp != null and operationIp != ''">AND operation_ip = #{operationIp}</if>
             <if test="operationResult != null">AND operation_result = #{operationResult}</if>
-            <if test="createUserId != null and createUserId != ''">AND create_user_id = #{createUserId}</if>
+            <if test="status != null">AND status = #{status}</if>
         </where>
     </select>
+
+    <delete id="deleteById" parameterType="java.lang.String">
+        DELETE FROM sig_audit_log WHERE id = #{id}
+    </delete>
 
     <delete id="deleteByIds">
         DELETE FROM sig_audit_log WHERE id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </delete>
+
+    <update id="batchUpdateStatus">
+        UPDATE sig_audit_log SET status = #{status}, update_time = CURRENT_TIMESTAMP WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM sig_audit_log WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
 
 </mapper>

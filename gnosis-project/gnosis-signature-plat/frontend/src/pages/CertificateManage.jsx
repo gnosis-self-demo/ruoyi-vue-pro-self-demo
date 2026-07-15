@@ -49,7 +49,7 @@ const CertificateManage = () => {
       const response = await certificateApi.pageList({
         pageNum,
         pageSize,
-        ...params,
+        query: params,
       });
       if (response.code === 200 && response.data) {
         setDataSource(response.data.list || []);
@@ -202,9 +202,16 @@ const CertificateManage = () => {
   const handleExport = async () => {
     try {
       const response = await certificateApi.export(selectedRowKeys);
-      if (response.code === 200) {
-        message.success('导出成功');
-      }
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'certificate_export.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      message.success('导出成功');
     } catch (error) {
       console.error('导出失败:', error);
     }

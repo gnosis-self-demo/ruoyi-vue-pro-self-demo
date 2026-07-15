@@ -9,14 +9,20 @@ import com.gnosis.signature.dto.process.SignatureProcessQueryRequest;
 import com.gnosis.signature.dto.process.SignatureProcessUpdateRequest;
 import com.gnosis.signature.dto.process.SignatureProcessVO;
 import com.gnosis.signature.mapper.SignatureProcessMapper;
+import com.gnosis.signature.util.ExcelExportImportUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -170,6 +176,83 @@ public class SignatureProcessService {
     }
 
     /**
+     * 导出流程数据
+     */
+    public void exportData(SignatureProcessIdsRequest request, HttpServletResponse response) throws IOException {
+        List<SignatureProcess> list;
+        if (request != null && request.getIds() != null && !request.getIds().isEmpty()) {
+            list = processMapper.selectByIds(request.getIds());
+        } else {
+            list = processMapper.selectByCondition(new SignatureProcessQueryRequest());
+        }
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("id", "ID");
+        headers.put("processCode", "流程编码");
+        headers.put("processName", "流程名称");
+        headers.put("processType", "流程类型");
+        headers.put("processConfig", "流程配置");
+        headers.put("signOrder", "签署顺序");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+        headers.put("createUserId", "创建人ID");
+        headers.put("updateUserId", "更新人ID");
+        headers.put("createTime", "创建时间");
+        headers.put("updateTime", "更新时间");
+
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        for (SignatureProcess entity : list) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", entity.getId());
+            row.put("processCode", entity.getProcessCode());
+            row.put("processName", entity.getProcessName());
+            row.put("processType", entity.getProcessType());
+            row.put("processConfig", entity.getProcessConfig());
+            row.put("signOrder", entity.getSignOrder());
+            row.put("description", entity.getDescription());
+            row.put("status", entity.getStatus());
+            row.put("createUserId", entity.getCreateUserId());
+            row.put("updateUserId", entity.getUpdateUserId());
+            row.put("createTime", entity.getCreateTime());
+            row.put("updateTime", entity.getUpdateTime());
+            dataList.add(row);
+        }
+        ExcelExportImportUtil.exportExcel(response, "process_export", headers, dataList);
+    }
+
+    /**
+     * 导入流程数据
+     */
+    public int importData(MultipartFile file) throws IOException {
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("processCode", "流程编码");
+        headers.put("processName", "流程名称");
+        headers.put("processType", "流程类型");
+        headers.put("processConfig", "流程配置");
+        headers.put("signOrder", "签署顺序");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+
+        List<Map<String, Object>> dataList = ExcelExportImportUtil.importExcel(file.getInputStream(), headers);
+        int count = 0;
+        for (Map<String, Object> row : dataList) {
+            SignatureProcess entity = new SignatureProcess();
+            entity.setId(UUID.randomUUID().toString());
+            entity.setProcessCode(getStringValue(row, "processCode"));
+            entity.setProcessName(getStringValue(row, "processName"));
+            entity.setProcessType(getStringValue(row, "processType"));
+            entity.setProcessConfig(getStringValue(row, "processConfig"));
+            entity.setSignOrder(getIntegerValue(row, "signOrder"));
+            entity.setDescription(getStringValue(row, "description"));
+            entity.setStatus(getIntegerValue(row, "status"));
+            entity.setCreateTime(new Date());
+            entity.setUpdateTime(new Date());
+            processMapper.insert(entity);
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * 转换为VO
      */
     private SignatureProcessVO convertToVO(SignatureProcess process) {
@@ -187,5 +270,22 @@ public class SignatureProcessService {
         vo.setCreateTime(process.getCreateTime());
         vo.setUpdateTime(process.getUpdateTime());
         return vo;
+    }
+
+    private String getStringValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private Integer getIntegerValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null || String.valueOf(value).isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

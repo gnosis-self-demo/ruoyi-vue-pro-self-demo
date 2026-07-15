@@ -1,11 +1,13 @@
 package com.gnosis.signature.dto.audit;
 
-import java.util.Date;
+import java.io.Serializable;
 
 /**
- * 审计日志视图对象
+ * 审计日志更新请求
  */
-public class SignatureAuditLogVO {
+public class SignatureAuditLogUpdateRequest implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /** 主键ID */
     private String id;
@@ -42,12 +44,6 @@ public class SignatureAuditLogVO {
 
     /** 更新人ID */
     private String updateUserId;
-
-    /** 创建时间 */
-    private Date createTime;
-
-    /** 更新时间 */
-    private Date updateTime;
 
     public String getId() {
         return id;
@@ -143,21 +139,5 @@ public class SignatureAuditLogVO {
 
     public void setUpdateUserId(String updateUserId) {
         this.updateUserId = updateUserId;
-    }
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
     }
 }

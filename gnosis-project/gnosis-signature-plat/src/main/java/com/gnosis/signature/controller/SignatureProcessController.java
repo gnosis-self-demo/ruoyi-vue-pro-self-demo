@@ -91,14 +91,14 @@ public class SignatureProcessController {
     @ApiOperation("导出流程")
     @PostMapping("/export")
     public void export(@RequestBody SignatureProcessIdsRequest request, HttpServletResponse response) throws IOException {
-        // TODO: 实现导出逻辑
+        processService.exportData(request, response);
     }
 
     @ApiOperation("导入流程")
     @PostMapping("/import")
     public BaseResponse<Void> importProcesses(@RequestParam("file") MultipartFile file) {
         try {
-            // TODO: 实现导入逻辑
+            processService.importData(file);
             return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.fail("导入失败: " + e.getMessage());

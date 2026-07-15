@@ -9,12 +9,18 @@ import com.gnosis.signature.dto.supplier.SignatureSupplierQueryRequest;
 import com.gnosis.signature.dto.supplier.SignatureSupplierUpdateRequest;
 import com.gnosis.signature.dto.supplier.SignatureSupplierVO;
 import com.gnosis.signature.mapper.SignatureSupplierMapper;
+import com.gnosis.signature.util.ExcelExportImportUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -170,6 +176,99 @@ public class SignatureSupplierService {
     }
 
     /**
+     * 导出供应商数据
+     */
+    public void exportData(SignatureSupplierIdsRequest request, HttpServletResponse response) throws IOException {
+        List<SignatureSupplier> list;
+        if (request != null && request.getIds() != null && !request.getIds().isEmpty()) {
+            list = mapper.selectByIds(request.getIds());
+        } else {
+            list = mapper.selectByCondition(new SignatureSupplierQueryRequest());
+        }
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("id", "ID");
+        headers.put("supplierCode", "供应商编码");
+        headers.put("supplierName", "供应商名称");
+        headers.put("supplierType", "供应商类型");
+        headers.put("apiUrl", "API地址");
+        headers.put("apiKey", "API密钥");
+        headers.put("apiSecret", "API密钥Secret");
+        headers.put("contactName", "联系人");
+        headers.put("contactPhone", "联系电话");
+        headers.put("contactEmail", "联系邮箱");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+        headers.put("createUserId", "创建人ID");
+        headers.put("updateUserId", "更新人ID");
+        headers.put("createTime", "创建时间");
+        headers.put("updateTime", "更新时间");
+
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        for (SignatureSupplier entity : list) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", entity.getId());
+            row.put("supplierCode", entity.getSupplierCode());
+            row.put("supplierName", entity.getSupplierName());
+            row.put("supplierType", entity.getSupplierType());
+            row.put("apiUrl", entity.getApiUrl());
+            row.put("apiKey", entity.getApiKey());
+            row.put("apiSecret", entity.getApiSecret());
+            row.put("contactName", entity.getContactName());
+            row.put("contactPhone", entity.getContactPhone());
+            row.put("contactEmail", entity.getContactEmail());
+            row.put("description", entity.getDescription());
+            row.put("status", entity.getStatus());
+            row.put("createUserId", entity.getCreateUserId());
+            row.put("updateUserId", entity.getUpdateUserId());
+            row.put("createTime", entity.getCreateTime());
+            row.put("updateTime", entity.getUpdateTime());
+            dataList.add(row);
+        }
+        ExcelExportImportUtil.exportExcel(response, "supplier_export", headers, dataList);
+    }
+
+    /**
+     * 导入供应商数据
+     */
+    public int importData(MultipartFile file) throws IOException {
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("supplierCode", "供应商编码");
+        headers.put("supplierName", "供应商名称");
+        headers.put("supplierType", "供应商类型");
+        headers.put("apiUrl", "API地址");
+        headers.put("apiKey", "API密钥");
+        headers.put("apiSecret", "API密钥Secret");
+        headers.put("contactName", "联系人");
+        headers.put("contactPhone", "联系电话");
+        headers.put("contactEmail", "联系邮箱");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+
+        List<Map<String, Object>> dataList = ExcelExportImportUtil.importExcel(file.getInputStream(), headers);
+        int count = 0;
+        for (Map<String, Object> row : dataList) {
+            SignatureSupplier entity = new SignatureSupplier();
+            entity.setId(UUID.randomUUID().toString());
+            entity.setSupplierCode(getStringValue(row, "supplierCode"));
+            entity.setSupplierName(getStringValue(row, "supplierName"));
+            entity.setSupplierType(getStringValue(row, "supplierType"));
+            entity.setApiUrl(getStringValue(row, "apiUrl"));
+            entity.setApiKey(getStringValue(row, "apiKey"));
+            entity.setApiSecret(getStringValue(row, "apiSecret"));
+            entity.setContactName(getStringValue(row, "contactName"));
+            entity.setContactPhone(getStringValue(row, "contactPhone"));
+            entity.setContactEmail(getStringValue(row, "contactEmail"));
+            entity.setDescription(getStringValue(row, "description"));
+            entity.setStatus(getIntegerValue(row, "status"));
+            entity.setCreateTime(new Date());
+            entity.setUpdateTime(new Date());
+            mapper.insert(entity);
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * 转换为VO
      */
     private SignatureSupplierVO convertToVO(SignatureSupplier entity) {
@@ -191,5 +290,22 @@ public class SignatureSupplierService {
         vo.setCreateTime(entity.getCreateTime());
         vo.setUpdateTime(entity.getUpdateTime());
         return vo;
+    }
+
+    private String getStringValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private Integer getIntegerValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null || String.valueOf(value).isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

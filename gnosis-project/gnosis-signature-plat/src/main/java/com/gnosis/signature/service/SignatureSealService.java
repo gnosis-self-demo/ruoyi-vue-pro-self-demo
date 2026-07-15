@@ -9,14 +9,20 @@ import com.gnosis.signature.dto.seal.SignatureSealQueryRequest;
 import com.gnosis.signature.dto.seal.SignatureSealUpdateRequest;
 import com.gnosis.signature.dto.seal.SignatureSealVO;
 import com.gnosis.signature.mapper.SignatureSealMapper;
+import com.gnosis.signature.util.ExcelExportImportUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -176,6 +182,91 @@ public class SignatureSealService {
     }
 
     /**
+     * 导出印章数据
+     */
+    public void exportData(SignatureSealIdsRequest request, HttpServletResponse response) throws IOException {
+        List<SignatureSeal> list;
+        if (request != null && request.getIds() != null && !request.getIds().isEmpty()) {
+            list = sealMapper.selectByIds(request.getIds());
+        } else {
+            list = sealMapper.selectByCondition(new SignatureSealQueryRequest());
+        }
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("id", "ID");
+        headers.put("sealCode", "印章编码");
+        headers.put("sealName", "印章名称");
+        headers.put("sealType", "印章类型");
+        headers.put("sealImagePath", "印章图片路径");
+        headers.put("sealImageData", "印章图片数据");
+        headers.put("authorizeUserId", "授权人ID");
+        headers.put("authorizeTime", "授权时间");
+        headers.put("expireTime", "过期时间");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+        headers.put("createUserId", "创建人ID");
+        headers.put("updateUserId", "更新人ID");
+        headers.put("createTime", "创建时间");
+        headers.put("updateTime", "更新时间");
+
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        for (SignatureSeal entity : list) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", entity.getId());
+            row.put("sealCode", entity.getSealCode());
+            row.put("sealName", entity.getSealName());
+            row.put("sealType", entity.getSealType());
+            row.put("sealImagePath", entity.getSealImagePath());
+            row.put("sealImageData", entity.getSealImageData());
+            row.put("authorizeUserId", entity.getAuthorizeUserId());
+            row.put("authorizeTime", entity.getAuthorizeTime());
+            row.put("expireTime", entity.getExpireTime());
+            row.put("description", entity.getDescription());
+            row.put("status", entity.getStatus());
+            row.put("createUserId", entity.getCreateUserId());
+            row.put("updateUserId", entity.getUpdateUserId());
+            row.put("createTime", entity.getCreateTime());
+            row.put("updateTime", entity.getUpdateTime());
+            dataList.add(row);
+        }
+        ExcelExportImportUtil.exportExcel(response, "seal_export", headers, dataList);
+    }
+
+    /**
+     * 导入印章数据
+     */
+    public int importData(MultipartFile file) throws IOException {
+        LinkedHashMap<String, String> headers = new LinkedHashMap<>();
+        headers.put("sealCode", "印章编码");
+        headers.put("sealName", "印章名称");
+        headers.put("sealType", "印章类型");
+        headers.put("sealImagePath", "印章图片路径");
+        headers.put("sealImageData", "印章图片数据");
+        headers.put("authorizeUserId", "授权人ID");
+        headers.put("description", "描述");
+        headers.put("status", "状态");
+
+        List<Map<String, Object>> dataList = ExcelExportImportUtil.importExcel(file.getInputStream(), headers);
+        int count = 0;
+        for (Map<String, Object> row : dataList) {
+            SignatureSeal entity = new SignatureSeal();
+            entity.setId(UUID.randomUUID().toString());
+            entity.setSealCode(getStringValue(row, "sealCode"));
+            entity.setSealName(getStringValue(row, "sealName"));
+            entity.setSealType(getStringValue(row, "sealType"));
+            entity.setSealImagePath(getStringValue(row, "sealImagePath"));
+            entity.setSealImageData(getStringValue(row, "sealImageData"));
+            entity.setAuthorizeUserId(getStringValue(row, "authorizeUserId"));
+            entity.setDescription(getStringValue(row, "description"));
+            entity.setStatus(getIntegerValue(row, "status"));
+            entity.setCreateTime(new Date());
+            entity.setUpdateTime(new Date());
+            sealMapper.insert(entity);
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * 转换为VO
      */
     private SignatureSealVO convertToVO(SignatureSeal seal) {
@@ -196,5 +287,22 @@ public class SignatureSealService {
         vo.setCreateTime(seal.getCreateTime());
         vo.setUpdateTime(seal.getUpdateTime());
         return vo;
+    }
+
+    private String getStringValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private Integer getIntegerValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null || String.valueOf(value).isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

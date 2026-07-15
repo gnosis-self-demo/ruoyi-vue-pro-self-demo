@@ -52,4 +52,9 @@ public interface SignatureFileMapper {
      * 批量更新状态
      */
     int batchUpdateStatus(@Param("ids") List<String> ids, @Param("status") Integer status);
+
+    /**
+     * 根据ID列表批量查询文件
+     */
+    List<SignatureFile> selectByIds(@Param("ids") List<String> ids);
 }

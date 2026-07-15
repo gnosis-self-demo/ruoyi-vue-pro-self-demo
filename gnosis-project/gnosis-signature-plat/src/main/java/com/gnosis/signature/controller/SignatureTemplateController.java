@@ -91,14 +91,14 @@ public class SignatureTemplateController {
     @ApiOperation("导出模板")
     @PostMapping("/export")
     public void export(@RequestBody SignatureTemplateIdsRequest request, HttpServletResponse response) throws IOException {
-        // TODO: 实现导出逻辑
+        templateService.exportData(request, response);
     }
 
     @ApiOperation("导入模板")
     @PostMapping("/import")
     public BaseResponse<Void> importTemplates(@RequestParam("file") MultipartFile file) {
         try {
-            // TODO: 实现导入逻辑
+            templateService.importData(file);
             return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.fail("导入失败: " + e.getMessage());

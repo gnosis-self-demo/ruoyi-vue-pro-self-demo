@@ -33,6 +33,9 @@ public class SignatureAuditLog extends BaseEntity {
     /** 错误信息 */
     private String errorMsg;
 
+    /** 状态(0-禁用 1-启用) */
+    private Integer status;
+
     public String getOperationType() {
         return operationType;
     }
@@ -95,5 +98,13 @@ public class SignatureAuditLog extends BaseEntity {
 
     public void setErrorMsg(String errorMsg) {
         this.errorMsg = errorMsg;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 }
