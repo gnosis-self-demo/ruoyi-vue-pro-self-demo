@@ -12,6 +12,7 @@
         <result column="content" property="content"/>
         <result column="attachment_config" property="attachmentConfig"/>
         <result column="third_party_config" property="thirdPartyConfig"/>
+        <result column="priority" property="priority"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
         <result column="create_user_id" property="createUserId"/>
@@ -22,18 +23,18 @@
 
     <sql id="Base_Column_List">
         id, template_code, template_name, template_type, notice_type, subject, content,
-        attachment_config, third_party_config, status, remark,
+        attachment_config, third_party_config, priority, status, remark,
         create_user_id, update_user_id, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="com.gnosis.notice.domain.NoticeTemplate">
         INSERT INTO sys_notice_template (
             id, template_code, template_name, template_type, notice_type, subject, content,
-            attachment_config, third_party_config, status, remark,
+            attachment_config, third_party_config, priority, status, remark,
             create_user_id, update_user_id, create_time, update_time
         ) VALUES (
             #{id}, #{templateCode}, #{templateName}, #{templateType}, #{noticeType}, #{subject}, #{content},
-            #{attachmentConfig}, #{thirdPartyConfig}, #{status}, #{remark},
+            #{attachmentConfig}, #{thirdPartyConfig}, #{priority}, #{status}, #{remark},
             #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
         )
     </insert>
@@ -48,6 +49,7 @@
             <if test="content != null">content = #{content},</if>
             <if test="attachmentConfig != null">attachment_config = #{attachmentConfig},</if>
             <if test="thirdPartyConfig != null">third_party_config = #{thirdPartyConfig},</if>
+            <if test="priority != null">priority = #{priority},</if>
             <if test="status != null">status = #{status},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
@@ -76,6 +78,7 @@
             <if test="templateName != null and templateName != ''">AND template_name LIKE CONCAT('%', #{templateName}, '%')</if>
             <if test="templateType != null and templateType != ''">AND template_type = #{templateType}</if>
             <if test="noticeType != null and noticeType != ''">AND notice_type = #{noticeType}</if>
+            <if test="priority != null">AND priority = #{priority}</if>
             <if test="status != null">AND status = #{status}</if>
         </where>
         ORDER BY create_time DESC
@@ -91,6 +94,7 @@
             <if test="templateName != null and templateName != ''">AND template_name LIKE CONCAT('%', #{templateName}, '%')</if>
             <if test="templateType != null and templateType != ''">AND template_type = #{templateType}</if>
             <if test="noticeType != null and noticeType != ''">AND notice_type = #{noticeType}</if>
+            <if test="priority != null">AND priority = #{priority}</if>
             <if test="status != null">AND status = #{status}</if>
         </where>
     </select>

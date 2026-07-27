@@ -26,6 +26,16 @@ public class NoticeProperties {
     private WechatProperties wechat = new WechatProperties();
 
     /**
+     * 钉钉配置
+     */
+    private DingTalkProperties dingtalk = new DingTalkProperties();
+
+    /**
+     * 频率控制配置
+     */
+    private FrequencyProperties frequency = new FrequencyProperties();
+
+    /**
      * 重试配置
      */
     private RetryProperties retry = new RetryProperties();
@@ -52,6 +62,22 @@ public class NoticeProperties {
 
     public void setWechat(WechatProperties wechat) {
         this.wechat = wechat;
+    }
+
+    public DingTalkProperties getDingtalk() {
+        return dingtalk;
+    }
+
+    public void setDingtalk(DingTalkProperties dingtalk) {
+        this.dingtalk = dingtalk;
+    }
+
+    public FrequencyProperties getFrequency() {
+        return frequency;
+    }
+
+    public void setFrequency(FrequencyProperties frequency) {
+        this.frequency = frequency;
     }
 
     public RetryProperties getRetry() {
@@ -200,6 +226,54 @@ public class NoticeProperties {
 
         public void setInterval(Long interval) {
             this.interval = interval;
+        }
+    }
+
+    /**
+     * 钉钉配置
+     */
+    public static class DingTalkProperties {
+        private String appKey;
+        private String appSecret;
+        private Long agentId;
+
+        public String getAppKey() {
+            return appKey;
+        }
+
+        public void setAppKey(String appKey) {
+            this.appKey = appKey;
+        }
+
+        public String getAppSecret() {
+            return appSecret;
+        }
+
+        public void setAppSecret(String appSecret) {
+            this.appSecret = appSecret;
+        }
+
+        public Long getAgentId() {
+            return agentId;
+        }
+
+        public void setAgentId(Long agentId) {
+            this.agentId = agentId;
+        }
+    }
+
+    /**
+     * 频率控制配置
+     */
+    public static class FrequencyProperties {
+        private Integer maxPerMinute = 10;
+
+        public Integer getMaxPerMinute() {
+            return maxPerMinute;
+        }
+
+        public void setMaxPerMinute(Integer maxPerMinute) {
+            this.maxPerMinute = maxPerMinute;
         }
     }
 }

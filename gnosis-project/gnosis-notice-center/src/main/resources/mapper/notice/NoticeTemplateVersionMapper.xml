@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gnosis.notice.mapper.NoticeTemplateVersionMapper">
+
+    <resultMap id="BaseResultMap" type="com.gnosis.notice.domain.NoticeTemplateVersion">
+        <id column="id" property="id"/>
+        <result column="template_id" property="templateId"/>
+        <result column="template_code" property="templateCode"/>
+        <result column="version_number" property="versionNumber"/>
+        <result column="template_name" property="templateName"/>
+        <result column="template_type" property="templateType"/>
+        <result column="notice_type" property="noticeType"/>
+        <result column="subject" property="subject"/>
+        <result column="content" property="content"/>
+        <result column="attachment_config" property="attachmentConfig"/>
+        <result column="third_party_config" property="thirdPartyConfig"/>
+        <result column="priority" property="priority"/>
+        <result column="change_remark" property="changeRemark"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, template_id, template_code, version_number, template_name, template_type, notice_type,
+        subject, content, attachment_config, third_party_config, priority, change_remark,
+        create_user_id, update_user_id, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.gnosis.notice.domain.NoticeTemplateVersion">
+        INSERT INTO sys_notice_template_version (
+            id, template_id, template_code, version_number, template_name, template_type, notice_type,
+            subject, content, attachment_config, third_party_config, priority, change_remark,
+            create_user_id, update_user_id, create_time, update_time
+        ) VALUES (
+            #{id}, #{templateId}, #{templateCode}, #{versionNumber}, #{templateName}, #{templateType}, #{noticeType},
+            #{subject}, #{content}, #{attachmentConfig}, #{thirdPartyConfig}, #{priority}, #{changeRemark},
+            #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.gnosis.notice.domain.NoticeTemplateVersion">
+        UPDATE sys_notice_template_version
+        <set>
+            <if test="templateId != null">template_id = #{templateId},</if>
+            <if test="templateCode != null">template_code = #{templateCode},</if>
+            <if test="versionNumber != null">version_number = #{versionNumber},</if>
+            <if test="templateName != null">template_name = #{templateName},</if>
+            <if test="templateType != null">template_type = #{templateType},</if>
+            <if test="noticeType != null">notice_type = #{noticeType},</if>
+            <if test="subject != null">subject = #{subject},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="attachmentConfig != null">attachment_config = #{attachmentConfig},</if>
+            <if test="thirdPartyConfig != null">third_party_config = #{thirdPartyConfig},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="changeRemark != null">change_remark = #{changeRemark},</if>
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_template_version
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap" parameterType="com.gnosis.notice.dto.templateversion.NoticeTemplateVersionQueryRequest">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_template_version
+        <where>
+            <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
+            <if test="templateCode != null and templateCode != ''">AND template_code = #{templateCode}</if>
+            <if test="versionNumber != null">AND version_number = #{versionNumber}</if>
+        </where>
+        ORDER BY version_number DESC
+        <if test="pageNum != null and pageSize != null">
+            LIMIT #{pageSize} OFFSET #{pageNum}
+        </if>
+    </select>
+
+    <select id="countByCondition" resultType="java.lang.Long" parameterType="com.gnosis.notice.dto.templateversion.NoticeTemplateVersionQueryRequest">
+        SELECT COUNT(*) FROM sys_notice_template_version
+        <where>
+            <if test="templateId != null and templateId != ''">AND template_id = #{templateId}</if>
+            <if test="templateCode != null and templateCode != ''">AND template_code = #{templateCode}</if>
+            <if test="versionNumber != null">AND version_number = #{versionNumber}</if>
+        </where>
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM sys_notice_template_version WHERE id = #{id}
+    </delete>
+
+    <select id="selectByTemplateId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_notice_template_version
+        WHERE template_id = #{templateId}
+        ORDER BY version_number DESC
+    </select>
+
+</mapper>

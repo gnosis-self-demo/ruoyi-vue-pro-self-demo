@@ -3,6 +3,7 @@ package com.gnosis.notice.controller;
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.dto.PageResult;
 import com.gnosis.common.util.ResponseUtil;
+import com.gnosis.notice.config.NoticeContextUtil;
 import com.gnosis.notice.dto.template.NoticeTemplateCreateRequest;
 import com.gnosis.notice.dto.template.NoticeTemplateQueryRequest;
 import com.gnosis.notice.dto.template.NoticeTemplateUpdateRequest;
@@ -18,7 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
- * 消息模板管理接口
+ * 消息模板管理接口 - 修复版: userId从上下文获取
  */
 @Api(tags = "消息模板管理")
 @RestController
@@ -27,6 +28,9 @@ public class NoticeTemplateController {
 
     @Autowired
     private NoticeTemplateService templateService;
+
+    @Autowired
+    private NoticeContextUtil contextUtil;
 
     @ApiOperation("分页查询模板列表")
     @PostMapping("/page")
@@ -44,7 +48,7 @@ public class NoticeTemplateController {
     @ApiOperation("创建模板")
     @PostMapping("/create")
     public BaseResponse<String> create(@RequestBody NoticeTemplateCreateRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         String id = templateService.create(request, userId);
         return ResponseUtil.ok(id);
     }
@@ -52,7 +56,7 @@ public class NoticeTemplateController {
     @ApiOperation("更新模板")
     @PostMapping("/update")
     public BaseResponse<Integer> update(@RequestBody NoticeTemplateUpdateRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         int result = templateService.update(request, userId);
         return ResponseUtil.ok(result);
     }
@@ -94,7 +98,7 @@ public class NoticeTemplateController {
     @ApiOperation("导入模板")
     @PostMapping("/import")
     public BaseResponse<Integer> importExcel(@RequestParam("file") MultipartFile file) throws Exception {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         int count = templateService.importExcel(file.getInputStream(), userId);
         return ResponseUtil.ok(count);
     }

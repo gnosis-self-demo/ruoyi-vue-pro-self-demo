@@ -56,6 +56,24 @@ public class NoticeSendRequest implements Serializable {
      */
     private Boolean async;
 
+    /**
+     * 消息优先级：0普通 1重要 2紧急
+     */
+    private Integer priority;
+
+    /**
+     * 消息分组ID
+     */
+    private String groupId;
+
+    /** 设置模板变量参数便捷方法 */
+    public void setParam(String key, Object value) {
+        if (this.params == null) {
+            this.params = new java.util.HashMap<>();
+        }
+        this.params.put(key, value);
+    }
+
     public String getTemplateCode() {
         return templateCode;
     }
@@ -126,5 +144,21 @@ public class NoticeSendRequest implements Serializable {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 }

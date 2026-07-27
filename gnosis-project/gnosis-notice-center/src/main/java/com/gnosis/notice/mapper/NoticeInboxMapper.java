@@ -13,53 +13,16 @@ import java.util.List;
 @Mapper
 public interface NoticeInboxMapper {
 
-    /**
-     * 插入站内信
-     */
     int insert(NoticeInbox record);
-
-    /**
-     * 批量插入站内信
-     */
     int batchInsert(@Param("list") List<NoticeInbox> list);
-
-    /**
-     * 根据ID查询
-     */
+    int updateById(NoticeInbox record);
     NoticeInbox selectById(@Param("id") String id);
-
-    /**
-     * 条件查询列表
-     */
     List<NoticeInbox> selectByCondition(NoticeInboxQueryRequest query);
-
-    /**
-     * 条件统计总数
-     */
     Long countByCondition(NoticeInboxQueryRequest query);
-
-    /**
-     * 统计未读数量
-     */
     Long countUnread(@Param("userId") String userId);
-
-    /**
-     * 标记已读
-     */
     int markRead(@Param("id") String id);
-
-    /**
-     * 批量标记已读
-     */
     int batchMarkRead(@Param("ids") List<String> ids);
-
-    /**
-     * 根据ID删除
-     */
+    int batchUpdateStatus(@Param("ids") List<String> ids, @Param("status") Integer status);
     int deleteById(@Param("id") String id);
-
-    /**
-     * 批量删除
-     */
     int deleteByIds(@Param("ids") List<String> ids);
 }

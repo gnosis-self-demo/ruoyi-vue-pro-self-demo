@@ -24,9 +24,13 @@ public class NoticeInboxQueryRequest implements Serializable {
      * 是否已读：0未读 1已读
      */
     private Integer isRead;
-
-    /**
-     * 开始时间
+    /** 消息优先级 */
+    private Integer priority;
+    /** 消息分组ID */
+    private String groupId;
+    /** 状态 */
+    private Integer status;
+    /** 开始时间 */
      */
     private Date startTime;
 
@@ -100,4 +104,11 @@ public class NoticeInboxQueryRequest implements Serializable {
     public void setPageSize(Integer pageSize) {
         this.pageSize = pageSize;
     }
+
+    public Integer getPriority() { return priority; }
+    public void setPriority(Integer priority) { this.priority = priority; }
+    public String getGroupId() { return groupId; }
+    public void setGroupId(String groupId) { this.groupId = groupId; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 }

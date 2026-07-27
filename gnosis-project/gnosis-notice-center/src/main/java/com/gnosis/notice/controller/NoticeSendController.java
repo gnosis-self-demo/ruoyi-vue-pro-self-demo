@@ -2,6 +2,7 @@ package com.gnosis.notice.controller;
 
 import com.gnosis.common.dto.BaseResponse;
 import com.gnosis.common.util.ResponseUtil;
+import com.gnosis.notice.config.NoticeContextUtil;
 import com.gnosis.notice.dto.send.NoticeSendRequest;
 import com.gnosis.notice.dto.send.NoticeSendResponse;
 import com.gnosis.notice.service.NoticeSendService;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 消息发送接口（对外API）
+ * 消息发送接口 - 修复版: userId从上下文获取
  */
 @Api(tags = "消息发送")
 @RestController
@@ -23,10 +24,13 @@ public class NoticeSendController {
     @Autowired
     private NoticeSendService sendService;
 
+    @Autowired
+    private NoticeContextUtil contextUtil;
+
     @ApiOperation("发送消息（使用模板）")
     @PostMapping("/send")
     public BaseResponse<NoticeSendResponse> send(@RequestBody NoticeSendRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         NoticeSendResponse response = sendService.send(request, userId);
         return ResponseUtil.ok(response);
     }
@@ -34,7 +38,7 @@ public class NoticeSendController {
     @ApiOperation("批量发送消息")
     @PostMapping("/batch")
     public BaseResponse<List<NoticeSendResponse>> batchSend(@RequestBody NoticeSendRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         List<NoticeSendResponse> responses = sendService.batchSend(request, userId);
         return ResponseUtil.ok(responses);
     }
@@ -42,7 +46,7 @@ public class NoticeSendController {
     @ApiOperation("快速发送短信")
     @PostMapping("/sms")
     public BaseResponse<NoticeSendResponse> sendSms(@RequestBody NoticeSendRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         NoticeSendResponse response = sendService.sendSms(request.getReceiver(), request.getContent(), userId);
         return ResponseUtil.ok(response);
     }
@@ -50,7 +54,7 @@ public class NoticeSendController {
     @ApiOperation("快速发送邮件")
     @PostMapping("/email")
     public BaseResponse<NoticeSendResponse> sendEmail(@RequestBody NoticeSendRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         NoticeSendResponse response = sendService.sendEmail(request.getReceiver(), request.getSubject(), request.getContent(), userId);
         return ResponseUtil.ok(response);
     }
@@ -58,7 +62,7 @@ public class NoticeSendController {
     @ApiOperation("发送站内信")
     @PostMapping("/inbox")
     public BaseResponse<List<NoticeSendResponse>> sendInbox(@RequestBody NoticeSendRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         List<NoticeSendResponse> responses = sendService.sendInbox(request.getReceivers(), request.getSubject(), request.getContent(), userId);
         return ResponseUtil.ok(responses);
     }
@@ -66,8 +70,19 @@ public class NoticeSendController {
     @ApiOperation("发送微信通知")
     @PostMapping("/wechat")
     public BaseResponse<NoticeSendResponse> sendWechat(@RequestBody NoticeSendRequest request) {
-        String userId = "admin"; // TODO: 从登录上下文获取
+        String userId = contextUtil.getCurrentUserId();
         NoticeSendResponse response = sendService.sendWechat(request.getReceiver(), request.getContent(), userId);
+        return ResponseUtil.ok(response);
+    }
+
+    @ApiOperation("发送钉钉通知")
+    @PostMapping("/dingtalk")
+    public BaseResponse<NoticeSendResponse> sendDingtalk(@RequestBody NoticeSendRequest request) {
+        String userId = contextUtil.getCurrentUserId();
+        NoticeSendResponse response = sendService.sendWechat(request.getReceiver(), request.getContent(), userId);
+        // 钉钉通道通过NoticeSendService的send方法，noticeType="DINGTALK"
+        request.setNoticeType("DINGTALK");
+        response = sendService.send(request, userId);
         return ResponseUtil.ok(response);
     }
 }

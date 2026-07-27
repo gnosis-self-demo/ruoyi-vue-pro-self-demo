@@ -7,133 +7,39 @@ import com.gnosis.common.domain.BaseEntity;
  */
 public class NoticeTemplate extends BaseEntity {
 
-    /**
-     * 模板编码
-     */
     private String templateCode;
-
-    /**
-     * 模板名称
-     */
     private String templateName;
-
-    /**
-     * 模板类型：TEXT/RICH_TEXT/HTML
-     */
     private String templateType;
-
-    /**
-     * 通知类型：SMS/EMAIL/INBOX/WECHAT
-     */
     private String noticeType;
-
-    /**
-     * 消息主题
-     */
     private String subject;
-
-    /**
-     * 模板内容
-     */
     private String content;
-
-    /**
-     * 附件配置JSON
-     */
     private String attachmentConfig;
-
-    /**
-     * 第三方配置JSON
-     */
     private String thirdPartyConfig;
-
-    /**
-     * 状态：1启用 0禁用
-     */
+    /** 消息优先级：0普通 1重要 2紧急 */
+    private Integer priority;
     private Integer status;
-
-    /**
-     * 备注
-     */
     private String remark;
 
-    public String getTemplateCode() {
-        return templateCode;
-    }
-
-    public void setTemplateCode(String templateCode) {
-        this.templateCode = templateCode;
-    }
-
-    public String getTemplateName() {
-        return templateName;
-    }
-
-    public void setTemplateName(String templateName) {
-        this.templateName = templateName;
-    }
-
-    public String getTemplateType() {
-        return templateType;
-    }
-
-    public void setTemplateType(String templateType) {
-        this.templateType = templateType;
-    }
-
-    public String getNoticeType() {
-        return noticeType;
-    }
-
-    public void setNoticeType(String noticeType) {
-        this.noticeType = noticeType;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getAttachmentConfig() {
-        return attachmentConfig;
-    }
-
-    public void setAttachmentConfig(String attachmentConfig) {
-        this.attachmentConfig = attachmentConfig;
-    }
-
-    public String getThirdPartyConfig() {
-        return thirdPartyConfig;
-    }
-
-    public void setThirdPartyConfig(String thirdPartyConfig) {
-        this.thirdPartyConfig = thirdPartyConfig;
-    }
-
-    public Integer getStatus() {
-        return status;
-    }
-
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark;
-    }
+    public String getTemplateCode() { return templateCode; }
+    public void setTemplateCode(String templateCode) { this.templateCode = templateCode; }
+    public String getTemplateName() { return templateName; }
+    public void setTemplateName(String templateName) { this.templateName = templateName; }
+    public String getTemplateType() { return templateType; }
+    public void setTemplateType(String templateType) { this.templateType = templateType; }
+    public String getNoticeType() { return noticeType; }
+    public void setNoticeType(String noticeType) { this.noticeType = noticeType; }
+    public String getSubject() { return subject; }
+    public void setSubject(String subject) { this.subject = subject; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getAttachmentConfig() { return attachmentConfig; }
+    public void setAttachmentConfig(String attachmentConfig) { this.attachmentConfig = attachmentConfig; }
+    public String getThirdPartyConfig() { return thirdPartyConfig; }
+    public void setThirdPartyConfig(String thirdPartyConfig) { this.thirdPartyConfig = thirdPartyConfig; }
+    public Integer getPriority() { return priority; }
+    public void setPriority(Integer priority) { this.priority = priority; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
 }

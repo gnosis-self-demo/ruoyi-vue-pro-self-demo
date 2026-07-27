@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合同付款管理系统</title>
+    <link rel="stylesheet" href="https://unpkg.com/antd@4.24.12/dist/antd.min.css">
+    <script src="https://unpkg.com/react@16.14.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@16.14.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/moment@2.29.4/min/moment.min.js"></script>
+    <script src="https://unpkg.com/antd@4.24.12/dist/antd.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; margin: 0; }
+        .logo { height: 32px; margin: 16px; color: #fff; font-size: 18px; font-weight: bold; display: flex; align-items: center; }
+        .page-content { padding: 24px; }
+        .search-card { margin-bottom: 16px; }
+        .table-card { background: #fff; border-radius: 8px; }
+        .status-tag { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .status-pending { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        .status-approved { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .status-rejected { background: #fff1f0; color: #f5222d; border: 1px solid #ffa39e; }
+        .status-paid { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+        .read-only-field { background-color: #f5f5f5 !important; color: #8c8c8c; }
+        .invoice-status-tag { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { Layout, Menu, Breadcrumb, Card, Table, Button, Space, Tag, Input, Select, DatePicker, Form, Row, Col, Tabs, Modal, message, Popconfirm, Descriptions, Popover } = antd;
+        const { Header, Sider, Content } = Layout;
+        const { TabPane } = Tabs;
+        const { Option } = Select;
+        const { TextArea } = Input;
+
+        // 合同模拟数据
+        const contractList = [
+            { key: '1', contractNo: 'HT202607001', contractName: '设备采购合同', nodeName: '预付款', paymentNature: '预付款', amount: 500000, ratio: 30, planDate: '2026-07-25', currency: 'CNY', fsReportNo: 'FS20260722001' },
+            { key: '2', contractNo: 'HT202606015', contractName: '软件开发合同', nodeName: '进度款', paymentNature: '进度款', amount: 800000, ratio: 50, planDate: '2026-07-22', currency: 'CNY', fsReportNo: 'FS20260721002' },
+            { key: '3', contractNo: 'HT202605008', contractName: '咨询服务合同', nodeName: '尾款', paymentNature: '尾款', amount: 200000, ratio: 20, planDate: '2026-07-20', currency: 'CNY', fsReportNo: 'FS20260720003' }
+        ];
+
+        // 付款列表模拟数据
+        const mockData = [
+            { key: '1', paymentNo: 'PAY20260722001', title: '设备采购首付款', status: 'pending', requester: '张三', contractNo: 'HT202607001', nodeName: '预付款', paymentNature: '预付款', summary: '根据合同约定，支付设备采购预付款', remarks: '设备预付款', acceptanceDate: '2026-07-20', amount: 500000, ratio: 30, planDate: '2026-07-25', actualDate: '-', supplier: '华为技术有限公司', account: '6222021234567890123', bank: '中国工商银行深圳分行', bankNo: '102100099996', currency: 'CNY', taxNo: '91440300192345678X', taxAmount: 65000, fsReportNo: 'FS20260722001', procurementCostNo: 'CGFY20260722001', procurementResultNo: 'CGJG20260715001', createUserId: 'admin', createTime: '2026-07-22 10:30:00', updateUserId: 'admin', updateTime: '2026-07-22 10:30:00' },
+            { key: '2', paymentNo: 'PAY20260721002', title: '软件开发进度款', status: 'approved', requester: '李四', contractNo: 'HT202606015', nodeName: '进度款', paymentNature: '进度款', summary: '项目完成50%，支付进度款', remarks: '软件开发款', acceptanceDate: '2026-07-18', amount: 800000, ratio: 50, planDate: '2026-07-22', actualDate: '-', supplier: '腾讯科技', account: '6222029876543210987', bank: '招商银行北京分行', bankNo: '103100000001', currency: 'CNY', taxNo: '91110108123456789X', taxAmount: 104000, fsReportNo: 'FS20260721002', procurementCostNo: 'CGFY20260721002', procurementResultNo: 'CGJG20260610002', createUserId: 'lisi', createTime: '2026-07-21 14:20:00', updateUserId: 'admin', updateTime: '2026-07-22 09:15:00' },
+            { key: '3', paymentNo: 'PAY20260720003', title: '咨询服务尾款', status: 'paid', requester: '王五', contractNo: 'HT202605008', nodeName: '尾款', paymentNature: '尾款', summary: '咨询服务完成验收，支付尾款', remarks: '咨询尾款', acceptanceDate: '2026-07-15', amount: 200000, ratio: 20, planDate: '2026-07-20', actualDate: '2026-07-20', supplier: '德勤咨询', account: '6222021111222233334', bank: '中国银行上海分行', bankNo: '104100000001', currency: 'CNY', taxNo: '91310101123456789X', taxAmount: 26000, fsReportNo: 'FS20260720003', procurementCostNo: 'CGFY20260720003', procurementResultNo: 'CGJG20260520003', createUserId: 'wangwu', createTime: '2026-07-20 11:00:00', updateUserId: 'admin', updateTime: '2026-07-20 16:30:00' }
+        ];
+
+        const statusMap = { pending: { text: '待审批', className: 'status-pending' }, approved: { text: '已审批', className: 'status-approved' }, rejected: { text: '已驳回', className: 'status-rejected' }, paid: { text: '已付款', className: 'status-paid' } };
+
+        // 付款计划数据
+        const paymentPlanData = [
+            { key: '1', planNo: 'PP202607001-01', nodeName: '预付款', amount: 500000, ratio: 30, planDate: '2026-07-25', needAcceptance: '是', nature: '预付款', content: '合同签订后支付预付款' },
+            { key: '2', planNo: 'PP202607001-02', nodeName: '进度款', amount: 800000, ratio: 50, planDate: '2026-09-30', needAcceptance: '是', nature: '进度款', content: '项目完成50%后支付' },
+            { key: '3', planNo: 'PP202607001-03', nodeName: '尾款', amount: 200000, ratio: 20, planDate: '2026-12-31', needAcceptance: '是', nature: '尾款', content: '验收合格后支付尾款' }
+        ];
+
+        // 验收详情数据
+        const acceptanceData = [
+            { key: '1', title: '设备到货验收', no: 'YS20260720001', acceptor: '张三', date: '2026-07-20', location: '深圳总部仓库' },
+            { key: '2', title: '设备安装调试验收', no: 'YS20260720002', acceptor: '李四', date: '2026-07-20', location: '深圳总部机房' }
+        ];
+
+        // 合同详情数据
+        const contractData = [
+            { key: '1', name: '设备采购合同', no: 'HT202607001', draftDate: '2026-07-01', method: '电子签', subClass: '采购合同', legalNo: 'FL202607001', sealNo: 'YZ202607001' }
+        ];
+
+        // 采购详情数据
+        const procurementData = [
+            { key: '1', itemNo: 'CG202607001', itemName: '服务器设备采购', method: '公开招标', resultTime: '2026-06-15', planNo: 'CGFA202606001', status: '已完成', budgetType: '资本性支出', requester: '张三', requestDept: '信息技术部', manager: '王经理', costNo: 'CGFY20260722001', resultNo: 'CGJG20260715001' }
+        ];
+
+        // 发票列表数据
+        const invoiceData = [
+            { key: '1', name: '增值税专用发票.pdf', number: '01234567', submitter: '张三', submitTime: '2026-07-22 10:00:00', type: '付款发票', size: 256, status: '核验中', operator: '系统自动', operateTime: '2026-07-22 10:05:00', reason: '' },
+            { key: '2', name: '普通发票.pdf', number: '01234568', submitter: '李四', submitTime: '2026-07-21 14:00:00', type: '付款发票', size: 128, status: '核验失败', operator: '', operateTime: '', reason: '发票号码与税局数据不匹配' },
+            { key: '3', name: '电子收据.jpg', number: '-', submitter: '王五', submitTime: '2026-07-20 11:00:00', type: '其他附件', size: 512, status: '上传成功', operator: '', operateTime: '', reason: '' },
+            { key: '4', name: '作废发票.pdf', number: '01234569', submitter: '赵六', submitTime: '2026-07-19 09:00:00', type: '付款发票', size: 200, status: '删除中', operator: 'admin', operateTime: '2026-07-22 08:00:00', reason: '' }
+        ];
+
+        // 附件列表数据
+        const attachmentData = [
+            { key: '1', name: '付款申请单.pdf', submitter: '张三', submitTime: '2026-07-22 10:00:00', type: '付款申请单', size: 256 },
+            { key: '2', name: '验收报告.pdf', submitter: '李四', submitTime: '2026-07-21 14:00:00', type: '验收报告', size: 1024 },
+            { key: '3', name: '合同附件.docx', submitter: '王五', submitTime: '2026-07-20 11:00:00', type: '合同附件', size: 512 }
+        ];
+
+        // 发票状态颜色映射
+        const invoiceStatusColor = { '上传成功': 'green', '待核验': 'orange', '核验中': 'blue', '核验失败': 'red', '删除中': 'gold', '删除失败': 'red' };
+
+        // ===== 列定义 =====
+        const paymentPlanColumns = [
+            { title: '计划编号', dataIndex: 'planNo', key: 'planNo' },
+            { title: '计划节点名称', dataIndex: 'nodeName', key: 'nodeName' },
+            { title: '节点付款金额(元)', dataIndex: 'amount', key: 'amount', render: (val) => val.toLocaleString() },
+            { title: '付款比例(%)', dataIndex: 'ratio', key: 'ratio' },
+            { title: '计划付款日期', dataIndex: 'planDate', key: 'planDate' },
+            { title: '是否需要验收', dataIndex: 'needAcceptance', key: 'needAcceptance' },
+            { title: '款项性质', dataIndex: 'nature', key: 'nature' },
+            { title: '验收内容', dataIndex: 'content', key: 'content' }
+        ];
+
+        const acceptanceColumns = [
+            { title: '验收标题', dataIndex: 'title', key: 'title' },
+            { title: '验收编号', dataIndex: 'no', key: 'no' },
+            { title: '验收人', dataIndex: 'acceptor', key: 'acceptor' },
+            { title: '验收日期', dataIndex: 'date', key: 'date' },
+            { title: '验收地点', dataIndex: 'location', key: 'location' }
+        ];
+
+        const contractColumns = [
+            { title: '合同名称', dataIndex: 'name', key: 'name' },
+            { title: '合同编号', dataIndex: 'no', key: 'no' },
+            { title: '起草日期', dataIndex: 'draftDate', key: 'draftDate' },
+            { title: '起草方式', dataIndex: 'method', key: 'method' },
+            { title: '合同子类', dataIndex: 'subClass', key: 'subClass' },
+            { title: '法审流水号', dataIndex: 'legalNo', key: 'legalNo' },
+            { title: '用印流水号', dataIndex: 'sealNo', key: 'sealNo' }
+        ];
+
+        const procurementColumns = [
+            { title: '采购项编号', dataIndex: 'itemNo', key: 'itemNo' },
+            { title: '采购项名称', dataIndex: 'itemName', key: 'itemName' },
+            { title: '采购方式', dataIndex: 'method', key: 'method' },
+            { title: '采购结果通知时间', dataIndex: 'resultTime', key: 'resultTime' },
+            { title: '采购方案编号', dataIndex: 'planNo', key: 'planNo' },
+            { title: '采购项状态', dataIndex: 'status', key: 'status' },
+            { title: '预算项目类型', dataIndex: 'budgetType', key: 'budgetType' },
+            { title: '请购人', dataIndex: 'requester', key: 'requester' },
+            { title: '请购部门', dataIndex: 'requestDept', key: 'requestDept' },
+            { title: '采购经理', dataIndex: 'manager', key: 'manager' },
+            { title: '采购费用签报号', dataIndex: 'costNo', key: 'costNo' },
+            { title: '采购结果签报号', dataIndex: 'resultNo', key: 'resultNo' }
+        ];
+
+        const invoiceColumns = [
+            { title: '发票名称', dataIndex: 'name', key: 'name', width: 180 },
+            { title: '发票号码', dataIndex: 'number', key: 'number', width: 120 },
+            { title: '提交人', dataIndex: 'submitter', key: 'submitter', width: 80 },
+            { title: '提交时间', dataIndex: 'submitTime', key: 'submitTime', width: 160 },
+            { title: '附件类型', dataIndex: 'type', key: 'type', width: 100 },
+            { title: '大小(KB)', dataIndex: 'size', key: 'size', width: 90 },
+            { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (status, record) => {
+                const needPopover = ['核验中', '核验失败', '删除中', '删除失败'].includes(status);
+                if (!needPopover) return <Tag color={invoiceStatusColor[status]}>{status}</Tag>;
+                const content = ['核验中', '删除中'].includes(status)
+                    ? (<div><p>操作人：{record.operator}</p><p>操作时间：{record.operateTime}</p></div>)
+                    : (<div><p>原因：{record.reason}</p></div>);
+                return <Popover content={content} trigger="click"><Tag color={invoiceStatusColor[status]} className="invoice-status-tag">{status}</Tag></Popover>;
+            }},
+            { title: '操作', key: 'action', width: 200, render: (_, record) => (
+                <Space size="small">
+                    <Button type="link" size="small" onClick={() => message.success('下载成功')}>下载</Button>
+                    <Popconfirm title="确定删除该发票？" onConfirm={() => message.success('删除成功')}><Button type="link" size="small" danger>删除</Button></Popconfirm>
+                    {record.type === '付款发票' && <Button type="link" size="small" onClick={() => message.success('发票核验已提交')}>发票核验</Button>}
+                </Space>
+            )}
+        ];
+
+        const attachmentColumns = [
+            { title: '附件名称', dataIndex: 'name', key: 'name', width: 180 },
+            { title: '提交人', dataIndex: 'submitter', key: 'submitter', width: 80 },
+            { title: '提交时间', dataIndex: 'submitTime', key: 'submitTime', width: 160 },
+            { title: '附件类型', dataIndex: 'type', key: 'type', width: 120 },
+            { title: '大小(KB)', dataIndex: 'size', key: 'size', width: 90 },
+            { title: '操作', key: 'action', width: 140, render: (_, record) => (
+                <Space size="small">
+                    <Button type="link" size="small" onClick={() => message.success('下载成功')}>下载</Button>
+                    <Popconfirm title="确定删除该附件？" onConfirm={() => message.success('删除成功')}><Button type="link" size="small" danger>删除</Button></Popconfirm>
+                </Space>
+            )}
+        ];
+
+        // 合同选择弹窗
+        const ContractSelectModal = ({ visible, onSelect, onClose }) => {
+            const [searchText, setSearchText] = React.useState('');
+            const filtered = contractList.filter(item => item.contractNo.includes(searchText) || item.contractName.includes(searchText));
+            const columns = [
+                { title: '合同编号', dataIndex: 'contractNo', width: 150 },
+                { title: '合同名称', dataIndex: 'contractName' },
+                { title: '款项性质', dataIndex: 'paymentNature', width: 100 },
+                { title: '付款金额', dataIndex: 'amount', width: 120, render: (val) => val.toLocaleString() },
+                { title: '操作', key: 'action', width: 80, render: (_, record) => <Button type="link" size="small" onClick={() => { onSelect(record); onClose(); }}>选择</Button> }
+            ];
+            return (
+                <Modal title="选择合同" visible={visible} onCancel={onClose} footer={null} width={700}>
+                    <Input.Search placeholder="搜索合同编号或合同名称" value={searchText} onChange={(e) => setSearchText(e.target.value)} style={{ marginBottom: 16 }} />
+                    <Table columns={columns} dataSource={filtered} pagination={false} size="small" rowKey="key" />
+                </Modal>
+            );
+        };
+
+        // 详情弹窗
+        const PaymentDetailModal = ({ visible, record, onClose }) => {
+            if (!record) return null;
+            return (
+                <Modal title="付款详情" visible={visible} onCancel={onClose} footer={<Button onClick={onClose}>关闭</Button>} width={1100} style={{ top: 20 }}>
+                    <Descriptions bordered column={2} style={{ marginTop: 16 }}>
+                        <Descriptions.Item label="付款编号">{record.paymentNo}</Descriptions.Item>
+                        <Descriptions.Item label="付款标题">{record.title}</Descriptions.Item>
+                        <Descriptions.Item label="付款状态"><span className={`status-tag ${statusMap[record.status].className}`}>{statusMap[record.status].text}</span></Descriptions.Item>
+                        <Descriptions.Item label="请款人">{record.requester}</Descriptions.Item>
+                        <Descriptions.Item label="合同编号">{record.contractNo}</Descriptions.Item>
+                        <Descriptions.Item label="付款节点名称">{record.nodeName}</Descriptions.Item>
+                        <Descriptions.Item label="款项性质">{record.paymentNature}</Descriptions.Item>
+                        <Descriptions.Item label="付款摘要">{record.summary}</Descriptions.Item>
+                        <Descriptions.Item label="银行汇款附言">{record.remarks}</Descriptions.Item>
+                        <Descriptions.Item label="验收日期">{record.acceptanceDate}</Descriptions.Item>
+                        <Descriptions.Item label="本次付款金额">{record.amount.toLocaleString()} 元</Descriptions.Item>
+                        <Descriptions.Item label="付款比例">{record.ratio}%</Descriptions.Item>
+                        <Descriptions.Item label="计划付款日期">{record.planDate}</Descriptions.Item>
+                        <Descriptions.Item label="实际付款日期">{record.actualDate}</Descriptions.Item>
+                        <Descriptions.Item label="供应商名称">{record.supplier}</Descriptions.Item>
+                        <Descriptions.Item label="收款账号">{record.account}</Descriptions.Item>
+                        <Descriptions.Item label="开户行">{record.bank}</Descriptions.Item>
+                        <Descriptions.Item label="大额支付行号">{record.bankNo}</Descriptions.Item>
+                        <Descriptions.Item label="币种">{record.currency}</Descriptions.Item>
+                        <Descriptions.Item label="税号">{record.taxNo}</Descriptions.Item>
+                        <Descriptions.Item label="税额">{record.taxAmount.toLocaleString()} 元</Descriptions.Item>
+                        <Descriptions.Item label="财务共享签报号">{record.fsReportNo}</Descriptions.Item>
+                        <Descriptions.Item label="采购费用签报号">{record.procurementCostNo}</Descriptions.Item>
+                        <Descriptions.Item label="采购结果签报号">{record.procurementResultNo}</Descriptions.Item>
+                        <Descriptions.Item label="创建人">{record.createUserId}</Descriptions.Item>
+                        <Descriptions.Item label="创建时间">{record.createTime}</Descriptions.Item>
+                        <Descriptions.Item label="修改人">{record.updateUserId}</Descriptions.Item>
+                        <Descriptions.Item label="修改时间">{record.updateTime}</Descriptions.Item>
+                    </Descriptions>
+                    <Tabs style={{ marginTop: 24 }}>
+                        <TabPane tab="付款计划" key="plan">
+                            <Table columns={paymentPlanColumns} dataSource={paymentPlanData} pagination={false} rowKey="key" />
+                        </TabPane>
+                        <TabPane tab="验收详情" key="acceptance">
+                            <Table columns={acceptanceColumns} dataSource={acceptanceData} pagination={false} rowKey="key" />
+                        </TabPane>
+                        <TabPane tab="合同详情" key="contract">
+                            <Table columns={contractColumns} dataSource={contractData} pagination={false} rowKey="key" />
+                        </TabPane>
+                        <TabPane tab="采购详情" key="procurement">
+                            <Table columns={procurementColumns} dataSource={procurementData} pagination={false} rowKey="key" />
+                        </TabPane>
+                        <TabPane tab="发票列表" key="invoice">
+                            <Space style={{ marginBottom: 16 }}>
+                                <Button type="primary" size="small" onClick={() => message.success('一键发票核验已提交')}>一键发票核验</Button>
+                                <Button size="small" onClick={() => message.success('打包下载成功')}>打包下载</Button>
+                            </Space>
+                            <Table columns={invoiceColumns} dataSource={invoiceData} pagination={false} rowKey="key" size="small" scroll={{ x: 1000 }} />
+                        </TabPane>
+                        <TabPane tab="附件列表" key="attachment">
+                            <Space style={{ marginBottom: 16 }}>
+                                <Button size="small" onClick={() => message.success('打包下载成功')}>打包下载</Button>
+                            </Space>
+                            <Table columns={attachmentColumns} dataSource={attachmentData} pagination={false} rowKey="key" size="small" scroll={{ x: 700 }} />
+                        </TabPane>
+                    </Tabs>
+                </Modal>
+            );
+        };
+
+        // 新建/编辑付款弹窗
+        const PaymentFormModal = ({ visible, record, onClose }) => {
+            const [form] = Form.useForm();
+            const [submitting, setSubmitting] = React.useState(false);
+            const [contractSelectVisible, setContractSelectVisible] = React.useState(false);
+            const isEdit = !!record;
+
+            React.useEffect(() => {
+                if (visible && record) {
+                    form.setFieldsValue({
+                        title: record.title, contractNo: record.contractNo, contractName: record.contractNo + ' - ' + record.nodeName,
+                        nodeName: record.nodeName, paymentNature: record.paymentNature, summary: record.summary,
+                        remarks: record.remarks, amount: record.amount, ratio: record.ratio,
+                        planDate: record.planDate ? moment(record.planDate) : null, currency: record.currency, fsReportNo: record.fsReportNo
+                    });
+                } else if (visible && !record) {
+                    form.resetFields();
+                    form.setFieldsValue({ currency: 'CNY' });
+                }
+            }, [visible, record]);
+
+            const handleContractSelect = (contract) => {
+                form.setFieldsValue({
+                    contractNo: contract.contractNo, contractName: contract.contractNo + ' - ' + contract.contractName,
+                    nodeName: contract.nodeName, paymentNature: contract.paymentNature, amount: contract.amount,
+                    ratio: contract.ratio, planDate: moment(contract.planDate), currency: contract.currency, fsReportNo: contract.fsReportNo
+                });
+            };
+
+            const handleSubmit = () => {
+                form.validateFields().then(values => {
+                    setSubmitting(true);
+                    setTimeout(() => { setSubmitting(false); message.success(isEdit ? '修改并提交成功' : '创建并提交成功'); onClose(); form.resetFields(); }, 1000);
+                });
+            };
+
+            const handleSaveDraft = () => {
+                form.validateFields().then(values => { message.success('保存草稿成功'); onClose(); form.resetFields(); });
+            };
+
+            return (
+                <>
+                    <ContractSelectModal visible={contractSelectVisible} onSelect={handleContractSelect} onClose={() => setContractSelectVisible(false)} />
+                    <Modal title={isEdit ? '编辑付款' : '新建付款'} visible={visible} onCancel={onClose} width={800}
+                        footer={[
+                            <Button key="cancel" onClick={onClose}>取消</Button>,
+                            <Button key="draft" onClick={handleSaveDraft}>保存草稿</Button>,
+                            <Button key="submit" type="primary" loading={submitting} onClick={handleSubmit}>提交</Button>
+                        ]}>
+                        <Form form={form} layout="vertical">
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item label="付款标题" name="title" rules={[{ required: true, message: '请输入付款标题' }]}>
+                                        <Input placeholder="请输入付款标题" />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item label="合同编号" name="contractName" rules={[{ required: true, message: '请选择合同编号' }]}>
+                                        <Input placeholder="请选择合同编号" readOnly className="read-only-field"
+                                            suffix={<Button type="link" size="small" onClick={() => setContractSelectVisible(true)} disabled={isEdit}>选择</Button>} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item label="付款节点名称" name="nodeName">
+                                        <Select placeholder="自动带出" disabled>
+                                            <Option value="预付款">预付款</Option>
+                                            <Option value="进度款">进度款</Option>
+                                            <Option value="尾款">尾款</Option>
+                                            <Option value="质保金">质保金</Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item label="款项性质" name="paymentNature">
+                                        <Input placeholder="自动带出" readOnly className="read-only-field" />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item label="本次付款金额(元)" name="amount">
+                                        <Input type="number" placeholder="自动带出" readOnly className="read-only-field" />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item label="付款比例(%)" name="ratio">
+                                        <Input type="number" placeholder="自动带出" readOnly className="read-only-field" />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item label="计划付款日期" name="planDate">
+                                        <DatePicker style={{ width: '100%' }} disabled />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item label="币种" name="currency">
+                                        <Select disabled>
+                                            <Option value="CNY">CNY - 人民币</Option>
+                                            <Option value="USD">USD - 美元</Option>
+                                            <Option value="EUR">EUR - 欧元</Option>
+                                            <Option value="JPY">JPY - 日元</Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                            <Form.Item label="付款摘要" name="summary">
+                                <TextArea rows={3} placeholder="请输入付款摘要（最多500字符）" maxLength={500} showCount />
+                            </Form.Item>
+                            <Form.Item label="银行汇款附言" name="remarks">
+                                <Input placeholder="请输入银行汇款附言（最多12字符）" maxLength={12} />
+                            </Form.Item>
+                            <Form.Item label="财务共享签报号" name="fsReportNo">
+                                <Input placeholder="自动带出，可修改" />
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+                </>
+            );
+        };
+
+        // 列表页面
+        const PaymentListPage = () => {
+            const [selectedRowKeys, setSelectedRowKeys] = React.useState([]);
+            const [searchForm] = Form.useForm();
+            const [detailVisible, setDetailVisible] = React.useState(false);
+            const [editVisible, setEditVisible] = React.useState(false);
+            const [currentRecord, setCurrentRecord] = React.useState(null);
+            const [createVisible, setCreateVisible] = React.useState(false);
+
+            const columns = [
+                { title: '付款编号', dataIndex: 'paymentNo', width: 150, fixed: 'left' },
+                { title: '付款标题', dataIndex: 'title', width: 150 },
+                { title: '付款状态', dataIndex: 'status', width: 100, render: (s) => <span className={`status-tag ${statusMap[s].className}`}>{statusMap[s].text}</span> },
+                { title: '请款人', dataIndex: 'requester', width: 80 },
+                { title: '合同编号', dataIndex: 'contractNo', width: 140 },
+                { title: '付款节点名称', dataIndex: 'nodeName', width: 110 },
+                { title: '款项性质', dataIndex: 'paymentNature', width: 100 },
+                { title: '付款摘要', dataIndex: 'summary', width: 200, ellipsis: true },
+                { title: '银行汇款附言', dataIndex: 'remarks', width: 120 },
+                { title: '验收日期', dataIndex: 'acceptanceDate', width: 120 },
+                { title: '本次付款金额(元)', dataIndex: 'amount', width: 140, render: (val) => val.toLocaleString() },
+                { title: '付款比例(%)', dataIndex: 'ratio', width: 100 },
+                { title: '计划付款日期', dataIndex: 'planDate', width: 120 },
+                { title: '实际付款日期', dataIndex: 'actualDate', width: 120 },
+                { title: '供应商名称', dataIndex: 'supplier', width: 150 },
+                { title: '收款账号', dataIndex: 'account', width: 180 },
+                { title: '开户行', dataIndex: 'bank', width: 160 },
+                { title: '大额支付行号', dataIndex: 'bankNo', width: 140 },
+                { title: '币种', dataIndex: 'currency', width: 80 },
+                { title: '税号', dataIndex: 'taxNo', width: 160 },
+                { title: '税额(元)', dataIndex: 'taxAmount', width: 120, render: (val) => val.toLocaleString() },
+                { title: '财务共享签报号', dataIndex: 'fsReportNo', width: 160 },
+                { title: '采购费用签报号', dataIndex: 'procurementCostNo', width: 160 },
+                { title: '采购结果签报号', dataIndex: 'procurementResultNo', width: 160 },
+                { title: '创建人', dataIndex: 'createUserId', width: 100 },
+                { title: '创建时间', dataIndex: 'createTime', width: 160 },
+                { title: '修改人', dataIndex: 'updateUserId', width: 100 },
+                { title: '修改时间', dataIndex: 'updateTime', width: 160 },
+                { title: '操作', key: 'action', width: 150, fixed: 'right', render: (_, r) => (
+                    <Space size="small">
+                        <Button type="link" size="small" onClick={() => { setCurrentRecord(r); setDetailVisible(true); }}>详情</Button>
+                        <Button type="link" size="small" onClick={() => { setCurrentRecord(r); setEditVisible(true); }}>编辑</Button>
+                        <Popconfirm title="确定删除？" onConfirm={() => message.success('删除成功')}><Button type="link" size="small" danger>删除</Button></Popconfirm>
+                    </Space>
+                ) }
+            ];
+
+            const rowSelection = { selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys) };
+
+            const handleSearch = () => message.success('查询成功');
+            const handleReset = () => searchForm.resetFields();
+            const handleExport = () => message.success('导出成功');
+            const handleBatchDelete = () => {
+                if (selectedRowKeys.length === 0) { message.warning('请选择要删除的记录'); return; }
+                Modal.confirm({ title: '批量删除', content: `确定删除选中的 ${selectedRowKeys.length} 条记录？`, onOk: () => { message.success('删除成功'); setSelectedRowKeys([]); } });
+            };
+
+            return (
+                <div className="page-content">
+                    <Card className="search-card" bordered={false}>
+                        <Form form={searchForm} layout="inline">
+                            <Row gutter={16} style={{ width: '100%' }}>
+                                <Col span={6}><Form.Item label="付款编号" name="paymentNo" style={{ marginBottom: 8 }}><Input placeholder="请输入付款编号" allowClear /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="付款标题" name="title" style={{ marginBottom: 8 }}><Input placeholder="请输入付款标题" allowClear /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="付款状态" name="status" style={{ marginBottom: 8 }}><Select placeholder="请选择状态" allowClear><Option value="pending">待审批</Option><Option value="approved">已审批</Option><Option value="rejected">已驳回</Option><Option value="paid">已付款</Option></Select></Form.Item></Col>
+                                <Col span={6}><Form.Item label="请款人" name="requester" style={{ marginBottom: 8 }}><Input placeholder="请输入请款人" allowClear /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="合同编号" name="contractNo" style={{ marginBottom: 8 }}><Input placeholder="请输入合同编号" allowClear /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="供应商" name="supplier" style={{ marginBottom: 8 }}><Input placeholder="请输入供应商" allowClear /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="款项性质" name="paymentNature" style={{ marginBottom: 8 }}><Select placeholder="请选择款项性质" allowClear><Option value="预付款">预付款</Option><Option value="进度款">进度款</Option><Option value="尾款">尾款</Option><Option value="质保金">质保金</Option></Select></Form.Item></Col>
+                                <Col span={6}><Form.Item label="计划付款日期" name="planDate" style={{ marginBottom: 8 }}><DatePicker.RangePicker style={{ width: '100%' }} /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="实际付款日期" name="actualDate" style={{ marginBottom: 8 }}><DatePicker.RangePicker style={{ width: '100%' }} /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="创建人" name="createUserId" style={{ marginBottom: 8 }}><Input placeholder="请输入创建人" allowClear /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="创建时间" name="createTime" style={{ marginBottom: 8 }}><DatePicker.RangePicker style={{ width: '100%' }} /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="修改人" name="updateUserId" style={{ marginBottom: 8 }}><Input placeholder="请输入修改人" allowClear /></Form.Item></Col>
+                                <Col span={6}><Form.Item label="修改时间" name="updateTime" style={{ marginBottom: 8 }}><DatePicker.RangePicker style={{ width: '100%' }} /></Form.Item></Col>
+                            </Row>
+                            <Row justify="end" style={{ width: '100%' }}>
+                                <Col span={24} style={{ textAlign: 'right' }}>
+                                    <Space>
+                                        <Button type="primary" onClick={handleSearch}>查询</Button>
+                                        <Button onClick={handleReset}>重置</Button>
+                                    </Space>
+                                </Col>
+                            </Row>
+                        </Form>
+                    </Card>
+                    <Card className="table-card" bordered={false}>
+                        <Space style={{ marginBottom: 16 }}>
+                            <Button type="primary" onClick={() => setCreateVisible(true)}>新建付款</Button>
+                            <Button onClick={handleExport}>导出</Button>
+                            <Popconfirm title="确定批量删除？" onConfirm={handleBatchDelete}>
+                                <Button danger disabled={selectedRowKeys.length === 0}>批量删除</Button>
+                            </Popconfirm>
+                        </Space>
+                        <Table columns={columns} dataSource={mockData} rowSelection={rowSelection} scroll={{ x: 3800 }}
+                            pagination={{ total: 100, pageSize: 10, showSizeChanger: true, showQuickJumper: true, showTotal: (total) => `共 ${total} 条` }} rowKey="key" />
+                    </Card>
+                    <PaymentDetailModal visible={detailVisible} record={currentRecord} onClose={() => setDetailVisible(false)} />
+                    <PaymentFormModal visible={editVisible || createVisible} record={editVisible ? currentRecord : null} onClose={() => { setEditVisible(false); setCreateVisible(false); }} />
+                </div>
+            );
+        };
+
+        // 主应用
+        const App = () => (
+            <Layout style={{ minHeight: '100vh' }}>
+                <Sider collapsible>
+                    <div className="logo"><span>💳</span> 合同付款系统</div>
+                    <Menu theme="dark" defaultSelectedKeys={['payment-list']} mode="inline" inlineCollapsed={false}>
+                        <Menu.Item key="home">首页</Menu.Item>
+                        <Menu.SubMenu key="contract" title="合同管理">
+                            <Menu.Item key="contract-list">合同列表</Menu.Item>
+                        </Menu.SubMenu>
+                        <Menu.SubMenu key="payment" title="付款管理">
+                            <Menu.Item key="payment-list">付款列表</Menu.Item>
+                            <Menu.Item key="payment-add">新建付款</Menu.Item>
+                        </Menu.SubMenu>
+                        <Menu.SubMenu key="acceptance" title="验收管理">
+                            <Menu.Item key="acceptance-list">验收列表</Menu.Item>
+                        </Menu.SubMenu>
+                        <Menu.SubMenu key="report" title="报表统计">
+                            <Menu.Item key="report-payment">付款统计</Menu.Item>
+                        </Menu.SubMenu>
+                        <Menu.SubMenu key="system" title="系统管理">
+                            <Menu.Item key="system-user">用户管理</Menu.Item>
+                        </Menu.SubMenu>
+                    </Menu>
+                </Sider>
+                <Layout>
+                    <Header style={{ background: '#fff', padding: '0 24px' }}>
+                        <Breadcrumb>
+                            <Breadcrumb.Item>首页</Breadcrumb.Item>
+                            <Breadcrumb.Item>付款管理</Breadcrumb.Item>
+                            <Breadcrumb.Item>付款列表</Breadcrumb.Item>
+                        </Breadcrumb>
+                    </Header>
+                    <Content>
+                        <PaymentListPage />
+                    </Content>
+                </Layout>
+            </Layout>
+        );
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

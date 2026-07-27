@@ -11,6 +11,8 @@
         <result column="subject" property="subject"/>
         <result column="content" property="content"/>
         <result column="attachment_paths" property="attachmentPaths"/>
+        <result column="priority" property="priority"/>
+        <result column="group_id" property="groupId"/>
         <result column="send_status" property="sendStatus"/>
         <result column="error_msg" property="errorMsg"/>
         <result column="retry_count" property="retryCount"/>
@@ -19,24 +21,26 @@
         <result column="third_party_response" property="thirdPartyResponse"/>
         <result column="send_time" property="sendTime"/>
         <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
         <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id, template_id, template_code, notice_type, receiver, subject, content,
-        attachment_paths, send_status, error_msg, retry_count, max_retry,
-        request_id, third_party_response, send_time, create_user_id, create_time
+        attachment_paths, priority, group_id, send_status, error_msg, retry_count, max_retry,
+        request_id, third_party_response, send_time, create_user_id, update_user_id, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="com.gnosis.notice.domain.NoticeLog">
         INSERT INTO sys_notice_log (
             id, template_id, template_code, notice_type, receiver, subject, content,
-            attachment_paths, send_status, error_msg, retry_count, max_retry,
-            request_id, third_party_response, send_time, create_user_id, create_time
+            attachment_paths, priority, group_id, send_status, error_msg, retry_count, max_retry,
+            request_id, third_party_response, send_time, create_user_id, update_user_id, create_time, update_time
         ) VALUES (
             #{id}, #{templateId}, #{templateCode}, #{noticeType}, #{receiver}, #{subject}, #{content},
-            #{attachmentPaths}, #{sendStatus}, #{errorMsg}, #{retryCount}, #{maxRetry},
-            #{requestId}, #{thirdPartyResponse}, #{sendTime}, #{createUserId}, #{createTime}
+            #{attachmentPaths}, #{priority}, #{groupId}, #{sendStatus}, #{errorMsg}, #{retryCount}, #{maxRetry},
+            #{requestId}, #{thirdPartyResponse}, #{sendTime}, #{createUserId}, #{updateUserId}, #{createTime}, #{updateTime}
         )
     </insert>
 
@@ -50,6 +54,8 @@
             <if test="subject != null">subject = #{subject},</if>
             <if test="content != null">content = #{content},</if>
             <if test="attachmentPaths != null">attachment_paths = #{attachmentPaths},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="groupId != null">group_id = #{groupId},</if>
             <if test="sendStatus != null">send_status = #{sendStatus},</if>
             <if test="errorMsg != null">error_msg = #{errorMsg},</if>
             <if test="retryCount != null">retry_count = #{retryCount},</if>
@@ -57,6 +63,8 @@
             <if test="requestId != null">request_id = #{requestId},</if>
             <if test="thirdPartyResponse != null">third_party_response = #{thirdPartyResponse},</if>
             <if test="sendTime != null">send_time = #{sendTime},</if>
+            <if test="updateUserId != null">update_user_id = #{updateUserId},</if>
+            update_time = #{updateTime}
         </set>
         WHERE id = #{id}
     </update>
@@ -75,6 +83,8 @@
             <if test="templateCode != null and templateCode != ''">AND template_code = #{templateCode}</if>
             <if test="noticeType != null and noticeType != ''">AND notice_type = #{noticeType}</if>
             <if test="receiver != null and receiver != ''">AND receiver LIKE CONCAT('%', #{receiver}, '%')</if>
+            <if test="priority != null">AND priority = #{priority}</if>
+            <if test="groupId != null and groupId != ''">AND group_id = #{groupId}</if>
             <if test="sendStatus != null">AND send_status = #{sendStatus}</if>
             <if test="startTime != null">AND create_time &gt;= #{startTime}</if>
             <if test="endTime != null">AND create_time &lt;= #{endTime}</if>
@@ -92,6 +102,8 @@
             <if test="templateCode != null and templateCode != ''">AND template_code = #{templateCode}</if>
             <if test="noticeType != null and noticeType != ''">AND notice_type = #{noticeType}</if>
             <if test="receiver != null and receiver != ''">AND receiver LIKE CONCAT('%', #{receiver}, '%')</if>
+            <if test="priority != null">AND priority = #{priority}</if>
+            <if test="groupId != null and groupId != ''">AND group_id = #{groupId}</if>
             <if test="sendStatus != null">AND send_status = #{sendStatus}</if>
             <if test="startTime != null">AND create_time &gt;= #{startTime}</if>
             <if test="endTime != null">AND create_time &lt;= #{endTime}</if>
@@ -109,7 +121,7 @@
 
     <update id="updateRetryCount">
         UPDATE sys_notice_log
-        SET retry_count = #{retryCount}
+        SET retry_count = #{retryCount}, update_time = CURRENT_TIMESTAMP
         WHERE id = #{id}
     </update>
 
