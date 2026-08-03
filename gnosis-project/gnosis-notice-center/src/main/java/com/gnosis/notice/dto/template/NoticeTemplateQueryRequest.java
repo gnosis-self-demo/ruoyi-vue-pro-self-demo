@@ -35,6 +35,11 @@ public class NoticeTemplateQueryRequest implements Serializable {
     private Integer status;
 
     /**
+     * 消息优先级：0普通 1重要 2紧急
+     */
+    private Integer priority;
+
+    /**
      * 页码
      */
     private Integer pageNum;
@@ -98,5 +103,13 @@ public class NoticeTemplateQueryRequest implements Serializable {
 
     public void setPageSize(Integer pageSize) {
         this.pageSize = pageSize;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 }

@@ -16,7 +16,7 @@ public class NoticeTemplate extends BaseEntity {
     private String attachmentConfig;
     private String thirdPartyConfig;
     /** 消息优先级：0普通 1重要 2紧急 */
-    private Integer priority;
+    private Integer priority = 0;
     private Integer status;
     private String remark;
 

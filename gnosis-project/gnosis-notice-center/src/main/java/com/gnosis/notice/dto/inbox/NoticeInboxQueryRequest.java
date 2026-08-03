@@ -31,7 +31,6 @@ public class NoticeInboxQueryRequest implements Serializable {
     /** 状态 */
     private Integer status;
     /** 开始时间 */
-     */
     private Date startTime;
 
     /**

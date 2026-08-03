@@ -12,6 +12,6 @@ echo ========================================
 echo.
 
 cd /d %~dp0frontend
-npm run dev
+npm run dev  --host
 
 pause

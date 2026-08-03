@@ -105,6 +105,13 @@ public class ExcelUtils {
     }
 
     /**
+     * 获取单元格值（公共方法）
+     */
+    public static String getCellStringValue(Cell cell) {
+        return getCellValue(cell);
+    }
+
+    /**
      * 获取单元格值
      */
     private static String getCellValue(Cell cell) {

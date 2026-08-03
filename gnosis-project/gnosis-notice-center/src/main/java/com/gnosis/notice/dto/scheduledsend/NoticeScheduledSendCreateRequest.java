@@ -1,5 +1,7 @@
 package com.gnosis.notice.dto.scheduledsend;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -43,6 +45,7 @@ public class NoticeScheduledSendCreateRequest implements Serializable {
     private String groupId;
 
     /** 计划发送时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date scheduledTime;
 
     public String getTemplateCode() {

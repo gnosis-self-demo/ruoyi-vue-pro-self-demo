@@ -13,7 +13,7 @@ public class NoticeInbox extends BaseEntity {
     private String content;
     private String attachmentPaths;
     /** 消息优先级：0普通 1重要 2紧急 */
-    private Integer priority;
+    private Integer priority = 0;
     /** 消息分组ID */
     private String groupId;
     /** 是否已读：0未读 1已读 */

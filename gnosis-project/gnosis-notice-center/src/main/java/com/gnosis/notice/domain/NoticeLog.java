@@ -16,7 +16,7 @@ public class NoticeLog extends BaseEntity {
     private String content;
     private String attachmentPaths;
     /** 消息优先级：0普通 1重要 2紧急 */
-    private Integer priority;
+    private Integer priority = 0;
     /** 消息分组ID */
     private String groupId;
     /** 发送状态：0待发送 1发送中 2成功 3失败 */
